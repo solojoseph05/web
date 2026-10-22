@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencias (Aplica para frontend y backend)
+node_modules
+*/node_modules
+
+# Carpetas de compilación del Frontend
+dist
+dist-ssr
+*/dist
+*.local
+
+# Variables de entorno (MUY IMPORTANTE para el backend)
+.env
+.env.local
+.env.*.local
+*/env
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Archivos de base de datos locales (si usas SQLite o similar en el backend)
+*.sqlite
+*.sqlite3
+*.db
