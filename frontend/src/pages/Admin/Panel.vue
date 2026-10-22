@@ -86,6 +86,15 @@
           <p v-if="statusError" class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
             {{ statusError }}
           </p>
+          <p v-if="lastDraftSavedAt" class="mt-3 text-xs font-medium text-gray-500">
+            Borrador local guardado: {{ formatDateTime(lastDraftSavedAt) }}
+          </p>
+          <div v-if="systemAlerts.pending_approvals || systemAlerts.pending_messages" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p class="font-semibold">Alertas internas</p>
+            <p class="mt-1">
+              Aprobaciones pendientes: {{ systemAlerts.pending_approvals }} · Mensajes pendientes: {{ systemAlerts.pending_messages }}
+            </p>
+          </div>
 
           <div v-if="loading" class="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center text-gray-600">
             Cargando información del panel...
@@ -127,35 +136,7 @@
                   </p>
                 </div>
 
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-700">
-                  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">📊 Resumen de estado</p>
-                  <div class="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3">
-                    <div class="rounded-lg bg-red-50 p-3 text-center dark:bg-red-900">
-                      <div class="text-2xl font-bold text-red-600 dark:text-red-300">{{ dashboardSummary.active_jobs }}</div>
-                      <p class="text-xs text-red-700 dark:text-red-200 mt-1">Vacantes</p>
-                    </div>
-                    <div class="rounded-lg bg-green-50 p-3 text-center dark:bg-green-900">
-                      <div class="text-2xl font-bold text-green-600 dark:text-green-300">{{ dashboardSummary.active_menu_items }}</div>
-                      <p class="text-xs text-green-700 dark:text-green-200 mt-1">Productos</p>
-                    </div>
-                    <div class="rounded-lg bg-blue-50 p-3 text-center dark:bg-blue-900">
-                      <div class="text-2xl font-bold text-blue-600 dark:text-blue-300">{{ dashboardSummary.contact_messages }}</div>
-                      <p class="text-xs text-blue-700 dark:text-blue-200 mt-1">Mensajes</p>
-                    </div>
-                    <div class="rounded-lg bg-yellow-50 p-3 text-center dark:bg-yellow-900">
-                      <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-300">{{ dashboardSummary.pending_contact_messages }}</div>
-                      <p class="text-xs text-yellow-700 dark:text-yellow-200 mt-1">Pendientes</p>
-                    </div>
-                    <div class="rounded-lg bg-purple-50 p-3 text-center dark:bg-purple-900">
-                      <div class="text-2xl font-bold text-purple-600 dark:text-purple-300">{{ dashboardSummary.admin_users }}</div>
-                      <p class="text-xs text-purple-700 dark:text-purple-200 mt-1">Admin</p>
-                    </div>
-                    <div class="rounded-lg bg-orange-50 p-3 text-center dark:bg-orange-900">
-                      <div class="text-2xl font-bold text-orange-600 dark:text-orange-300">{{ dashboardSummary.change_logs }}</div>
-                      <p class="text-xs text-orange-700 dark:text-orange-200 mt-1">Cambios</p>
-                    </div>
-                  </div>
-                </div>
+                <AdminOverviewSummary :summary="dashboardSummary" />
               </div>
             </section>
 
@@ -165,7 +146,7 @@
                   <h2 class="text-lg font-bold text-gray-900">Contenido principal</h2>
                   <p class="text-sm text-gray-600">Ajusta lo que se muestra en la cabecera y el contacto del sitio.</p>
                 </div>
-                <button class="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="saveSettings">
+                <button class="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageSettings" @click="saveSettings">
                   Guardar contenido principal
                 </button>
               </div>
@@ -327,8 +308,8 @@
                       <input v-model="job.is_active" type="checkbox" class="mr-2" />
                       Activa
                     </label>
-                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageLanding" @click="saveJob(job)">Guardar</button>
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="deleteJob(job.id)">Eliminar</button>
+                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageJobs" @click="saveJob(job)">Guardar</button>
+                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageJobs" @click="deleteJob(job.id)">Eliminar</button>
                   </div>
                 </div>
               </div>
@@ -393,7 +374,7 @@
                   </div>
                 </div>
                 <textarea v-model="newJob.description" rows="2" placeholder="Descripción" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="createJob">Crear vacante</button>
+                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageJobs" @click="createJob">Crear vacante</button>
               </div>
             </section>
 
@@ -421,7 +402,7 @@
                   <button
                     class="rounded-lg border border-amber-300 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900"
                     @click="restoreDefaultMenu"
-                    v-if="canManageLanding"
+                    v-if="canManageMenu"
                   >
                     ↻ Restaurar 20 default
                   </button>
@@ -497,7 +478,7 @@
                         </button>
                         <button
                           @click.stop="deleteMenuItem(item.id)"
-                          v-if="canManageLanding"
+                          v-if="canManageMenu"
                           class="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700"
                         >
                           Eliminar
@@ -560,6 +541,7 @@
                         </div>
                         <div class="mt-2 flex flex-wrap gap-2">
                           <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(selectedMenuItem)">✓ Aplicar</button>
+                          <button class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700" @click="openImageCropper(selectedMenuItem)">✂ Recortar</button>
                           <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600" @click="cancelPendingUpload(selectedMenuItem)">✕ Cancelar</button>
                         </div>
                       </div>
@@ -580,8 +562,8 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap gap-2">
-                      <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400 dark:bg-gray-900 dark:hover:bg-gray-800" :disabled="!canManageLanding" @click="saveMenuItem(selectedMenuItem)">💾 Guardar cambios</button>
-                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="deleteMenuItem(selectedMenuItem.id)">🗑 Eliminar card</button>
+                      <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400 dark:bg-gray-900 dark:hover:bg-gray-800" :disabled="!canManageMenu" @click="saveMenuItem(selectedMenuItem)">💾 Guardar cambios</button>
+                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageMenu" @click="deleteMenuItem(selectedMenuItem.id)">🗑 Eliminar card</button>
                     </div>
                   </template>
 
@@ -593,21 +575,21 @@
                         <button
                           @click="bulkActionChangeStatus(true)"
                           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                          v-if="canManageLanding"
+                          v-if="canManageMenu"
                         >
                           ✓ Activar todos
                         </button>
                         <button
                           @click="bulkActionChangeStatus(false)"
                           class="rounded-lg bg-gray-600 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-                          v-if="canManageLanding"
+                          v-if="canManageMenu"
                         >
                           ✗ Desactivar todos
                         </button>
                         <button
                           @click="bulkActionToggleFeatured"
                           class="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700"
-                          v-if="canManageLanding"
+                          v-if="canManageMenu"
                         >
                           ⭐ Destacar todos
                         </button>
@@ -681,7 +663,7 @@
                   </div>
                 </div>
                 <textarea v-model="newMenuItem.description" rows="2" placeholder="Descripción" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="createMenuItem">
+                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageMenu" @click="createMenuItem">
                   Crear producto
                 </button>
               </div>
@@ -714,7 +696,7 @@
                   v-for="promotion in filteredPromotions"
                   :key="promotion.id"
                   class="rounded-2xl border border-gray-200 bg-gray-50 p-4"
-                  :draggable="canManageLanding"
+                  :draggable="canManagePromotions"
                   @dragstart="onPromotionDragStart(promotion.id)"
                   @dragend="draggedPromotionId = null"
                   @dragover.prevent
@@ -772,8 +754,8 @@
                   </div>
                   <div class="mt-3 flex flex-wrap items-center gap-3">
                     <label class="text-sm text-gray-700"><input v-model="promotion.is_active" type="checkbox" class="mr-2" />Activa</label>
-                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageLanding" @click="savePromotion(promotion)">Guardar</button>
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="deletePromotion(promotion.id)">Eliminar</button>
+                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManagePromotions" @click="savePromotion(promotion)">Guardar</button>
+                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManagePromotions" @click="deletePromotion(promotion.id)">Eliminar</button>
                   </div>
                 </div>
               </div>
@@ -824,7 +806,7 @@
                     <p class="text-sm text-gray-600">Listo para guardar.</p>
                   </div>
                 </div>
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="createPromotion">Crear promoción</button>
+                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManagePromotions" @click="createPromotion">Crear promoción</button>
               </div>
             </section>
 
@@ -855,7 +837,7 @@
                   v-for="branch in filteredBranches"
                   :key="branch.id"
                   class="rounded-2xl border border-gray-200 bg-gray-50 p-4"
-                  :draggable="canManageLanding"
+                  :draggable="canManageBranches"
                   @dragstart="onBranchDragStart(branch.id)"
                   @dragend="draggedBranchId = null"
                   @dragover.prevent
@@ -912,8 +894,8 @@
                   </div>
                   <div class="mt-3 flex flex-wrap items-center gap-3">
                     <label class="text-sm text-gray-700"><input v-model="branch.is_open" type="checkbox" class="mr-2" />Abierta</label>
-                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageLanding" @click="saveBranch(branch)">Guardar</button>
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="deleteBranch(branch.id)">Eliminar</button>
+                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageBranches" @click="saveBranch(branch)">Guardar</button>
+                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageBranches" @click="deleteBranch(branch.id)">Eliminar</button>
                   </div>
                 </div>
               </div>
@@ -961,7 +943,7 @@
                     <p class="text-sm text-gray-600">Listo para guardar.</p>
                   </div>
                 </div>
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageLanding" @click="createBranch">Crear sucursal</button>
+                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageBranches" @click="createBranch">Crear sucursal</button>
               </div>
             </section>
 
@@ -1083,6 +1065,35 @@
                   <option value="super_admin">Super admin</option>
                 </select>
               </div>
+
+              <div class="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <h3 class="text-sm font-semibold text-gray-900">Seguridad de cuenta (2FA)</h3>
+                <p class="mt-1 text-xs text-gray-600">Estado actual: {{ currentAdmin.two_factor_enabled ? 'Activado' : 'Desactivado' }}</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black" @click="setupTwoFactor">
+                    Generar secreto 2FA
+                  </button>
+                  <button v-if="!currentAdmin.two_factor_enabled" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700" @click="enableTwoFactor">
+                    Activar 2FA
+                  </button>
+                  <button v-else class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="disableTwoFactor">
+                    Desactivar 2FA
+                  </button>
+                </div>
+                <input
+                  v-model="twoFactorCode"
+                  type="text"
+                  maxlength="6"
+                  placeholder="Código 2FA de 6 dígitos"
+                  class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none"
+                />
+                <p v-if="twoFactorSetupSecret" class="mt-2 break-all text-xs text-gray-700">
+                  Secreto: <strong>{{ twoFactorSetupSecret }}</strong>
+                </p>
+                <p v-if="twoFactorSetupUrl" class="mt-1 break-all text-[11px] text-gray-500">
+                  URL OTP: {{ twoFactorSetupUrl }}
+                </p>
+              </div>
             </section>
 
             <section id="history" class="mt-8 rounded-2xl border border-gray-200 p-5">
@@ -1115,6 +1126,29 @@
               <p v-if="!canViewHistory" class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
                 Tu rol no tiene permiso para ver historial de cambios.
               </p>
+
+              <div v-if="canApproveRequests" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-sm font-semibold text-amber-900">Cambios pendientes de aprobación</h3>
+                  <span class="text-xs font-semibold text-amber-800">{{ pendingApprovals.length }}</span>
+                </div>
+                <div v-if="pendingApprovals.length" class="space-y-2">
+                  <div v-for="request in pendingApprovals" :key="request.id" class="rounded-xl bg-white p-3">
+                    <p class="text-xs text-gray-500">{{ formatDateTime(request.created_at) }} · {{ request.admin_user?.name || 'Admin' }}</p>
+                    <p class="mt-1 text-sm font-semibold text-gray-900">{{ request.action }}</p>
+                    <p class="text-xs text-gray-600">{{ request.description || 'Sin detalle.' }}</p>
+                    <div class="mt-2 flex gap-2">
+                      <button class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700" @click="approveRequest(request.id)">
+                        Aprobar
+                      </button>
+                      <button class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700" @click="rejectRequest(request.id)">
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-xs text-amber-800">No hay solicitudes pendientes.</p>
+              </div>
 
               <div v-else class="mt-4 overflow-x-auto">
                 <table class="min-w-full border-separate border-spacing-y-2 text-left text-sm">
@@ -1278,18 +1312,18 @@
   />
 
   <LoadingSpinner ref="loadingSpinner" />
-  <ImageCropper ref="imageCropper" @crop="onImageCropped" />
+  <ImageCropper ref="imageCropper" @crop="onImageCropped" @cancel="cropTarget = null" />
 
   <div class="fixed bottom-6 right-6 z-30 flex flex-col gap-3">
     <div class="relative">
       <button
-        class="rounded-full bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition hover:scale-105 dark:from-green-700 dark:to-green-800"
+        class="rounded-full bg-linear-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition hover:scale-105 dark:from-green-700 dark:to-green-800"
         title="Exportar datos"
         @click="showExportMenu = !showExportMenu"
       >
         📥 Exportar
       </button>
-      <div v-if="showExportMenu" class="absolute bottom-full right-0 mb-2 rounded-lg bg-white shadow-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700 min-w-[160px]">
+      <div v-if="showExportMenu" class="absolute bottom-full right-0 mb-2 rounded-lg bg-white shadow-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700 min-w-40">
         <button
           @click="exportData('menu')"
           class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
@@ -1325,7 +1359,7 @@
 
     <button
       v-if="canViewHistory"
-      class="rounded-full bg-gradient-to-r from-red-600 to-red-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition hover:scale-105 dark:from-red-700 dark:to-red-800"
+      class="rounded-full bg-linear-to-r from-red-600 to-red-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition hover:scale-105 dark:from-red-700 dark:to-red-800"
       :title="lastOperation ? 'Deshacer: ' + lastOperation : 'Sin cambios para deshacer'"
       :disabled="!lastOperation"
       @click="undoLastChange"
@@ -1347,6 +1381,7 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import GlobalSearch from '@/components/admin/GlobalSearch.vue'
 import ModalEditor from '@/components/admin/ModalEditor.vue'
 import LoadingSpinner from '@/components/admin/LoadingSpinner.vue'
+import AdminOverviewSummary from '@/components/admin/AdminOverviewSummary.vue'
 import MenuCardGrid from '@/components/admin/MenuCardGrid.vue'
 import ImageCropper from '@/components/admin/ImageCropper.vue'
 import SessionTimeout from '@/components/admin/SessionTimeout.vue'
@@ -1362,10 +1397,13 @@ const deleteAction = ref(null)
 const modalEditor = ref(null)
 const loadingSpinner = ref(null)
 const imageCropper = ref(null)
+const cropTarget = ref(null)
 const lastOperation = ref(null)
 const showExportMenu = ref(false)
 const bulkMode = ref(false)
 const bulkSelectedIds = ref([])
+const lastDraftSavedAt = ref('')
+const hasRestoredDrafts = ref(false)
 
 const loading = ref(true)
 const settings = ref({
@@ -1449,9 +1487,24 @@ const newAdminUser = ref({
   role: 'content_manager',
 })
 const currentAdmin = ref({
+  id: null,
+  name: '',
+  email: '',
   role: '',
   permissions: [],
+  two_factor_enabled: false,
 })
+const twoFactorSetupSecret = ref('')
+const twoFactorSetupUrl = ref('')
+const twoFactorCode = ref('')
+const systemAlerts = ref({
+  pending_approvals: 0,
+  pending_messages: 0,
+  alerts: [],
+  recent_pending_approvals: [],
+})
+const pendingApprovals = ref([])
+let alertsIntervalId = null
 const imageGallery = ref([])
 const promotions = ref([])
 const branches = ref([])
@@ -1483,7 +1536,7 @@ const revokePendingUpload = (target) => {
     return
   }
 
-  if (target.__uploadPreviewUrl) {
+  if (target.__uploadPreviewUrl && String(target.__uploadPreviewUrl).startsWith('blob:')) {
     URL.revokeObjectURL(target.__uploadPreviewUrl)
   }
 
@@ -1595,10 +1648,23 @@ const dashboardCards = computed(() => {
     }
   ]
 })
-const canManageAdmins = computed(() => currentAdmin.value.permissions.includes('admin.manage'))
-const canManageLanding = computed(() => currentAdmin.value.permissions.includes('landing.manage'))
-const canManageMessages = computed(() => currentAdmin.value.permissions.includes('messages.manage'))
-const canViewHistory = computed(() => currentAdmin.value.permissions.includes('history.view'))
+const hasPermission = (permission) => currentAdmin.value.permissions.includes(permission)
+const canManageAdmins = computed(() => hasPermission('admin.manage'))
+const canManageSettings = computed(() => hasPermission('landing.settings.manage') || hasPermission('landing.manage'))
+const canManageJobs = computed(() => hasPermission('landing.jobs.manage') || hasPermission('landing.manage'))
+const canManageMenu = computed(() => hasPermission('landing.menu.manage') || hasPermission('landing.manage'))
+const canManagePromotions = computed(() => hasPermission('landing.promotions.manage') || hasPermission('landing.manage'))
+const canManageBranches = computed(() => hasPermission('landing.branches.manage') || hasPermission('landing.manage'))
+const canManageLanding = computed(() => (
+  canManageSettings.value
+  || canManageJobs.value
+  || canManageMenu.value
+  || canManagePromotions.value
+  || canManageBranches.value
+))
+const canManageMessages = computed(() => hasPermission('messages.manage'))
+const canViewHistory = computed(() => hasPermission('history.view'))
+const canApproveRequests = computed(() => hasPermission('approval.manage'))
 const historyActionOptions = computed(() => {
   return Array.from(new Set(changeLogs.value.map((entry) => entry.action).filter(Boolean)))
 })
@@ -1711,6 +1777,15 @@ const previewBranches = computed(() => filteredBranches.value.slice(0, 2))
 const selectedMenuItem = computed(() => menuItems.value.find((item) => item.id === selectedMenuItemId.value) || null)
 const MAX_ADMIN_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
 const ADMIN_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ADMIN_IMAGE_MIN_DIMENSIONS = {
+  hero: { width: 700, height: 500 },
+  job: { width: 500, height: 350 },
+  menu: { width: 300, height: 200 },
+  promotion: { width: 600, height: 400 },
+  branch: { width: 600, height: 400 },
+  general: { width: 400, height: 300 },
+}
+const DRAFT_STORAGE_KEY = 'admin_panel_drafts_v1'
 
 watch(menuItems, (items) => {
   if (!items.length) {
@@ -1724,7 +1799,23 @@ watch(menuItems, (items) => {
   }
 }, { immediate: true })
 
-const validateImageFile = (file) => {
+const getImageDimensions = (file) => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file)
+  const image = new Image()
+  image.onload = () => {
+    const width = image.width
+    const height = image.height
+    URL.revokeObjectURL(url)
+    resolve({ width, height })
+  }
+  image.onerror = () => {
+    URL.revokeObjectURL(url)
+    reject(new Error('No se pudieron leer las dimensiones de la imagen.'))
+  }
+  image.src = url
+})
+
+const validateImageFile = async (file, context = 'general') => {
   if (!ADMIN_IMAGE_TYPES.includes(file.type)) {
     setError('Usa una imagen JPG, PNG o WebP.')
     return false
@@ -1735,7 +1826,62 @@ const validateImageFile = (file) => {
     return false
   }
 
+  try {
+    const { width, height } = await getImageDimensions(file)
+    const minimum = ADMIN_IMAGE_MIN_DIMENSIONS[context] || ADMIN_IMAGE_MIN_DIMENSIONS.general
+    if (width < minimum.width || height < minimum.height) {
+      setError(`La imagen es muy pequeña para ${context}. Mínimo ${minimum.width}x${minimum.height}px.`)
+      return false
+    }
+  } catch (requestError) {
+    setError(requestError.message || 'No se pudo validar la imagen seleccionada.')
+    return false
+  }
+
   return true
+}
+
+const persistDrafts = () => {
+  const payload = {
+    settings: sanitizePayload(settings.value),
+    newJob: sanitizePayload(newJob.value),
+    newMenuItem: sanitizePayload(newMenuItem.value),
+    newPromotion: sanitizePayload(newPromotion.value),
+    newBranch: sanitizePayload(newBranch.value),
+    timestamp: new Date().toISOString(),
+  }
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload))
+  lastDraftSavedAt.value = payload.timestamp
+}
+
+const restoreDrafts = () => {
+  const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
+  if (!raw) {
+    return
+  }
+
+  try {
+    const data = JSON.parse(raw)
+    if (data.settings) {
+      settings.value = { ...settings.value, ...data.settings }
+    }
+    if (data.newJob) {
+      newJob.value = { ...newJob.value, ...data.newJob }
+    }
+    if (data.newMenuItem) {
+      newMenuItem.value = { ...newMenuItem.value, ...data.newMenuItem }
+    }
+    if (data.newPromotion) {
+      newPromotion.value = { ...newPromotion.value, ...data.newPromotion }
+    }
+    if (data.newBranch) {
+      newBranch.value = { ...newBranch.value, ...data.newBranch }
+    }
+    lastDraftSavedAt.value = data.timestamp || ''
+  } catch (requestError) {
+    localStorage.removeItem(DRAFT_STORAGE_KEY)
+    lastDraftSavedAt.value = ''
+  }
 }
 
 const fetchImageGallery = async () => {
@@ -1759,13 +1905,17 @@ const fetchAll = async () => {
   try {
     const meResponse = await api.get('/admin/auth/me')
     currentAdmin.value = {
+      id: meResponse.data?.user?.id || null,
+      name: meResponse.data?.user?.name || '',
+      email: meResponse.data?.user?.email || '',
       role: meResponse.data?.user?.role || '',
       permissions: meResponse.data?.user?.permissions || [],
+      two_factor_enabled: Boolean(meResponse.data?.user?.two_factor_enabled),
     }
 
     const shouldLoadMessages = canManageMessages.value
     const shouldLoadHistory = canViewHistory.value
-    const shouldLoadTrash = canManageLanding.value
+    const shouldLoadTrash = canManageJobs.value || canManageMenu.value
 
     const requests = [api.get('/admin/dashboard-content')]
     if (canManageLanding.value) {
@@ -1781,6 +1931,10 @@ const fetchAll = async () => {
     if (shouldLoadHistory) {
       requests.push(fetchChangeLogs(1))
     }
+    requests.push(api.get('/admin/system-alerts'))
+    if (canApproveRequests.value) {
+      requests.push(api.get('/admin/approvals?status=pending'))
+    }
 
     const responses = await Promise.all(requests)
     const dashboardResponse = responses[0]
@@ -1789,6 +1943,8 @@ const fetchAll = async () => {
     const jobsTrashResponse = shouldLoadTrash ? responses[responseIndex++] : null
     const menuTrashResponse = shouldLoadTrash ? responses[responseIndex++] : null
     const messagesResponse = shouldLoadMessages ? responses[responseIndex++] : null
+    const alertsResponse = responses[responseIndex++]
+    const approvalsResponse = canApproveRequests.value ? responses[responseIndex++] : null
 
     settings.value = {
       hero_title: dashboardResponse.data?.settings?.hero_title || '',
@@ -1806,10 +1962,17 @@ const fetchAll = async () => {
     trashedJobs.value = jobsTrashResponse?.data?.jobs || []
     trashedMenuItems.value = menuTrashResponse?.data?.items || []
     contactMessages.value = shouldLoadMessages ? (messagesResponse?.data || []) : []
+    systemAlerts.value = alertsResponse?.data || systemAlerts.value
+    pendingApprovals.value = approvalsResponse?.data?.requests || []
     if (!shouldLoadHistory) {
       changeLogs.value = []
       historyPage.value = 1
       historyPageCount.value = 1
+    }
+
+    if (!hasRestoredDrafts.value) {
+      restoreDrafts()
+      hasRestoredDrafts.value = true
     }
   } catch (requestError) {
     if (requestError.response?.status === 401) {
@@ -1999,7 +2162,7 @@ const sanitizePayload = (payload) => {
 }
 
 const saveSettings = async () => {
-  if (!canManageLanding.value) {
+  if (!canManageSettings.value) {
     setError('Tu rol no tiene permisos para editar el landing.')
     return
   }
@@ -2024,7 +2187,7 @@ const saveSettings = async () => {
 }
 
 const createJob = async () => {
-  if (!canManageLanding.value) {
+  if (!canManageJobs.value) {
     setError('Tu rol no tiene permisos para crear vacantes.')
     return
   }
@@ -2051,7 +2214,7 @@ const createJob = async () => {
 }
 
 const saveJob = async (job) => {
-  if (!canManageLanding.value) {
+  if (!canManageJobs.value) {
     setError('Tu rol no tiene permisos para editar vacantes.')
     return
   }
@@ -2090,13 +2253,13 @@ const executeDeleteAction = async () => {
 
   try {
     await action()
-  } catch (error) {
-    console.error('Error executing delete action:', error)
+  } catch (requestError) {
+    setError(requestError?.userMessage || 'No se pudo completar la acción solicitada.')
   }
 }
 
 const deleteJob = async (jobId) => {
-  if (!canManageLanding.value) {
+  if (!canManageJobs.value) {
     setError('Tu rol no tiene permisos para eliminar vacantes.')
     return
   }
@@ -2115,7 +2278,7 @@ const deleteJob = async (jobId) => {
 }
 
 const restoreJob = async (jobId) => {
-  if (!canManageLanding.value) {
+  if (!canManageJobs.value) {
     setError('Tu rol no tiene permisos para restaurar vacantes.')
     return
   }
@@ -2141,8 +2304,17 @@ const uploadImage = async (file, context = 'general') => {
   return response.data?.url || ''
 }
 
-const onImageSelected = (event, target, fieldName = 'image_url', context = 'general') => {
-  if (!canManageLanding.value) {
+const onImageSelected = async (event, target, fieldName = 'image_url', context = 'general') => {
+  const contextPermissions = {
+    hero: canManageSettings.value,
+    job: canManageJobs.value,
+    menu: canManageMenu.value,
+    promotion: canManagePromotions.value,
+    branch: canManageBranches.value,
+    general: canManageLanding.value,
+  }
+
+  if (!contextPermissions[context]) {
     setError('Tu rol no tiene permisos para subir imágenes.')
     return
   }
@@ -2151,7 +2323,7 @@ const onImageSelected = (event, target, fieldName = 'image_url', context = 'gene
   if (!file) {
     return
   }
-  if (!validateImageFile(file)) {
+  if (!(await validateImageFile(file, context))) {
     event.target.value = ''
     return
   }
@@ -2161,13 +2333,27 @@ const onImageSelected = (event, target, fieldName = 'image_url', context = 'gene
   event.target.value = ''
 }
 
-const onImageDropped = (event, target, fieldName = 'image_url', context = 'general') => {
+const onImageDropped = async (event, target, fieldName = 'image_url', context = 'general') => {
   event.preventDefault()
+  const contextPermissions = {
+    hero: canManageSettings.value,
+    job: canManageJobs.value,
+    menu: canManageMenu.value,
+    promotion: canManagePromotions.value,
+    branch: canManageBranches.value,
+    general: canManageLanding.value,
+  }
+
+  if (!contextPermissions[context]) {
+    setError('Tu rol no tiene permisos para subir imágenes.')
+    return
+  }
+
   const [file] = event.dataTransfer?.files || []
   if (!file) {
     return
   }
-  if (!validateImageFile(file)) {
+  if (!(await validateImageFile(file, context))) {
     return
   }
 
@@ -2221,7 +2407,7 @@ const removeCurrentImage = async (target, fieldName = 'image_url') => {
 }
 
 const createMenuItem = async () => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('Tu rol no tiene permisos para crear productos.')
     return
   }
@@ -2254,7 +2440,7 @@ const createMenuItem = async () => {
 }
 
 const saveMenuItem = async (item, skipToast = false) => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('Tu rol no tiene permisos para editar productos.')
     return
   }
@@ -2282,7 +2468,7 @@ const saveMenuItem = async (item, skipToast = false) => {
 }
 
 const deleteMenuItem = async (itemId) => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('Tu rol no tiene permisos para eliminar productos.')
     return
   }
@@ -2301,7 +2487,7 @@ const deleteMenuItem = async (itemId) => {
 }
 
 const restoreMenuItem = async (itemId) => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('Tu rol no tiene permisos para restaurar productos.')
     return
   }
@@ -2318,7 +2504,7 @@ const restoreMenuItem = async (itemId) => {
 }
 
 const restoreDefaultMenu = async () => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('Tu rol no tiene permisos para restaurar el menú.')
     return
   }
@@ -2440,7 +2626,7 @@ const onBranchDrop = async (targetBranchId) => {
 }
 
 const createPromotion = async () => {
-  if (!canManageLanding.value) {
+  if (!canManagePromotions.value) {
     setError('Tu rol no tiene permisos para crear promociones.')
     return
   }
@@ -2474,7 +2660,7 @@ const createPromotion = async () => {
 }
 
 const savePromotion = async (promotion) => {
-  if (!canManageLanding.value) {
+  if (!canManagePromotions.value) {
     setError('Tu rol no tiene permisos para editar promociones.')
     return
   }
@@ -2503,7 +2689,7 @@ const savePromotion = async (promotion) => {
 }
 
 const deletePromotion = async (promotionId) => {
-  if (!canManageLanding.value) {
+  if (!canManagePromotions.value) {
     setError('Tu rol no tiene permisos para eliminar promociones.')
     return
   }
@@ -2521,7 +2707,7 @@ const deletePromotion = async (promotionId) => {
 }
 
 const createBranch = async () => {
-  if (!canManageLanding.value) {
+  if (!canManageBranches.value) {
     setError('Tu rol no tiene permisos para crear sucursales.')
     return
   }
@@ -2555,7 +2741,7 @@ const createBranch = async () => {
 }
 
 const saveBranch = async (branch) => {
-  if (!canManageLanding.value) {
+  if (!canManageBranches.value) {
     setError('Tu rol no tiene permisos para editar sucursales.')
     return
   }
@@ -2584,7 +2770,7 @@ const saveBranch = async (branch) => {
 }
 
 const deleteBranch = async (branchId) => {
-  if (!canManageLanding.value) {
+  if (!canManageBranches.value) {
     setError('Tu rol no tiene permisos para eliminar sucursales.')
     return
   }
@@ -2636,6 +2822,92 @@ const createAdminUser = async () => {
     setSuccess('Usuario administrador creado.')
   } catch (requestError) {
     setError(requestError.userMessage || 'No se pudo crear el usuario administrador.')
+  }
+}
+
+const fetchSystemAlerts = async () => {
+  if (!canViewHistory.value) {
+    return
+  }
+
+  try {
+    const response = await api.get('/admin/system-alerts')
+    systemAlerts.value = response.data || systemAlerts.value
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudieron actualizar las alertas internas.')
+  }
+}
+
+const fetchPendingApprovals = async () => {
+  if (!canApproveRequests.value) {
+    pendingApprovals.value = []
+    return
+  }
+
+  try {
+    const response = await api.get('/admin/approvals?status=pending')
+    pendingApprovals.value = response.data?.requests || []
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudieron cargar las aprobaciones pendientes.')
+  }
+}
+
+const approveRequest = async (requestId) => {
+  try {
+    await api.post(`/admin/approvals/${requestId}/approve`)
+    await fetchPendingApprovals()
+    await fetchSystemAlerts()
+    setSuccess('Solicitud aprobada.')
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudo aprobar la solicitud.')
+  }
+}
+
+const rejectRequest = async (requestId) => {
+  try {
+    await api.post(`/admin/approvals/${requestId}/reject`)
+    await fetchPendingApprovals()
+    await fetchSystemAlerts()
+    setSuccess('Solicitud rechazada.')
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudo rechazar la solicitud.')
+  }
+}
+
+const setupTwoFactor = async () => {
+  try {
+    const response = await api.post('/admin/auth/2fa/setup')
+    twoFactorSetupSecret.value = response.data?.secret || ''
+    twoFactorSetupUrl.value = response.data?.otpauth_url || ''
+    setSuccess('Se generó el secreto 2FA. Ingresa un código para activarlo.')
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudo iniciar la configuración 2FA.')
+  }
+}
+
+const enableTwoFactor = async () => {
+  try {
+    await api.post('/admin/auth/2fa/enable', { code: twoFactorCode.value.trim() })
+    twoFactorCode.value = ''
+    twoFactorSetupSecret.value = ''
+    twoFactorSetupUrl.value = ''
+    currentAdmin.value.two_factor_enabled = true
+    setSuccess('2FA activado correctamente.')
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudo activar 2FA.')
+  }
+}
+
+const disableTwoFactor = async () => {
+  try {
+    await api.post('/admin/auth/2fa/disable', { code: twoFactorCode.value.trim() })
+    twoFactorCode.value = ''
+    twoFactorSetupSecret.value = ''
+    twoFactorSetupUrl.value = ''
+    currentAdmin.value.two_factor_enabled = false
+    setSuccess('2FA desactivado correctamente.')
+  } catch (requestError) {
+    setError(requestError.userMessage || 'No se pudo desactivar 2FA.')
   }
 }
 
@@ -2722,6 +2994,16 @@ watch([historySearch, historyActionFilter, historyDateFrom, historyDateTo, histo
   }
 })
 
+watch(
+  [settings, newJob, newMenuItem, newPromotion, newBranch],
+  () => {
+    if (hasRestoredDrafts.value) {
+      persistDrafts()
+    }
+  },
+  { deep: true }
+)
+
 const undoLastChange = async () => {
   if (!canViewHistory.value) {
     setError('No tienes permisos para deshacer cambios.')
@@ -2759,11 +3041,14 @@ const exportData = async (type) => {
       params: { type },
       responseType: 'blob'
     })
-    const url = window.URL.createObjectURL(response)
+    // Axios returns Blob payload in response.data; using response object breaks downloads.
+    const url = window.URL.createObjectURL(response.data)
     const link = document.createElement('a')
     link.href = url
     link.download = `admin-export-${type}-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
     addToast(`Archivo ${type} exportado correctamente`, 'success')
   } catch (error) {
@@ -2773,15 +3058,43 @@ const exportData = async (type) => {
   }
 }
 
-const onImageCropped = (croppedImage) => {
-  if (selectedMenuItem.value) {
-    selectedMenuItem.value.__uploadPreviewUrl = croppedImage
-    addToast('Imagen recortada. Haz clic en "Aplicar" para confirmar.', 'success')
+const dataUrlToFile = (dataUrl, filename = 'cropped-image.png') => {
+  // Convert cropper base64 output to File so existing upload pipeline can be reused.
+  const [meta, base64] = dataUrl.split(',')
+  const mime = (meta.match(/data:(.*?);base64/) || [])[1] || 'image/png'
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i)
   }
+  return new File([bytes], filename, { type: mime })
+}
+
+const openImageCropper = (target, ratio = '4/3') => {
+  if (!target?.__uploadPreviewUrl) {
+    setError('Primero selecciona una imagen para recortar.')
+    return
+  }
+  cropTarget.value = target
+  imageCropper.value?.show(target.__uploadPreviewUrl, ratio)
+}
+
+const onImageCropped = (croppedImage) => {
+  if (!cropTarget.value) {
+    return
+  }
+
+  const target = cropTarget.value
+  const file = dataUrlToFile(croppedImage, `cropped-${Date.now()}.png`)
+  const fieldName = target.__uploadFieldName || 'image_url'
+  const context = target.__uploadContext || 'general'
+  setPendingUpload(target, file, fieldName, context)
+  cropTarget.value = null
+  addToast('Imagen recortada y lista para aplicar.', 'success')
 }
 
 const bulkActionChangeStatus = async (status) => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('No tienes permisos para esta acción.')
     return
   }
@@ -2806,7 +3119,7 @@ const bulkActionChangeStatus = async (status) => {
 }
 
 const bulkActionToggleFeatured = async () => {
-  if (!canManageLanding.value) {
+  if (!canManageMenu.value) {
     setError('No tienes permisos para esta acción.')
     return
   }
@@ -2839,9 +3152,17 @@ const toggleBulkSelect = (itemId) => {
   }
 }
 
-onMounted(() => {
-  fetchAll()
-  loadLastOperation()
+onMounted(async () => {
+  await fetchAll()
+  await loadLastOperation()
+  if (canViewHistory.value) {
+    alertsIntervalId = window.setInterval(() => {
+      fetchSystemAlerts()
+      if (canApproveRequests.value) {
+        fetchPendingApprovals()
+      }
+    }, 60000)
+  }
   window.addEventListener('scroll', updateActiveSection, { passive: true })
   updateActiveSection()
 })
@@ -2849,6 +3170,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   cleanupPendingUploads()
   window.removeEventListener('scroll', updateActiveSection)
+  if (alertsIntervalId !== null) {
+    clearInterval(alertsIntervalId)
+    alertsIntervalId = null
+  }
   if (scrollFrame !== null) {
     cancelAnimationFrame(scrollFrame)
   }

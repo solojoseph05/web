@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 px-4 py-24 dark:bg-gray-950">
-    <div class="mx-auto max-w-6xl rounded-[2rem] bg-white p-6 shadow-xl sm:p-8 dark:bg-gray-900 dark:border dark:border-gray-700">
+    <div class="mx-auto max-w-6xl rounded-4xl bg-white p-6 shadow-xl sm:p-8 dark:bg-gray-900 dark:border dark:border-gray-700">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p class="text-sm font-semibold uppercase tracking-[0.2em] text-red-600">Panel interno</p>

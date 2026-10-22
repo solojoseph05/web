@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             LandingMenuItemSeeder::class,
+            AdminUserSeeder::class,
         ]);
     }
 }

@@ -40,7 +40,7 @@
             </h2>
 
             <p class="text-gray-600 leading-relaxed dark:text-gray-300">
-              En <strong>Pollo Feliz</strong>, llevamos más de 15 años perfeccionando nuestra receta secreta,
+              En <strong>Pollo Feliz</strong>, llevamos más de 50 años perfeccionando nuestra receta secreta,
               transmitida de generación en generación. Cada pollo es preparado con ingredientes frescos
               y el cariño que solo una familia puede dar.
             </p>

@@ -82,7 +82,18 @@ class AdminAuthLandingContentApiTest extends TestCase
             ->assertJsonPath('settings.hero_title', 'Nuevo titulo principal')
             ->assertJsonPath('settings.hero_image_url', 'https://example.com/hero.webp')
             ->assertJsonPath('jobs.0.title', 'Ayudante general')
-            ->assertJsonPath('menu_items.0.name', 'Combo Especial');
+            ->assertJsonPath('menu_items.0.name', 'Combo Especial')
+            ->assertJsonStructure([
+                'summary' => [
+                    'trends' => [
+                        'active_jobs' => ['recent', 'previous', 'delta'],
+                        'active_menu_items' => ['recent', 'previous', 'delta'],
+                        'contact_messages' => ['recent', 'previous', 'delta'],
+                        'admin_users' => ['recent', 'previous', 'delta'],
+                        'change_logs' => ['recent', 'previous', 'delta'],
+                    ],
+                ],
+            ]);
     }
 
     public function test_super_admin_can_create_additional_admin_user(): void

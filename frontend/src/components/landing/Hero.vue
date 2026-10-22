@@ -2,7 +2,7 @@
   <section id="home" class="relative flex min-h-screen items-center overflow-hidden pt-20 sm:pt-24 dark:bg-gray-950">
     <!-- Background Decorations -->
     <div class="absolute inset-0 z-0">
-      <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-50 to-transparent dark:from-red-950/30"></div>
+      <div class="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-red-50 to-transparent dark:from-red-950/30"></div>
       <div class="absolute -top-20 -right-20 w-64 h-64 bg-red-200 rounded-full blur-3xl opacity-30 dark:bg-red-900/50"></div>
       <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-orange-200 rounded-full blur-3xl opacity-30 dark:bg-orange-900/40"></div>
     </div>
@@ -51,7 +51,7 @@
 
         <!-- Image -->
         <div class="order-1 md:order-2">
-          <div class="relative mx-auto max-w-[560px]">
+          <div class="relative mx-auto max-w-140">
             <!-- Floating Elements -->
             <div class="absolute -top-4 -left-4 w-20 h-20 bg-yellow-400 rounded-full blur-xl opacity-40 animate-pulse"></div>
             <div class="absolute -bottom-4 -right-4 w-20 h-20 bg-red-400 rounded-full blur-xl opacity-40 animate-pulse delay-1000"></div>
@@ -73,7 +73,7 @@
                 height="420"
                 @error="handleImageError"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-black/20 to-transparent"></div>
             </div>
 
             <!-- Floating Card -->

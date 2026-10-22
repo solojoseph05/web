@@ -1,7 +1,7 @@
 <template>
-  <section id="jobs" class="py-16 bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+  <section id="jobs" class="py-16 bg-linear-to-br from-red-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
     <div class="container mx-auto px-4">
-      <div class="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-red-100 bg-white shadow-[0_30px_80px_-20px_rgba(239,68,68,0.2)] dark:border-gray-700 dark:bg-gray-900 dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
+      <div class="mx-auto max-w-6xl overflow-hidden rounded-4xl border border-red-100 bg-white shadow-[0_30px_80px_-20px_rgba(239,68,68,0.2)] dark:border-gray-700 dark:bg-gray-900 dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
         <div class="grid lg:grid-cols-[0.95fr_1.05fr]">
           <div class="bg-red-600 px-6 py-8 text-white sm:px-8 md:px-10 md:py-10 lg:px-12">
             <span class="inline-flex items-center rounded-full bg-white/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm">
@@ -15,7 +15,7 @@
             </p>
           </div>
 
-          <div class="bg-gradient-to-br from-white to-red-50/70 p-6 sm:p-8 md:p-10 lg:p-12 dark:from-gray-900 dark:to-gray-800">
+          <div class="bg-linear-to-br from-white to-red-50/70 p-6 sm:p-8 md:p-10 lg:p-12 dark:from-gray-900 dark:to-gray-800">
             <div class="space-y-5">
               <div
                 v-for="job in visibleJobs"

@@ -57,11 +57,6 @@
                 {{ item.label }}
               </a>
             </li>
-            <li>
-              <router-link to="/admin/login" class="text-gray-400 hover:text-red-500 transition-colors text-sm">
-                Admin
-              </router-link>
-            </li>
           </ul>
         </div>
 

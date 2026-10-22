@@ -20,6 +20,7 @@ class AdminPermissionMiddleware
             'messages.manage',
             'history.view',
             'history.revert',
+            'approval.manage',
         ],
         'content_manager' => [
             'landing.manage',
@@ -78,6 +79,7 @@ class AdminPermissionMiddleware
             'messages.manage' => 'Gestionar mensajes de contacto',
             'history.view' => 'Ver historial de cambios',
             'history.revert' => 'Deshacer cambios',
+            'approval.manage' => 'Revisar y aprobar cambios',
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminChangeLog;
+use App\Models\AdminApprovalRequest;
 use App\Models\ContactMessage;
 use App\Models\LandingBranch;
 use App\Models\LandingJob;
@@ -11,6 +12,7 @@ use App\Models\LandingPromotion;
 use App\Models\LandingSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -676,6 +678,12 @@ class AdminLandingContentController extends Controller
             $promotionsQuery->where('is_active', true);
         }
 
+        $jobsTrend = $this->calculateWeeklyTrend(LandingJob::query()->whereNull('deleted_at'));
+        $menuTrend = $this->calculateWeeklyTrend(LandingMenuItem::query()->whereNull('deleted_at'));
+        $messagesTrend = $this->calculateWeeklyTrend(ContactMessage::query());
+        $adminsTrend = $this->calculateWeeklyTrend(User::query()->where('is_admin', true));
+        $changesTrend = $this->calculateWeeklyTrend(AdminChangeLog::query());
+
         return [
             'settings' => $this->getSettings(),
             'jobs' => $jobsQuery->get(),
@@ -689,7 +697,33 @@ class AdminLandingContentController extends Controller
                 'pending_contact_messages' => ContactMessage::query()->where('status', 'pending')->count(),
                 'admin_users' => User::query()->where('is_admin', true)->count(),
                 'change_logs' => AdminChangeLog::query()->count(),
+                'trends' => [
+                    'active_jobs' => $jobsTrend,
+                    'active_menu_items' => $menuTrend,
+                    'contact_messages' => $messagesTrend,
+                    'admin_users' => $adminsTrend,
+                    'change_logs' => $changesTrend,
+                ],
             ],
+        ];
+    }
+
+    private function calculateWeeklyTrend(Builder $query): array
+    {
+        $now = now();
+        $recentStart = (clone $now)->subDays(7);
+        $previousStart = (clone $now)->subDays(14);
+
+        $recent = (clone $query)->where('created_at', '>=', $recentStart)->count();
+        $previous = (clone $query)
+            ->where('created_at', '>=', $previousStart)
+            ->where('created_at', '<', $recentStart)
+            ->count();
+
+        return [
+            'recent' => $recent,
+            'previous' => $previous,
+            'delta' => $recent - $previous,
         ];
     }
 
@@ -840,5 +874,17 @@ class AdminLandingContentController extends Controller
             'description' => $description,
             'changes' => $changes,
         ]);
+
+        if ($adminUser && $adminUser->role !== 'super_admin' && str_starts_with($action, 'landing.')) {
+            AdminApprovalRequest::create([
+                'admin_user_id' => $adminUser->id,
+                'action' => $action,
+                'target_type' => $targetType,
+                'target_id' => $targetId,
+                'description' => $description,
+                'changes' => $changes,
+                'status' => 'pending',
+            ]);
+        }
     }
 }

@@ -19,7 +19,7 @@
           </div>
         </div>
 
-        <div class="border-t border-red-100 bg-gradient-to-br from-white to-red-50/70 p-8 md:p-10">
+        <div class="border-t border-red-100 bg-linear-to-br from-white to-red-50/70 p-8 md:p-10">
           <div class="mb-8">
             <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
               🍗 Historia de Pollo Feliz
@@ -32,7 +32,7 @@
           </div>
 
           <div class="relative">
-            <div class="absolute left-4 top-0 h-full w-0.5 bg-gradient-to-b from-red-400 via-orange-300 to-transparent md:left-1/2 md:-translate-x-1/2"></div>
+            <div class="absolute left-4 top-0 h-full w-0.5 bg-linear-to-b from-red-400 via-orange-300 to-transparent md:left-1/2 md:-translate-x-1/2"></div>
             <div class="space-y-8">
               <div v-for="(item, index) in timeline" :key="item.year" class="relative flex flex-col md:flex-row md:items-start">
                 <div class="absolute left-4 top-2 h-6 w-6 rounded-full border-4 border-white bg-red-500 shadow-md md:left-1/2 md:-translate-x-1/2"></div>
@@ -48,7 +48,7 @@
         </div>
 
         <div class="grid gap-0 border-t border-red-100 md:grid-cols-2">
-          <div class="border-b border-red-100 bg-gradient-to-br from-white to-red-50/70 p-8 md:border-b-0 md:border-r md:p-10">
+          <div class="border-b border-red-100 bg-linear-to-br from-white to-red-50/70 p-8 md:border-b-0 md:border-r md:p-10">
             <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-red-600 shadow-sm">
               <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -64,7 +64,7 @@
             </div>
           </div>
 
-          <div class="bg-gradient-to-br from-orange-50 to-white p-8 md:p-10">
+          <div class="bg-linear-to-br from-orange-50 to-white p-8 md:p-10">
             <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 shadow-sm">
               <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 21l7-7 4 4 7-7" />
@@ -81,7 +81,7 @@
           </div>
         </div>
 
-        <div class="border-t border-red-100 bg-gradient-to-br from-red-50 via-orange-50 to-white p-8 md:p-10">
+        <div class="border-t border-red-100 bg-linear-to-br from-red-50 via-orange-50 to-white p-8 md:p-10">
           <div class="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
             <div class="rounded-[1.5rem] border border-red-100 bg-white/70 p-7 shadow-sm backdrop-blur">
               <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
@@ -107,7 +107,7 @@
               </div>
             </div>
 
-            <form @submit.prevent="submitFeedback" class="rounded-[1.5rem] border border-red-100 bg-white p-6 shadow-[0_20px_60px_-20px_rgba(239,68,68,0.28)]">
+            <form @submit.prevent="submitFeedback" class="rounded-3xl border border-red-100 bg-white p-6 shadow-[0_20px_60px_-20px_rgba(239,68,68,0.28)]">
               <div class="mb-4">
                 <label class="mb-2 block text-sm font-semibold text-gray-700">Nombre</label>
                 <input v-model="form.name" type="text" required class="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100" placeholder="Tu nombre" />

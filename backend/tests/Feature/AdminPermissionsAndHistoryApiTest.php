@@ -84,4 +84,62 @@ class AdminPermissionsAndHistoryApiTest extends TestCase
         $logsResponse->assertStatus(200)
             ->assertJsonPath('data.0.action', 'landing.settings.update');
     }
+
+    public function test_granular_landing_permissions_are_applied_per_resource(): void
+    {
+        User::create([
+            'name' => 'Manager',
+            'email' => 'manager2@example.com',
+            'password' => 'password123',
+            'is_admin' => true,
+            'role' => 'content_manager',
+            'api_token' => hash('sha256', 'token-manager-granular'),
+        ]);
+
+        User::create([
+            'name' => 'Support',
+            'email' => 'support2@example.com',
+            'password' => 'password123',
+            'is_admin' => true,
+            'role' => 'support_agent',
+            'api_token' => hash('sha256', 'token-support-granular'),
+        ]);
+
+        $managerHeaders = [
+            'Authorization' => 'Bearer token-manager-granular',
+        ];
+        $supportHeaders = [
+            'Authorization' => 'Bearer token-support-granular',
+        ];
+
+        $this->putJson('/api/admin/settings', [
+            'hero_title' => 'Granular title',
+            'hero_description' => 'Granular description',
+            'hero_image_url' => 'https://example.com/granular.webp',
+            'company_address' => 'Granular address',
+        ], $managerHeaders)->assertStatus(200);
+
+        $this->postJson('/api/admin/promotions', [
+            'title' => 'Promo granular',
+            'description' => 'Detalle',
+            'code' => 'PROMO10',
+            'is_active' => true,
+        ], $managerHeaders)->assertStatus(201);
+
+        $this->putJson('/api/admin/settings', [
+            'hero_title' => 'Forbidden title',
+            'hero_description' => 'Forbidden description',
+            'hero_image_url' => 'https://example.com/forbidden.webp',
+            'company_address' => 'Forbidden address',
+        ], $supportHeaders)->assertStatus(403);
+
+        $this->postJson('/api/admin/jobs', [
+            'title' => 'No autorizado',
+            'description' => 'No autorizado',
+            'employment_type' => 'Tiempo completo',
+            'location' => 'Centro',
+            'schedule' => 'Matutino',
+            'is_active' => true,
+        ], $supportHeaders)->assertStatus(403);
+    }
 }
