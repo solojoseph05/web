@@ -2213,7 +2213,7 @@ app.get('/api/admin/export-data', authenticateAdmin, (_req, res) => {
 
 // =================== DEV & PRODUCTION SERVING ===================
 const isProd = process.env.NODE_ENV === 'production';
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 if (!isProd) {
   const vite = await createViteServer({

@@ -1,24 +1,24 @@
 <template>
-  <section id="branches" class="py-16 bg-white dark:bg-gray-950">
-    <div class="container mx-auto px-4">
-      <!-- Encabezado -->
+  <section id="branches" class="py-16 scroll-mt-24 bg-white dark:bg-gray-900">
+    <div class="container mx-auto px-4 sm:px-6">
+      <!-- Section Title -->
       <div class="text-center mb-12" data-aos="fade-up">
-        <span class="inline-block bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-full mb-4">
-          📍 Encuéntranos
+        <span class="inline-block bg-red-100 text-red-600 text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full mb-3 dark:bg-red-950/60 dark:text-red-300">
+          📍 Cobertura y Puntos de Venta
         </span>
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4 dark:text-gray-100">
-          Nuestras <span class="text-red-600">Sucursales</span>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white">
+          {{ branchesTitle }}
         </h2>
-        <p class="text-gray-600 max-w-2xl mx-auto text-sm md:text-base dark:text-gray-300">
-          Visítanos en cualquiera de nuestras sucursales. ¡Te esperamos con el mejor pollo asado!
+        <p class="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          {{ branchesSubtitle }}
         </p>
       </div>
 
-      <!-- Grid de sucursales -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <BranchCard 
-          v-for="branch in branches" 
-          :key="branch.id" 
+      <!-- Grid of Branches -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <BranchCard
+          v-for="branch in branchList"
+          :key="branch.id"
           :branch="branch"
         />
       </div>
@@ -28,30 +28,19 @@
 
 <script setup>
 import { computed } from 'vue'
-import BranchCard from './BranchCard.vue' // Importación relativa porque están en la misma carpeta
+import BranchCard from '@/components/landing/BranchCard.vue'
+import branchesConfig from '@/config/branches'
 import { useLandingContent } from '@/composables/useLandingContent'
-import branchesData from '@/config/branches'
 
-const { landingBranches } = useLandingContent()
+const { landingBranches, landingSettings } = useLandingContent()
 
-const normalizeBranch = (branch, index) => ({
-  id: branch.id ?? index,
-  name: branch.name || 'Sucursal',
-  address: branch.address || '',
-  phone: branch.phone || '',
-  schedule: branch.schedule || '',
-  image: branch.image_url || branch.image || '',
-  mapLink: branch.map_link || branch.mapLink || '',
-  isOpen: branch.is_open ?? branch.isOpen ?? true,
-})
+const branchesTitle = computed(() => landingSettings.value.branches_section_title || 'Nuestras Sucursales')
+const branchesSubtitle = computed(() => landingSettings.value.branches_section_subtitle || 'Visítanos o llámanos directamente para disfrutar del mejor sabor al carbón recién salido de la parrilla.')
 
-const branches = computed(() => {
-  const currentBranches = Array.isArray(landingBranches.value) ? landingBranches.value : []
-  if (currentBranches.length) {
-    return currentBranches.map((branch, index) => normalizeBranch(branch, index))
+const branchList = computed(() => {
+  if (landingBranches.value && landingBranches.value.length > 0) {
+    return landingBranches.value
   }
-
-  const fallbackBranches = Array.isArray(branchesData) ? branchesData : (branchesData.active || [])
-  return fallbackBranches.map((branch, index) => normalizeBranch(branch, index))
+  return branchesConfig.active || []
 })
 </script>

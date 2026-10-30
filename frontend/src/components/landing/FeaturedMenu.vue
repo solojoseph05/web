@@ -1,6 +1,6 @@
 <!-- src/components/landing/FeaturedMenu.vue -->
 <template>
-  <section id="menu" class="py-16 bg-gray-50 dark:bg-gray-900">
+  <section id="menu" class="py-16 scroll-mt-24 bg-gray-50 dark:bg-gray-900">
     <div class="container mx-auto px-4">
       <!-- Encabezado -->
       <div class="text-center mb-12" data-aos="fade-up">
@@ -8,75 +8,47 @@
           🍗 Nuestro Menú
         </span>
         <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4 dark:text-gray-100">
-          Platos <span class="text-red-600">Destacados</span>
+          {{ menuTitle }}
         </h2>
         <p class="text-gray-600 max-w-2xl mx-auto dark:text-gray-300">
-          Descubre nuestros platillos más populares, preparados con la receta secreta que nos hace únicos
+          {{ menuSubtitle }}
         </p>
       </div>
 
-      <!-- Filtros -->
+      <!-- Category Filter Tabs System -->
       <div class="flex flex-wrap justify-center gap-2 mb-10" data-aos="fade-up">
         <button
           v-for="category in categories"
           :key="category.id"
           @click="selectedCategory = category.id"
-          class="px-4 py-2 rounded-full transition-all duration-300 text-sm font-medium"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold cursor-pointer border active:scale-95 shadow-xs"
           :class="selectedCategory === category.id 
-            ? 'bg-red-600 text-white shadow-lg' 
-            : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'"
+            ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-600/20' 
+            : 'bg-white text-gray-700 border-gray-200 hover:border-red-200 hover:bg-red-50/50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700'"
         >
-          {{ category.name }}
+          <span>{{ category.icon }}</span>
+          <span>{{ category.name }}</span>
         </button>
       </div>
 
       <!-- Grid de productos -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <ProductCard
           v-for="(item, index) in filteredItems"
           :key="item.id"
-          class="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden dark:bg-gray-800 dark:border dark:border-gray-700"
+          :item="item"
           data-aos="fade-up"
-          :data-aos-delay="index * 100"
-        >
-          <!-- Imagen -->
-          <div class="relative overflow-hidden h-48">
-            <img
-              :src="resolveItemImage(item)"
-              :alt="item.name"
-              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              loading="lazy"
-              decoding="async"
-              width="640"
-              height="384"
-              @error="handleImageError"
-            />
-            <!-- Badge -->
-            <span v-if="item.badge" class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-              {{ item.badge }}
-            </span>
-            <!-- Overlay -->
-            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
-          </div>
-
-          <!-- Contenido -->
-          <div class="p-5">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-lg font-bold text-gray-800 group-hover:text-red-600 transition-colors dark:text-gray-100">
-                {{ item.name }}
-              </h3>
-              <span class="text-red-600 font-bold text-lg">${{ item.price }}</span>
-            </div>
-            <p class="text-sm text-gray-600 mb-3 line-clamp-2 dark:text-gray-300">{{ item.description }}</p>
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400 dark:text-gray-400">{{ item.category }}</span>
-              <button class="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm hover:bg-red-700 transition-all transform hover:scale-105">
-                Agregar
-              </button>
-            </div>
-          </div>
-        </div>
+          :data-aos-delay="index * 60"
+          @view-details="openItemDetails"
+        />
       </div>
+
+      <!-- Dish Detail Modal (Displays larger image, ingredients list & allergen information) -->
+      <MenuItemDetailModal
+        :is-open="!!selectedDetailItem"
+        :item="selectedDetailItem"
+        @close="selectedDetailItem = null"
+      />
 
       <!-- Ver más -->
       <div class="text-center mt-12" data-aos="fade-up">
@@ -92,26 +64,39 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import ProductCard from '@/components/landing/ProductCard.vue'
+import MenuItemDetailModal from '@/components/menu/MenuItemDetailModal.vue'
 import menu from '@/config/menu'
 import { useLandingContent } from '@/composables/useLandingContent'
 
 const props = defineProps({
   displayLimit: {
     type: Number,
-    default: 4
+    default: 8
   }
 })
 
 const selectedCategory = ref('all')
+const selectedDetailItem = ref(null)
 const router = useRouter()
-const { landingMenuItems } = useLandingContent()
+const { landingMenuItems, landingSettings } = useLandingContent()
+
+const openItemDetails = (item) => {
+  selectedDetailItem.value = item
+}
+
+const menuTitle = computed(() => landingSettings.value.menu_section_title || 'Platos Destacados')
+const menuSubtitle = computed(() => landingSettings.value.menu_section_subtitle || 'Descubre nuestros platillos más populares, preparados con la receta secreta que nos hace únicos.')
 
 const categoryMap = {
   whole: 'Pollo Entero',
   half: 'Medio Pollo',
-  combos: 'Paquetes',
+  combos: 'Combos',
+  paquetes: 'Paquetes',
   sides: 'Complementos',
+  extras: 'Extras',
   drinks: 'Bebidas',
+  bebidas: 'Bebidas',
   tacos: 'Tacos',
   ensaladas: 'Ensaladas',
   postres: 'Postres'
@@ -136,23 +121,76 @@ const sourceItems = computed(() => {
   return menu.featured
 })
 
+const filterTabs = [
+  { id: 'all', name: 'Todos', icon: '🍗' },
+  { id: 'pollos', name: 'Pollos', icon: '🍗' },
+  { id: 'entradas', name: 'Entradas', icon: '🍟' },
+  { id: 'combos', name: 'Combos', icon: '🍱' },
+  { id: 'bebidas', name: 'Bebidas', icon: '🥤' },
+  { id: 'tacos', name: 'Tacos', icon: '🌮' },
+  { id: 'postres', name: 'Postres', icon: '🍮' },
+]
+
 const categories = computed(() => {
-  const availableCategories = Array.from(new Set(sourceItems.value.map((item) => item.category)))
-  return [
-    { id: 'all', name: 'Todos' },
-    ...availableCategories.map((categoryName) => ({
-      id: categoryName,
-      name: categoryName,
-    })),
-  ]
+  return filterTabs
 })
 
 const computedItems = computed(() => {
   if (selectedCategory.value === 'all') {
     return sourceItems.value
   }
-  const categoryName = categoryMap[selectedCategory.value] || selectedCategory.value
-  return sourceItems.value.filter(item => item.category === categoryName)
+
+  const catId = selectedCategory.value.toLowerCase()
+
+  if (catId === 'pollos') {
+    const polloCats = ['pollo entero', 'medio pollo', 'pollo', 'pollos', 'pollo asado']
+    return sourceItems.value.filter(item => {
+      const c = (item.category || '').toLowerCase()
+      return polloCats.some(pc => c.includes(pc)) || (item.name || '').toLowerCase().includes('pollo')
+    })
+  }
+
+  if (catId === 'entradas') {
+    const entradaCats = ['entradas', 'entrada', 'extras', 'complementos', 'guarniciones', 'papas', 'salsas', 'tortillas', 'nuggets']
+    return sourceItems.value.filter(item => {
+      const c = (item.category || '').toLowerCase()
+      return entradaCats.some(ec => c.includes(ec))
+    })
+  }
+
+  if (catId === 'combos') {
+    const comboCats = ['combos', 'paquetes', 'combos / paquetes', 'combo']
+    return sourceItems.value.filter(item => {
+      const c = (item.category || '').toLowerCase()
+      return comboCats.some(cc => c.includes(cc))
+    })
+  }
+
+  if (catId === 'bebidas') {
+    const drinkCats = ['bebidas', 'drinks', 'refrescos', 'aguas']
+    return sourceItems.value.filter(item => {
+      const c = (item.category || '').toLowerCase()
+      return drinkCats.some(dc => c.includes(dc))
+    })
+  }
+
+  if (catId === 'tacos') {
+    return sourceItems.value.filter(item => {
+      const c = (item.category || '').toLowerCase()
+      return c.includes('taco') || c.includes('quesadilla')
+    })
+  }
+
+  if (catId === 'postres') {
+    return sourceItems.value.filter(item => {
+      const c = (item.category || '').toLowerCase()
+      return c.includes('postre')
+    })
+  }
+
+  return sourceItems.value.filter(item => {
+    return (item.category || '').toLowerCase() === catId
+  })
 })
 
 const filteredItems = computed(() => computedItems.value.slice(0, props.displayLimit))

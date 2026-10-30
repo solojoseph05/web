@@ -1,136 +1,188 @@
+<!-- src/components/landing/Navbar.vue -->
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-100 dark:bg-gray-900 dark:border-gray-700">
-    <nav class="container mx-auto flex items-center justify-between px-4 py-3 sm:px-6">
-      <!-- Logo -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-md border-b border-gray-100 dark:bg-gray-900/95 dark:border-gray-800 transition-all">
+    <nav class="container mx-auto flex h-18 sm:h-20 items-center justify-between px-4 sm:px-6 gap-3">
+      <!-- Official Logo (User Provided Pollo Feliz Mascot & Ribbon) -->
       <router-link
         :to="{ path: '/', hash: '#home' }"
-        class="flex items-center space-x-2"
+        class="flex items-center gap-2.5 shrink-0 select-none py-1 group"
         @click="goToHome"
+        title="Pollo Feliz - No hay otro mejor"
       >
         <img
           :src="logo"
-          alt="PolloFeliz"
-          class="w-12 h-12 object-cover rounded-full"
-          width="48"
-          height="48"
+          alt="Pollo Feliz - No hay otro mejor"
+          class="h-11 sm:h-13 w-auto max-w-[130px] sm:max-w-[160px] object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
+          width="160"
+          height="52"
           decoding="async"
         />
-        <span class="text-xl font-bold text-gray-800 dark:text-gray-100">
-          PolloFeliz
-        </span>
       </router-link>
 
-      <!-- Desktop Navigation -->
-      <div class="hidden md:flex items-center space-x-8">
+      <!-- Desktop Navigation (lg and xl screens - No text wrapping or collision) -->
+      <div class="hidden lg:flex items-center space-x-4 xl:space-x-7 shrink-0">
         <a 
           v-for="item in navigation.main" 
           :key="item.id"
           :href="item.href"
-          class="relative font-medium text-gray-700 hover:text-red-600 transition-colors duration-200 dark:text-gray-200"
-          :class="activeSection === item.id ? 'text-red-600' : ''"
+          class="relative whitespace-nowrap font-bold text-sm xl:text-[15px] transition-colors py-1 shrink-0"
+          :class="activeSection === item.id 
+            ? 'text-red-600 dark:text-red-500' 
+            : 'text-gray-700 hover:text-red-600 dark:text-gray-200 dark:hover:text-red-400'"
           @click.prevent="scrollToSection(item.href)"
         >
           {{ item.label }}
           <span 
             v-if="activeSection === item.id"
-            class="absolute -bottom-1 left-0 right-0 h-0.5 bg-red-600 rounded-full"
+            class="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-red-600 rounded-full"
           ></span>
         </a>
       </div>
 
-      <!-- Actions -->
-      <div class="hidden md:flex items-center space-x-4">
-        <button class="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-red-200">
-          Ordenar
-        </button>
-        <button class="p-2 rounded-full hover:bg-gray-100 transition-colors dark:hover:bg-gray-800">
-          <ShoppingCartIcon class="w-6 h-6 text-gray-700 dark:text-gray-200" />
-        </button>
+      <!-- Right Actions Container (Never overlaps) -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- 
+          ACCESO ADMINISTRATIVO PRIVADO:
+          Oculto de la interfaz pública para mayor seguridad.
+          El personal autorizado accede directamente mediante la ruta /admin/login.
+        -->
+
+        <!-- CTA: Ordenar -->
         <button
-          class="p-2 rounded-full hover:bg-gray-100 transition-colors dark:hover:bg-gray-800"
+          @click="handleOrderClick"
+          class="hidden md:inline-flex items-center gap-1.5 bg-linear-to-r from-red-600 to-red-700 text-white px-5 py-2 rounded-full hover:from-red-700 hover:to-red-800 transition-all transform hover:scale-105 shadow-md hover:shadow-red-200 font-bold text-xs sm:text-sm cursor-pointer whitespace-nowrap shrink-0"
+        >
+          <span>Ordenar Ahora</span>
+        </button>
+
+        <!-- 
+          CARRITO DE VENTA DESACTIVADO TEMPORALMENTE A SOLICITUD
+          Descomentar este bloque cuando se reactive el carrito de compras:
+          <button
+            @click="openCart"
+            class="relative p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-colors dark:hover:bg-gray-800 cursor-pointer shrink-0"
+            aria-label="Ver carrito de compras"
+          >
+            <ShoppingCartIcon class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200" />
+            <span
+              v-if="totalCount > 0"
+              class="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-extrabold text-white shadow-md animate-bounce"
+            >
+              {{ totalCount }}
+            </span>
+          </button>
+        -->
+
+        <!-- Theme Toggle Button -->
+        <button
+          class="p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-colors dark:hover:bg-gray-800 cursor-pointer shrink-0"
           :aria-label="theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
           @click="toggleTheme"
         >
-          <SunIcon v-if="theme === 'dark'" class="w-6 h-6 text-amber-300" />
-          <MoonIcon v-else class="w-6 h-6 text-gray-700 dark:text-gray-200" />
+          <SunIcon v-if="theme === 'dark'" class="w-5 h-5 text-amber-300" />
+          <MoonIcon v-else class="w-5 h-5 text-gray-700 dark:text-gray-200" />
+        </button>
+
+        <!-- Mobile / Tablet Hamburger Button -->
+        <button 
+          @click="mobileMenuOpen = !mobileMenuOpen"
+          class="lg:hidden p-2 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer shrink-0"
+          aria-label="Abrir menú de navegación"
+        >
+          <Bars3Icon v-if="!mobileMenuOpen" class="w-6 h-6" />
+          <XMarkIcon v-else class="w-6 h-6" />
         </button>
       </div>
-
-      <!-- Mobile Menu Button -->
-      <button 
-        @click="mobileMenuOpen = !mobileMenuOpen"
-        class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-800"
-      >
-        <Bars3Icon v-if="!mobileMenuOpen" class="w-6 h-6 text-gray-700 dark:text-gray-200" />
-        <XMarkIcon v-else class="w-6 h-6 text-gray-700 dark:text-gray-200" />
-      </button>
     </nav>
 
-    <!-- Mobile Menu -->
-    <div 
-      v-if="mobileMenuOpen"
-      class="md:hidden bg-white shadow-lg border-t border-gray-100 dark:bg-gray-900 dark:border-gray-700"
-    >
-      <div class="container mx-auto px-4 py-4 flex flex-col space-y-4">
-        <a 
-          v-for="item in navigation.main" 
-          :key="item.id"
-          :href="item.href"
-          class="text-gray-700 hover:text-red-600 transition-colors font-medium dark:text-gray-200"
-          @click.prevent="scrollToSection(item.href)"
-        >
-          {{ item.label }}
-        </a>
-        <button
-          class="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-100"
-          @click="toggleTheme"
-        >
-          {{ theme === 'dark' ? 'Modo claro' : 'Modo oscuro' }}
-        </button>
-        <button class="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors w-full">
-          Ordenar
-        </button>
+    <!-- Mobile / Tablet Dropdown Menu (No text collisions) -->
+    <Transition name="mobile-menu">
+      <div 
+        v-if="mobileMenuOpen"
+        class="lg:hidden bg-white shadow-2xl border-t border-gray-100 dark:bg-gray-900 dark:border-gray-800 max-h-[85vh] overflow-y-auto"
+      >
+        <div class="container mx-auto px-5 py-5 flex flex-col space-y-3">
+          <!-- Main Links List -->
+          <a 
+            v-for="item in navigation.main" 
+            :key="item.id"
+            :href="item.href"
+            class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-colors"
+            :class="activeSection === item.id
+              ? 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400'
+              : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'"
+            @click.prevent="scrollToSection(item.href)"
+          >
+            <span>{{ item.label }}</span>
+          </a>
+
+          <!-- Quick Actions in Mobile Menu -->
+          <div class="pt-2 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2.5">
+            <button
+              @click="handleOrderClick"
+              class="w-full rounded-xl bg-linear-to-r from-red-600 to-red-700 px-5 py-3 text-center text-xs sm:text-sm font-black text-white shadow-md hover:from-red-700 hover:to-red-800 cursor-pointer"
+            >
+              ¡Ordenar Pollo Asado Ahora!
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Transition>
   </header>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { ShoppingCartIcon, Bars3Icon, XMarkIcon, MoonIcon, SunIcon } from '@heroicons/vue/24/outline'
+import { useRouter } from 'vue-router'
+import {
+  ShoppingCartIcon,
+  Bars3Icon,
+  XMarkIcon,
+  MoonIcon,
+  SunIcon,
+} from '@heroicons/vue/24/outline'
 import navigation from '@/config/navigation'
-import logo from '@/assets/images/logo.jpg'
+import logo from '@/assets/images/logo.png'
 import { useTheme } from '@/composables/useTheme'
+import { useCart } from '@/composables/useCart'
+import { useAdminAuth } from '@/composables/useAdminAuth'
 
-// El navbar usa los IDs definidos en navigation.js para resaltar la sección activa.
-// Si cambias un id o href aquí, también debes mantenerlos coherentes con los section[id] del landing.
+const router = useRouter()
+const { totalCount, openCart } = useCart()
+const { theme, toggleTheme } = useTheme()
+const { adminUser } = useAdminAuth()
+
 const mobileMenuOpen = ref(false)
 const activeSection = ref('home')
-const { theme, toggleTheme } = useTheme()
 let frameId = null
 
-const updateHash = (sectionId) => {
-  if (!sectionId) {
-    return
+// Al hacer clic en "Ordenar Ahora", dado que el carrito de compras está temporalmente pausado,
+// se canaliza al usuario a explorar el menú completo o las sucursales para ordenar por teléfono/WhatsApp.
+const handleOrderClick = () => {
+  mobileMenuOpen.value = false
+  const menuElem = document.getElementById('menu')
+  if (menuElem) {
+    menuElem.scrollIntoView({ behavior: 'smooth' })
+  } else {
+    router.push('/menu')
   }
+}
 
+const updateHash = (sectionId) => {
+  if (!sectionId) return
   const newHash = `#${sectionId}`
   if (window.location.hash !== newHash) {
     window.history.replaceState(null, '', newHash)
   }
 }
 
-// El scroll se procesa con requestAnimationFrame para no saturar el navegador.
-// Esto mantiene la UI más fluida mientras cambia la sección activa y el hash de la URL.
 const handleScroll = () => {
-  if (frameId !== null) {
-    return
-  }
+  if (frameId !== null) return
 
   frameId = requestAnimationFrame(() => {
     const sections = document.querySelectorAll('section[id]')
     let current = 'home'
-    const scrollPosition = window.scrollY + 140
+    const scrollPosition = window.scrollY + 160
 
     sections.forEach(section => {
       if (section.offsetTop <= scrollPosition) {
@@ -147,36 +199,59 @@ const handleScroll = () => {
   })
 }
 
-// Al hacer clic en un enlace del navbar se desplaza a la sección correspondiente.
-// El hash de la URL se actualiza para que el navegador y la navegación compartan la misma referencia.
 const scrollToSection = (href) => {
   mobileMenuOpen.value = false
+
+  // If link points to another route like /historial or /menu
+  if (href.startsWith('/')) {
+    router.push(href)
+    return
+  }
+
+  if (router.currentRoute.value.path !== '/') {
+    router.push({ path: '/', hash: href })
+    return
+  }
+
   const target = document.querySelector(href)
   if (target) {
-    target.scrollIntoView({ behavior: 'smooth' })
+    // Leave safe 90px clearance below fixed navbar so title is NEVER overlapped!
+    const headerOffset = 90
+    const elementPosition = target.getBoundingClientRect().top
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    })
     updateHash(target.id)
   }
 }
 
-const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
-
-// El logo vuelve al inicio y limpia la selección activa para que vuelva el estado inicial.
 const goToHome = () => {
-  closeMobileMenu()
+  mobileMenuOpen.value = false
   activeSection.value = 'home'
-  updateHash('home')
+  if (router.currentRoute.value.path !== '/') {
+    router.push('/')
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    updateHash('home')
+  }
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
 
   if (window.location.hash) {
-    const target = document.querySelector(window.location.hash)
-    if (target) {
-      target.scrollIntoView({ behavior: 'auto' })
-    }
+    setTimeout(() => {
+      const target = document.querySelector(window.location.hash)
+      if (target) {
+        const headerOffset = 90
+        const elementPosition = target.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+      }
+    }, 150)
   }
 
   handleScroll()
@@ -189,3 +264,15 @@ onBeforeUnmount(() => {
   }
 })
 </script>
+
+<style scoped>
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>

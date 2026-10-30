@@ -1,96 +1,102 @@
 import { ref } from 'vue'
 import api from '@/plugins/axios'
+import company from '@/config/company'
+import menu from '@/config/menu'
+import promotionsConfig from '@/config/promotions'
+import branchesConfig from '@/config/branches'
 
-const landingSettings = ref({})
+const landingSettings = ref({
+  // Hero
+  hero_title: company.tagline || 'El mejor Pollo Asado de Durango',
+  hero_subtitle: '¡Bienvenidos a la Familia Pollo Feliz! · Tradición al Carbón',
+  hero_description: company.description || 'Descubre el auténtico sabor que reúne a la familia.',
+  hero_badge: '100% Asado al Carbón',
+  hero_image_url: '',
+  hero_cta_primary: 'Ver Menú Completo',
+  hero_cta_secondary: 'Ordenar en Línea',
+
+  // Social Proof & Stats
+  stat_1_value: '100%',
+  stat_1_label: 'Asado al Carbón',
+  stat_2_value: '4.9 ★',
+  stat_2_label: '+2,500 Reseñas',
+  stat_3_value: '3+',
+  stat_3_label: 'Sucursales Activas',
+
+  // Section Headers
+  menu_section_title: 'Platos Destacados',
+  menu_section_subtitle: 'Descubre nuestros platillos más populares, preparados con la receta secreta que nos hace únicos.',
+  promotions_section_title: 'Promociones Imperdibles',
+  promotions_section_subtitle: 'Aprovecha nuestras promociones especiales y disfruta del mejor pollo asado con descuentos exclusivos.',
+  branches_section_title: 'Nuestras Sucursales',
+  branches_section_subtitle: 'Visítanos o llámanos directamente para disfrutar del mejor sabor al carbón recién salido de la parrilla.',
+
+  // Company Contact & Footer
+  company_name: 'Pollo Feliz Durango',
+  company_phone: company.phone || '618-123-4567',
+  company_email: company.email || 'contacto@pollofeliz.com',
+  company_whatsapp: company.whatsapp || '618-123-4567',
+  company_address: company.address || 'Av. 5 de Mayo #123, Zona Centro, Durango, Dgo.',
+  schedule_weekday: 'Lunes a Domingo: 10:00 AM - 10:00 PM',
+  social_facebook: 'https://facebook.com/pollofelizdurango',
+  social_instagram: 'https://instagram.com/pollofelizdurango',
+})
+
+const landingMenuItems = ref(menu.featured || [])
+const landingPromotions = ref(promotionsConfig.active || [])
+const landingBranches = ref(branchesConfig.active || [])
 const landingJobs = ref([])
-const landingMenuItems = ref([])
-const landingPromotions = ref([])
-const landingBranches = ref([])
-const landingLoaded = ref(false)
-const CACHE_KEY = 'pollofeliz-landing-content'
-const CACHE_TTL_MS = 5 * 60 * 1000
-
-const readCache = () => {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  try {
-    const cached = window.localStorage.getItem(CACHE_KEY)
-    if (!cached) {
-      return null
-    }
-
-    const parsed = JSON.parse(cached)
-    if (!parsed?.timestamp || !parsed?.payload) {
-      return null
-    }
-
-    const age = Date.now() - parsed.timestamp
-    if (age > CACHE_TTL_MS) {
-      window.localStorage.removeItem(CACHE_KEY)
-      return null
-    }
-
-    return parsed.payload
-  } catch (error) {
-    return null
-  }
-}
-
-const writeCache = (payload) => {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  try {
-    window.localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), payload }))
-  } catch (error) {
-    console.warn('No se pudo guardar el caché del landing.', error)
-  }
-}
+const isLoading = ref(false)
+const error = ref(null)
 
 export const useLandingContent = () => {
-  const loadLandingContent = async (force = false) => {
-    if (!force) {
-      const cachedPayload = readCache()
-      if (cachedPayload) {
-        landingSettings.value = cachedPayload.settings || {}
-        landingJobs.value = cachedPayload.jobs || []
-        landingMenuItems.value = cachedPayload.menu_items || []
-        landingPromotions.value = cachedPayload.promotions || []
-        landingBranches.value = cachedPayload.branches || []
-        landingLoaded.value = true
-        return cachedPayload
+  const loadLandingContent = async () => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await api.get('/landing/content')
+      const data = response.data
+      if (data) {
+        if (data.settings) landingSettings.value = { ...landingSettings.value, ...data.settings }
+        if (Array.isArray(data.menu_items) && data.menu_items.length > 0) {
+          landingMenuItems.value = data.menu_items
+        }
+        if (Array.isArray(data.promotions) && data.promotions.length > 0) {
+          landingPromotions.value = data.promotions
+        }
+        if (Array.isArray(data.branches) && data.branches.length > 0) {
+          landingBranches.value = data.branches
+        }
+        if (Array.isArray(data.jobs)) {
+          landingJobs.value = data.jobs
+        }
       }
+      return data
+    } catch (err) {
+      console.warn('Usando configuración local de respaldo para el contenido.', err)
+      error.value = err
+      return null
+    } finally {
+      isLoading.value = false
     }
+  }
 
-    const response = await api.get('/landing/content')
-    const payload = {
-      settings: response.data?.settings || {},
-      jobs: response.data?.jobs || [],
-      menu_items: response.data?.menu_items || [],
-      promotions: response.data?.promotions || [],
-      branches: response.data?.branches || [],
+  const updateLandingSettings = (newSettings) => {
+    landingSettings.value = {
+      ...landingSettings.value,
+      ...newSettings,
     }
-
-    landingSettings.value = payload.settings
-    landingJobs.value = payload.jobs
-    landingMenuItems.value = payload.menu_items
-    landingPromotions.value = payload.promotions
-    landingBranches.value = payload.branches
-    landingLoaded.value = true
-    writeCache(payload)
-    return payload
   }
 
   return {
     landingSettings,
-    landingJobs,
     landingMenuItems,
     landingPromotions,
     landingBranches,
-    landingLoaded,
+    landingJobs,
+    isLoading,
+    error,
     loadLandingContent,
+    updateLandingSettings,
   }
 }

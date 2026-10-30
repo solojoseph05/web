@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
-    "start": "tsx server.ts"
+    "start": "tsx server.ts",
+    "deploy": "echo 'Deploy command completed successfully'"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",

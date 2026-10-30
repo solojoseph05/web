@@ -1,44 +1,47 @@
 <!-- src/pages/Landing/Home.vue -->
 <template>
-  <div class="min-h-screen">
-    <!-- Hero y resumen se cargan de inmediato porque son la primera impresión del sitio. -->
+  <main class="min-h-screen bg-white dark:bg-gray-950 overflow-x-hidden">
+    <!-- Hero Component -->
     <Hero />
-    <Stats />
 
-    <!-- El resto de las secciones se enlazan desde esta página y se activan cuando entran al viewport. -->
-    <LazySection :component="About" />
-    <LazySection :component="WhyUs" />
-    <LazySection :component="FeaturedMenu" />
-    <LazySection :component="Promotions" />
-    <LazySection :component="Branches" />
-    <LazySection :component="Jobs" />
-    <LazySection :component="Contact" />
-  </div>
+    <!-- Featured Menu Component -->
+    <FeaturedMenu />
+
+    <!-- Promotions Section Component -->
+    <Promotions />
+
+    <!-- Branches Section Component -->
+    <Branches />
+
+    <!-- Customer Reviews Section Component -->
+    <Reviews />
+
+    <!-- Contact & Feedback Section Component -->
+    <Contact />
+  </main>
 </template>
 
 <script setup>
-import { defineAsyncComponent } from 'vue'
 import { useHead } from '@vueuse/head'
-
 import Hero from '@/components/landing/Hero.vue'
-import Stats from '@/components/landing/Stats.vue'
 import FeaturedMenu from '@/components/landing/FeaturedMenu.vue'
-import LazySection from '@/components/common/LazySection.vue'
+import Promotions from '@/components/landing/Promotions.vue'
+import Branches from '@/components/landing/Branches.vue'
+import Reviews from '@/components/landing/Reviews.vue'
+import Contact from '@/components/landing/Contact.vue'
 
-// Estas secciones se cargan de forma diferida para reducir el peso inicial del home.
-// Si una sección cambia de nombre o se mueve de lugar, la ruta de importación también debe actualizarse.
-const About = defineAsyncComponent(() => import('@/components/landing/About.vue'))
-const WhyUs = defineAsyncComponent(() => import('@/components/landing/WhyUs.vue'))
-const Promotions = defineAsyncComponent(() => import('@/components/landing/Promotions.vue'))
-const Branches = defineAsyncComponent(() => import('@/components/landing/Branches.vue'))
-const Jobs = defineAsyncComponent(() => import('@/components/landing/Jobs.vue'))
-const Contact = defineAsyncComponent(() => import('@/components/landing/Contact.vue'))
-
-// SEO de la página de inicio: cualquier cambio en el título o descripción impacta la vista previa compartida.
 useHead({
-  title: 'Inicio | Pollo Feliz - El mejor pollo asado',
+  title: 'Pollo Feliz | El Mejor Pollo Asado al Carbón',
   meta: [
-    { name: 'description', content: 'Descubre el sabor inigualable del Pollo Feliz. Disfruta nuestras promociones, conoce nuestras sucursales y ordena el mejor pollo asado.' }
-  ]
+    {
+      name: 'description',
+      content: 'Disfruta del mejor pollo asado al carbón en Durango. Receta tradicional, paquetes familiares, servicio a domicilio y entrega rápida.',
+    },
+    { property: 'og:title', content: 'Pollo Feliz | El Mejor Pollo Asado al Carbón' },
+    {
+      property: 'og:description',
+      content: 'Pollo asado al carbón de mezquite con receta secreta, complementos y salsas caseras.',
+    },
+  ],
 })
 </script>

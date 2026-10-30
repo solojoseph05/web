@@ -8,14 +8,13 @@
           <div class="flex items-center space-x-2 mb-3">
             <img
               :src="logo"
-              alt="PolloFeliz"
-              class="w-8 h-8 object-cover rounded-full"
-              width="32"
-              height="32"
+              alt="Pollo Feliz"
+              class="h-10 w-auto object-contain"
+              width="140"
+              height="40"
               loading="lazy"
               decoding="async"
             />
-            <span class="text-lg font-bold text-white">PolloFeliz</span>
           </div>
           <p class="text-gray-400 text-sm">
             El mejor pollo asado de Durango. Sabor y tradición en cada bocado.
@@ -85,39 +84,110 @@
           </ul>
         </div>
 
-        <!-- Columna 4: Horario -->
+        <!-- 
+          Columna 4: Horario de Servicio y Pedidos (Club VIP desactivado temporalmente)
+          NOTA: El Club VIP Pollo Feliz fue desactivado a solicitud del cliente.
+          Se reemplaza por el bloque de Horarios, Atención Telefónica y Sucursales.
+        -->
         <div>
-          <h3 class="text-sm font-semibold mb-3">Horario</h3>
-          <p class="text-gray-400 text-sm">
-            Lunes - Domingo
-            <span class="block mt-1 font-semibold text-white">{{ company.workingHours.monday }}</span>
+          <h3 class="text-sm font-semibold mb-2">Horario & Servicio</h3>
+          <p class="text-gray-400 text-xs mb-3">
+            Visítanos en nuestras sucursales o solicita tu pedido directamente para recoger o envío local.
           </p>
+
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-xl bg-gray-800/80 border border-gray-700/60">
+              <span class="text-gray-400 block text-[10px] uppercase font-bold">Horario de Atención:</span>
+              <span class="text-white font-semibold">Lunes a Domingo: 10:00 AM - 10:00 PM</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-red-950/40 border border-red-900/60 flex items-center justify-between">
+              <div>
+                <span class="text-red-300 block text-[10px] uppercase font-bold">Línea de Pedidos:</span>
+                <span class="text-white font-black">{{ company.phone }}</span>
+              </div>
+              <a
+                :href="`tel:${company.phone}`"
+                class="px-2.5 py-1 rounded-lg bg-red-600 text-[11px] font-bold text-white hover:bg-red-700 transition"
+              >
+                Llamar
+              </a>
+            </div>
+          </div>
+
+          <!--
+            CLUB VIP POLLO FELIZ (DESACTIVADO TEMPORALMENTE A SOLICITUD)
+            Descomentar el siguiente bloque para reactivar la suscripción al newsletter con descuento:
+            <div class="mt-4 pt-4 border-t border-gray-800">
+              <h4 class="text-xs font-semibold text-gray-300 mb-1">Club VIP Pollo Feliz</h4>
+              <form @submit.prevent="handleNewsletterSubmit" class="space-y-2">
+                <input v-model="newsletterInput" type="text" placeholder="Tu correo o WhatsApp..." class="w-full bg-gray-800 text-xs p-2 rounded" />
+                <button type="submit" class="bg-red-600 px-3 py-1.5 text-xs text-white rounded">Unirme</button>
+              </form>
+            </div>
+          -->
         </div>
       </div>
 
       <!-- Copyright -->
       <div class="border-t border-gray-800 mt-6 pt-6 text-center text-sm text-gray-400 dark:border-gray-700">
         <p>&copy; {{ new Date().getFullYear() }} {{ company.name }}. Todos los derechos reservados.</p>
-        <div class="flex justify-center space-x-4 mt-2">
-          <a href="#" class="hover:text-red-500 transition-colors">Aviso de privacidad</a>
-          <a href="#" class="hover:text-red-500 transition-colors">Términos y condiciones</a>
+        <div class="flex flex-wrap justify-center items-center gap-4 mt-2 text-xs">
+          <router-link to="/vision-mision" class="hover:text-red-500 transition-colors">Visión y Misión</router-link>
+          <span>·</span>
+          <router-link to="/sucursales" class="hover:text-red-500 transition-colors">Sucursales</router-link>
         </div>
       </div>
     </div>
   </footer>
 </template>
-
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/plugins/axios'
 import company from '@/config/company'
 import navigation from '@/config/navigation'
-import logo from '@/assets/images/logo.jpg'
+import logo from '@/assets/images/logo.png'
 import { useLandingContent } from '@/composables/useLandingContent'
+import { useToasts } from '@/composables/useToasts'
 
+const router = useRouter()
+const { addToast } = useToasts()
 const { landingSettings } = useLandingContent()
 const landingAddress = computed(() => landingSettings.value.company_address || company.address)
 
+const newsletterInput = ref('')
+const newsletterFeedback = ref('')
+const isSubscribing = ref(false)
+
+const handleNewsletterSubmit = async () => {
+  const val = newsletterInput.value.trim()
+  if (!val) return
+
+  isSubscribing.value = true
+  newsletterFeedback.value = ''
+
+  try {
+    const isEmail = val.includes('@')
+    const payload = isEmail ? { email: val } : { phone: val }
+    const res = await api.post('/newsletter', payload)
+    
+    newsletterFeedback.value = `¡Cupón ${res.data?.coupon_code || 'FELIZCLUB10'} activado! 10% de descuento.`
+    newsletterInput.value = ''
+    addToast('¡Bienvenido al Club Pollo Feliz!', 'success')
+  } catch (error) {
+    newsletterFeedback.value = '¡Gracias por suscribirte al Club Pollo Feliz!'
+    newsletterInput.value = ''
+  } finally {
+    isSubscribing.value = false
+  }
+}
+
 const scrollToSection = (href) => {
+  if (router.currentRoute.value.path !== '/') {
+    router.push({ path: '/', hash: href })
+    return
+  }
   const target = document.querySelector(href)
   if (target) {
     target.scrollIntoView({ behavior: 'smooth' })

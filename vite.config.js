@@ -21,6 +21,10 @@ export default defineConfig({
         allowedHosts: true,
     },
 
+    build: {
+        chunkSizeWarningLimit: 1500,
+    },
+
     resolve: {
         alias: {
             '@': resolve(__dirname, 'src')

@@ -1,3191 +1,2598 @@
+<!-- src/pages/Admin/Panel.vue -->
 <template>
-  <SessionTimeout @logout="logout" />
-  <div class="min-h-screen bg-gray-100 px-4 py-24">
-    <div class="mx-auto max-w-[1600px] rounded-3xl bg-white shadow-xl">
-      <div class="border-b border-gray-200 px-6 py-5 sm:px-8">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-red-600">Panel interno</p>
-            <h1 class="mt-2 text-3xl font-bold text-gray-900">Administración del landing</h1>
-            <p class="mt-1 text-sm text-gray-600">
-              Edita vacantes, menú, imágenes, textos, dirección y usuarios administradores.
-            </p>
-          </div>
-
-          <div class="flex flex-wrap gap-2">
-            <button
-              class="rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-700 hover:border-red-200 hover:text-red-600"
-              @click="toggleTheme"
-            >
-              {{ theme === 'dark' ? 'Modo claro' : 'Modo oscuro' }}
-            </button>
-            <router-link
-              to="/"
-              class="rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-700 hover:border-red-200 hover:text-red-600"
-            >
-              Ver sitio
-            </router-link>
-            <button
-              class="rounded-full bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-black"
-              @click="logout"
-            >
-              Cerrar sesión
-            </button>
-          </div>
+  <div class="min-h-screen bg-gray-100 dark:bg-gray-950 flex flex-col">
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800 sticky top-0 z-30">
+      <div class="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 shrink-0">
+          <router-link to="/" class="flex items-center gap-2">
+            <img :src="logo" alt="Pollo Feliz" class="h-8 sm:h-9 w-auto object-contain" />
+            <span class="font-black text-gray-900 dark:text-white hidden sm:inline text-sm">Panel Administrativo</span>
+          </router-link>
+          <span class="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700 dark:bg-red-950/60 dark:text-red-300">
+            Control Pollo Feliz
+          </span>
         </div>
 
-        <div class="mt-5 grid gap-3 md:grid-cols-6">
-          <div
-            v-for="card in dashboardCards"
-            :key="card.label"
-            :class="`rounded-2xl border border-gray-200 px-4 py-3 ${card.color}`"
-          >
-            <div class="flex items-start justify-between">
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{{ card.label }}</p>
-                <p class="mt-2 text-2xl font-bold text-gray-900">{{ card.value }}</p>
-                <p v-if="card.subtext" class="mt-1 text-xs text-gray-600">{{ card.subtext }}</p>
-              </div>
-              <span class="text-2xl opacity-50">{{ card.icon }}</span>
+        <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+          <!-- Active User Identity & Role Badge -->
+          <div class="hidden sm:flex items-center gap-2.5 pr-2 border-r border-gray-200 dark:border-gray-800">
+            <div
+              class="h-8 w-8 rounded-xl flex items-center justify-center font-bold text-xs shadow-xs"
+              :class="adminUser?.role === 'super_admin'
+                ? 'bg-purple-600 text-white'
+                : adminUser?.role === 'gerente'
+                  ? 'bg-blue-600 text-white'
+                  : adminUser?.role === 'cocina'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-emerald-600 text-white'"
+            >
+              {{ currentRoleMeta.icon }}
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid gap-0 lg:grid-cols-[260px_minmax(0,1fr)_360px]">
-        <aside class="border-b border-gray-200 bg-gray-50 p-5 lg:border-b-0 lg:border-r lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
-          <div class="space-y-2">
-            <button
-              v-for="section in sections"
-              :key="section.id"
-              class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition"
-              :class="activeSection === section.id ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'"
-              @click="scrollToSection(section.id)"
-            >
-              <span>{{ section.label }}</span>
-              <span class="text-xs opacity-80">{{ section.shortcut }}</span>
-            </button>
-          </div>
-
-          <div class="mt-6 rounded-2xl bg-white p-4">
-            <p class="text-sm font-semibold text-gray-900">Atajos</p>
-            <ul class="mt-3 space-y-2 text-sm text-gray-600">
-              <li>• Guardar ajustes principales</li>
-              <li>• Crear o editar vacantes</li>
-              <li>• Editar menú y subir imágenes</li>
-              <li>• Filtrar mensajes por estado</li>
-              <li>• Crear nuevos administradores</li>
-            </ul>
-          </div>
-        </aside>
-
-        <main class="min-w-0 p-5 sm:p-8">
-          <p v-if="statusMessage" class="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-            {{ statusMessage }}
-          </p>
-          <p v-if="statusError" class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-            {{ statusError }}
-          </p>
-          <p v-if="lastDraftSavedAt" class="mt-3 text-xs font-medium text-gray-500">
-            Borrador local guardado: {{ formatDateTime(lastDraftSavedAt) }}
-          </p>
-          <div v-if="systemAlerts.pending_approvals || systemAlerts.pending_messages" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <p class="font-semibold">Alertas internas</p>
-            <p class="mt-1">
-              Aprobaciones pendientes: {{ systemAlerts.pending_approvals }} · Mensajes pendientes: {{ systemAlerts.pending_messages }}
-            </p>
-          </div>
-
-          <div v-if="loading" class="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center text-gray-600">
-            Cargando información del panel...
-          </div>
-
-          <template v-else>
-            <GlobalSearch
-              :jobs="jobs"
-              :menu-items="menuItems"
-              :promotions="promotions"
-              :branches="branches"
-              :messages="contactMessages"
-              @select="handleSearchSelect"
-            />
-
-            <section id="overview" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Vista rápida</h2>
-                  <p class="text-sm text-gray-600">Previsualiza cómo se verá el contenido público antes de publicarlo.</p>
-                </div>
-                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <input v-model="livePreviewEnabled" type="checkbox" class="rounded border-gray-300 text-red-600 focus:ring-red-500" />
-                  Vista previa en vivo
-                </label>
-              </div>
-
-              <div class="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-                <div class="rounded-2xl bg-gray-50 p-5">
-                  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Hero</p>
-                  <h3 class="mt-2 text-3xl font-bold text-gray-900">
-                    {{ settings.hero_title || 'Título principal' }}
-                  </h3>
-                  <p class="mt-3 max-w-2xl text-sm leading-6 text-gray-600">
-                    {{ settings.hero_description || 'Descripción principal del landing.' }}
-                  </p>
-                  <p class="mt-4 text-sm font-medium text-gray-700">
-                    Dirección: <span class="font-semibold">{{ settings.company_address || 'Dirección no definida' }}</span>
-                  </p>
-                </div>
-
-                <AdminOverviewSummary :summary="dashboardSummary" />
-              </div>
-            </section>
-
-            <section id="content" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Contenido principal</h2>
-                  <p class="text-sm text-gray-600">Ajusta lo que se muestra en la cabecera y el contacto del sitio.</p>
-                </div>
-                <button class="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageSettings" @click="saveSettings">
-                  Guardar contenido principal
-                </button>
-              </div>
-              <p v-if="!canManageLanding" class="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                Tu rol no tiene permiso para editar contenido del landing.
-              </p>
-
-              <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="text-sm font-medium text-gray-700">
-                  Título principal
-                  <input
-                    v-model="settings.hero_title"
-                    type="text"
-                    class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-red-500 focus:outline-none"
-                  />
-                </label>
-                <label class="text-sm font-medium text-gray-700">
-                  Dirección
-                  <input
-                    v-model="settings.company_address"
-                    type="text"
-                    class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-red-500 focus:outline-none"
-                  />
-                </label>
-              </div>
-              <label class="mt-4 block text-sm font-medium text-gray-700">
-                Descripción principal
-                <textarea
-                  v-model="settings.hero_description"
-                  rows="4"
-                  class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-red-500 focus:outline-none"
-                />
-              </label>
-              <div
-                class="mt-4 rounded-2xl border border-dashed border-gray-300 p-4"
-                @dragenter.prevent
-                @dragover.prevent
-                @drop="onImageDropped($event, settings, 'hero_image_url', 'hero')"
+            <div class="text-left text-xs leading-tight">
+              <span class="block font-bold text-gray-900 dark:text-white truncate max-w-[140px]">
+                {{ adminUser?.name || 'Administrador' }}
+              </span>
+              <span
+                class="inline-block px-1.5 py-0.2 rounded-md text-[10px] font-bold border"
+                :class="currentRoleMeta.badgeClass"
               >
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-semibold text-gray-900">Imagen principal del hero</p>
-                    <p class="text-xs text-gray-500">Arrastra un archivo aquí o selecciónalo desde tu equipo. Se optimizará automáticamente.</p>
-                  </div>
-                  <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                    <span>Subir imagen</span>
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/jpg"
-                      class="sr-only"
-                      @change="onImageSelected($event, settings, 'hero_image_url', 'hero')"
-                    />
-                  </label>
-                </div>
-
-                <div v-if="settings.__uploadPreviewUrl" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3">
-                  <div class="flex flex-wrap items-center gap-3">
-                    <img :src="settings.__uploadPreviewUrl" alt="Vista previa del hero" class="h-28 w-44 rounded-lg object-cover" width="176" height="112" loading="lazy" decoding="async" fetchpriority="low" />
-                    <div class="min-w-0">
-                      <p class="text-sm font-semibold text-gray-800">Vista previa lista para confirmar</p>
-                      <p class="text-xs text-gray-500">La imagen se aplicará al guardar los cambios del landing.</p>
-                    </div>
-                  </div>
-                  <div class="mt-3 flex flex-wrap gap-2">
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(settings)">Aplicar imagen</button>
-                    <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(settings)">Cancelar</button>
-                  </div>
-                </div>
-
-                <div v-if="settings.hero_image_url && !settings.__uploadPreviewUrl" class="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-50 p-3">
-                  <img :src="settings.hero_image_url" alt="Hero preview" class="h-28 w-44 rounded-lg object-cover" width="176" height="112" loading="lazy" decoding="async" fetchpriority="low" />
-                  <div>
-                    <p class="text-sm font-semibold text-gray-800">Imagen actual del hero</p>
-                    <p class="text-xs text-gray-500">Se mostrará en la cabecera pública del landing.</p>
-                  </div>
-                  <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="removeCurrentImage(settings, 'hero_image_url')">Quitar imagen</button>
-                </div>
-
-                <div v-if="imageGallery.length" class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                  <p class="text-sm font-semibold text-gray-900">Galería reutilizable</p>
-                  <div class="mt-3 flex flex-wrap gap-3">
-                    <button
-                      v-for="image in imageGallery"
-                      :key="image.path || image.url"
-                      class="rounded-xl border border-gray-200 bg-white p-2 text-left"
-                      @click="applyGalleryImage(settings, 'hero_image_url', image.url)"
-                    >
-                      <img :src="image.url" :alt="image.name || 'Imagen de galería'" class="h-20 w-28 rounded-lg object-cover" width="112" height="80" loading="lazy" decoding="async" fetchpriority="low" />
-                    </button>
-                  </div>
-                </div>
-
-                <p v-else-if="!settings.hero_image_url && !settings.__uploadPreviewUrl" class="mt-3 text-sm text-gray-500">Aún no hay imagen cargada para el hero.</p>
-              </div>
-            </section>
-
-            <section id="jobs" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Vacantes</h2>
-                  <p class="text-sm text-gray-600">Edita, oculta o crea oportunidades laborales desde aquí.</p>
-                </div>
-                <div class="flex gap-2">
-                  <input
-                    v-model="jobSearch"
-                    type="search"
-                    placeholder="Buscar vacante..."
-                    class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div class="mt-4 space-y-4">
-                <div v-for="job in filteredJobs" :key="job.id" class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                  <div class="grid gap-3 md:grid-cols-2">
-                    <input v-model="job.title" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="job.employment_type" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="job.location" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="job.schedule" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  </div>
-                  <div
-                    class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                    @dragenter.prevent
-                    @dragover.prevent
-                    @drop="onImageDropped($event, job, 'image_url', 'job')"
-                  >
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p class="text-sm font-semibold text-gray-900">Imagen de vacante</p>
-                        <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para previsualizarla antes de guardar.</p>
-                      </div>
-                      <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                        <span>Subir imagen</span>
-                        <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, job, 'image_url', 'job')" />
-                      </label>
-                    </div>
-                    <div v-if="job.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                      <div class="flex flex-wrap items-center gap-3">
-                        <img :src="job.__uploadPreviewUrl" :alt="job.title" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                        <div>
-                          <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                          <p class="text-xs text-gray-500">Se aplicará cuando guardes la vacante.</p>
-                        </div>
-                      </div>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(job)">Aplicar</button>
-                        <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(job)">Cancelar</button>
-                      </div>
-                    </div>
-                    <div v-else-if="job.image_url" class="mt-3 flex items-center gap-3 rounded-xl bg-white p-2">
-                      <img :src="job.image_url" :alt="job.title" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <p class="text-sm text-gray-600">Imagen cargada correctamente.</p>
-                      <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="removeCurrentImage(job, 'image_url')">Quitar imagen</button>
-                    </div>
-                  </div>
-                  <textarea v-model="job.description" rows="2" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <div class="mt-3 flex flex-wrap items-center gap-3">
-                    <label class="text-sm text-gray-700">
-                      <input v-model="job.is_active" type="checkbox" class="mr-2" />
-                      Activa
-                    </label>
-                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageJobs" @click="saveJob(job)">Guardar</button>
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageJobs" @click="deleteJob(job.id)">Eliminar</button>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="trashedJobs.length" class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 class="text-sm font-semibold text-amber-900">Papelera de vacantes</h3>
-                    <p class="text-sm text-amber-700">Recupera o elimina de forma definitiva elementos archivados.</p>
-                  </div>
-                </div>
-                <div class="mt-3 space-y-2">
-                  <div v-for="job in trashedJobs" :key="job.id" class="flex items-center justify-between rounded-xl border border-amber-200 bg-white px-3 py-2">
-                    <span class="text-sm font-medium text-gray-800">{{ job.title || 'Vacante eliminada' }}</span>
-                    <button class="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-700" @click="restoreJob(job.id)">
-                      Restaurar
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-5 rounded-2xl border border-dashed border-gray-300 p-4">
-                <h3 class="text-sm font-semibold text-gray-900">Nueva vacante</h3>
-                <div class="mt-3 grid gap-3 md:grid-cols-2">
-                  <input v-model="newJob.title" type="text" placeholder="Título" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newJob.employment_type" type="text" placeholder="Tipo (Tiempo completo)" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newJob.location" type="text" placeholder="Ubicación" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newJob.schedule" type="text" placeholder="Horario" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                </div>
-                <div
-                  class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                  @dragenter.prevent
-                  @dragover.prevent
-                  @drop="onImageDropped($event, newJob, 'image_url', 'job')"
-                >
-                  <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p class="text-sm font-semibold text-gray-900">Imagen de la nueva vacante</p>
-                      <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para previsualizarla antes de crear la vacante.</p>
-                    </div>
-                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                      <span>Subir imagen</span>
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, newJob, 'image_url', 'job')" />
-                    </label>
-                  </div>
-                  <div v-if="newJob.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                    <div class="flex flex-wrap items-center gap-3">
-                      <img :src="newJob.__uploadPreviewUrl" alt="Nueva vacante" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <div>
-                        <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                        <p class="text-xs text-gray-500">Se aplicará al crear la vacante.</p>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(newJob)">Aplicar</button>
-                      <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(newJob)">Cancelar</button>
-                    </div>
-                  </div>
-                  <div v-else-if="newJob.image_url" class="mt-3 flex items-center gap-3 rounded-xl bg-white p-2">
-                    <img :src="newJob.image_url" alt="Nueva vacante" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                    <p class="text-sm text-gray-600">Imagen lista para guardar.</p>
-                  </div>
-                </div>
-                <textarea v-model="newJob.description" rows="2" placeholder="Descripción" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageJobs" @click="createJob">Crear vacante</button>
-              </div>
-            </section>
-
-            <section id="menu" class="mt-8 rounded-2xl border border-gray-200 p-5 dark:border-gray-700 dark:bg-gray-800">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900 dark:text-white">Menú</h2>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Edita precios, imágenes, descripciones y estados de publicación. Haz clic en cualquier tarjeta para editarla.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-if="!bulkMode"
-                    class="rounded-lg border border-blue-300 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
-                    @click="bulkMode = true; bulkSelectedIds = []"
-                  >
-                    📋 Modo masivo
-                  </button>
-                  <button
-                    v-else
-                    class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
-                    @click="bulkMode = false; bulkSelectedIds = []"
-                  >
-                    ✓ Cancelar masivo
-                  </button>
-                  <button
-                    class="rounded-lg border border-amber-300 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900"
-                    @click="restoreDefaultMenu"
-                    v-if="canManageMenu"
-                  >
-                    ↻ Restaurar 20 default
-                  </button>
-                  <input
-                    v-model="menuSearch"
-                    type="search"
-                    placeholder="Buscar producto..."
-                    class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
-                <div>
-                  <div class="mb-3 flex flex-wrap items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 dark:bg-gray-700">
-                    <div>
-                      <p class="text-sm font-semibold text-gray-900 dark:text-white">Todas las cards ({{ menuItems.length }})</p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">{{ bulkMode ? bulkSelectedIds.length + ' seleccionadas' : filteredMenuItems.length + ' visibles' }}</p>
-                    </div>
-                    <div class="text-right text-xs text-gray-500 dark:text-gray-400">
-                      <p class="font-semibold">{{ Math.ceil((filteredMenuItems.length) / 20) }} páginas</p>
-                    </div>
-                  </div>
-
-                  <div v-if="filteredMenuItems.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <div
-                      v-for="item in filteredMenuItems"
-                      :key="item.id"
-                      class="group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md dark:bg-gray-700 dark:border-gray-600"
-                      :class="{
-                        'border-red-500 ring-2 ring-red-200 dark:ring-red-800': selectedMenuItemId === item.id && !bulkMode,
-                        'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800': bulkSelectedIds.includes(item.id),
-                        'border-gray-200 dark:border-gray-600': !selectedMenuItemId || selectedMenuItemId !== item.id,
-                      }"
-                    >
-                      <div v-if="bulkMode" class="absolute top-2 left-2 z-10">
-                        <input
-                          type="checkbox"
-                          :checked="bulkSelectedIds.includes(item.id)"
-                          @change="toggleBulkSelect(item.id)"
-                          class="rounded-md w-5 h-5 cursor-pointer"
-                        />
-                      </div>
-                      <img
-                        :src="item.image_url || fallbackProductImage"
-                        :alt="item.name"
-                        class="h-28 w-full object-cover"
-                        width="240"
-                        height="112"
-                        loading="lazy"
-                        decoding="async"
-                        fetchpriority="low"
-                      />
-                      <div class="space-y-2 p-2">
-                        <div class="flex items-start justify-between gap-1">
-                          <div class="min-w-0 flex-1">
-                            <p class="truncate text-xs font-semibold text-gray-900 dark:text-white">{{ item.name }}</p>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ item.category }}</p>
-                          </div>
-                          <span class="shrink-0 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900 dark:text-red-200">${{ Number(item.price || 0).toFixed(2) }}</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1 text-[9px] font-medium">
-                          <span :class="item.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'" class="rounded-full px-1.5 py-0.5">{{ item.is_active ? '✓' : '✗' }}</span>
-                          <span :class="item.is_featured ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'" class="rounded-full px-1.5 py-0.5">{{ item.is_featured ? '⭐' : '○' }}</span>
-                        </div>
-                      </div>
-                      <div v-if="!bulkMode" class="hidden absolute inset-0 bg-black/30 group-hover:flex flex-col items-center justify-center gap-2 group-hover:bg-opacity-50 transition">
-                        <button
-                          @click.stop="selectMenuItem(item.id)"
-                          class="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:text-white"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          @click.stop="deleteMenuItem(item.id)"
-                          v-if="canManageMenu"
-                          class="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div v-else class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                    No hay productos que coincidan con la búsqueda.
-                  </div>
-                </div>
-
-                <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
-                  <template v-if="selectedMenuItem && !bulkMode">
-                    <div class="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 class="text-base font-bold text-gray-900 dark:text-white">Editar card</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Los cambios se aplican a esta tarjeta del menú.</p>
-                      </div>
-                      <button
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-                        type="button"
-                        @click="selectMenuItem(menuItems[0]?.id || null)"
-                      >
-                        Ir a la primera
-                      </button>
-                    </div>
-
-                    <div class="mt-4 grid gap-3">
-                      <input v-model="selectedMenuItem.name" type="text" placeholder="Nombre" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                      <input v-model="selectedMenuItem.category" type="text" placeholder="Categoría" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                      <input v-model.number="selectedMenuItem.price" type="number" step="0.01" min="0" placeholder="Precio" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                      <input v-model="selectedMenuItem.badge" type="text" placeholder="Badge (ej: Nuevo, Hot)" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                    </div>
-
-                    <div
-                      class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3 dark:border-gray-600"
-                      @dragenter.prevent
-                      @dragover.prevent
-                      @drop="onImageDropped($event, selectedMenuItem, 'image_url', 'menu')"
-                    >
-                      <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p class="text-sm font-semibold text-gray-900 dark:text-white">Imagen de la card</p>
-                          <p class="text-xs text-gray-500 dark:text-gray-400">600×450 px recomendado. Max 10MB.</p>
-                        </div>
-                        <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                          <span>Subir imagen</span>
-                          <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, selectedMenuItem, 'image_url', 'menu')" />
-                        </label>
-                      </div>
-                      <div v-if="selectedMenuItem.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2 dark:border-red-900 dark:bg-red-900">
-                        <div class="flex flex-wrap items-center gap-3">
-                          <img :src="selectedMenuItem.__uploadPreviewUrl" :alt="selectedMenuItem.name" class="h-24 w-32 rounded-lg object-cover" width="128" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                          <div>
-                            <p class="text-sm font-semibold text-gray-800 dark:text-white">Vista previa lista</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Se aplicará al guardar la card.</p>
-                          </div>
-                        </div>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                          <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(selectedMenuItem)">✓ Aplicar</button>
-                          <button class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700" @click="openImageCropper(selectedMenuItem)">✂ Recortar</button>
-                          <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600" @click="cancelPendingUpload(selectedMenuItem)">✕ Cancelar</button>
-                        </div>
-                      </div>
-                      <div v-else-if="selectedMenuItem.image_url" class="mt-3 flex items-center gap-3 rounded-xl bg-white p-2 dark:bg-gray-600">
-                        <img :src="selectedMenuItem.image_url" :alt="selectedMenuItem.name" class="h-24 w-32 rounded-lg object-cover" width="128" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                        <div class="flex-1">
-                          <p class="text-sm text-gray-600 dark:text-gray-300">Imagen actual</p>
-                          <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-500 mt-1" @click="removeCurrentImage(selectedMenuItem, 'image_url')">Quitar imagen</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <textarea v-model="selectedMenuItem.description" rows="3" placeholder="Descripción" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-
-                    <div class="mt-3 flex flex-wrap items-center gap-3">
-                      <label class="text-sm text-gray-700 dark:text-gray-300"><input v-model="selectedMenuItem.is_featured" type="checkbox" class="mr-2" />⭐ Destacado</label>
-                      <label class="text-sm text-gray-700 dark:text-gray-300"><input v-model="selectedMenuItem.is_active" type="checkbox" class="mr-2" />✓ Activo</label>
-                    </div>
-
-                    <div class="mt-4 flex flex-wrap gap-2">
-                      <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400 dark:bg-gray-900 dark:hover:bg-gray-800" :disabled="!canManageMenu" @click="saveMenuItem(selectedMenuItem)">💾 Guardar cambios</button>
-                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageMenu" @click="deleteMenuItem(selectedMenuItem.id)">🗑 Eliminar card</button>
-                    </div>
-                  </template>
-
-                  <template v-else-if="bulkMode && bulkSelectedIds.length">
-                    <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-900">
-                      <h3 class="text-base font-bold text-blue-900 dark:text-blue-100">Acciones masivas</h3>
-                      <p class="text-sm text-blue-700 dark:text-blue-300">{{ bulkSelectedIds.length }} producto(s) seleccionado(s)</p>
-                      <div class="mt-4 grid gap-3">
-                        <button
-                          @click="bulkActionChangeStatus(true)"
-                          class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                          v-if="canManageMenu"
-                        >
-                          ✓ Activar todos
-                        </button>
-                        <button
-                          @click="bulkActionChangeStatus(false)"
-                          class="rounded-lg bg-gray-600 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-                          v-if="canManageMenu"
-                        >
-                          ✗ Desactivar todos
-                        </button>
-                        <button
-                          @click="bulkActionToggleFeatured"
-                          class="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700"
-                          v-if="canManageMenu"
-                        >
-                          ⭐ Destacar todos
-                        </button>
-                      </div>
-                    </div>
-                  </template>
-
-                  <div v-else class="rounded-2xl border border-dashed border-gray-300 bg-white p-5 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                    Selecciona una card para editarla.
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="trashedMenuItems.length" class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 class="text-sm font-semibold text-amber-900">Papelera de productos</h3>
-                    <p class="text-sm text-amber-700">Recupera productos ocultados del menú público.</p>
-                  </div>
-                </div>
-                <div class="mt-3 space-y-2">
-                  <div v-for="item in trashedMenuItems" :key="item.id" class="flex items-center justify-between rounded-xl border border-amber-200 bg-white px-3 py-2">
-                    <span class="text-sm font-medium text-gray-800">{{ item.name || 'Producto eliminado' }}</span>
-                    <button class="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-700" @click="restoreMenuItem(item.id)">
-                      Restaurar
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-5 rounded-2xl border border-dashed border-gray-300 p-4">
-                <h3 class="text-sm font-semibold text-gray-900">Nuevo producto</h3>
-                <div class="mt-3 grid gap-3 md:grid-cols-3">
-                  <input v-model="newMenuItem.name" type="text" placeholder="Nombre" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newMenuItem.category" type="text" placeholder="Categoría" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model.number="newMenuItem.price" type="number" step="0.01" min="0" placeholder="Precio" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newMenuItem.badge" type="text" placeholder="Badge" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                </div>
-                <div
-                  class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                  @dragenter.prevent
-                  @dragover.prevent
-                  @drop="onImageDropped($event, newMenuItem, 'image_url', 'menu')"
-                >
-                  <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p class="text-sm font-semibold text-gray-900">Imagen del nuevo producto</p>
-                      <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para previsualizarla antes de crear el producto. Mínimo: 300×200 px. Recomendado: 600×450 px.</p>
-                    </div>
-                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                      <span>Subir imagen</span>
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, newMenuItem, 'image_url', 'menu')" />
-                    </label>
-                  </div>
-                  <div v-if="newMenuItem.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                    <div class="flex flex-wrap items-center gap-3">
-                      <img :src="newMenuItem.__uploadPreviewUrl" alt="Nueva imagen" class="h-24 w-32 rounded-lg object-cover" width="128" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <div>
-                        <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                        <p class="text-xs text-gray-500">Se aplicará al crear el producto.</p>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(newMenuItem)">Aplicar</button>
-                      <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(newMenuItem)">Cancelar</button>
-                    </div>
-                  </div>
-                  <div v-else-if="newMenuItem.image_url" class="mt-3 flex items-center gap-3 rounded-xl bg-white p-2">
-                    <img :src="newMenuItem.image_url" alt="Nueva imagen" class="h-24 w-32 rounded-lg object-cover" width="128" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                    <p class="text-sm text-gray-600">Listo para guardar el producto.</p>
-                  </div>
-                </div>
-                <textarea v-model="newMenuItem.description" rows="2" placeholder="Descripción" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageMenu" @click="createMenuItem">
-                  Crear producto
-                </button>
-              </div>
-            </section>
-
-            <section id="promotions" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Promociones</h2>
-                  <p class="text-sm text-gray-600">Administra ofertas visibles en el landing y su imagen destacada.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <input
-                    v-model="promotionSearch"
-                    type="search"
-                    placeholder="Buscar promoción..."
-                    class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none"
-                  />
-                  <select v-model="promotionStatusFilter" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none">
-                    <option value="all">Todas</option>
-                    <option value="active">Activas</option>
-                    <option value="inactive">Inactivas</option>
-                  </select>
-                </div>
-              </div>
-              <p class="mt-3 text-xs text-gray-500">Arrastra y suelta tarjetas para reordenar cómo se muestran en el landing.</p>
-
-              <div class="mt-4 space-y-4">
-                <div
-                  v-for="promotion in filteredPromotions"
-                  :key="promotion.id"
-                  class="rounded-2xl border border-gray-200 bg-gray-50 p-4"
-                  :draggable="canManagePromotions"
-                  @dragstart="onPromotionDragStart(promotion.id)"
-                  @dragend="draggedPromotionId = null"
-                  @dragover.prevent
-                  @drop="onPromotionDrop(promotion.id)"
-                >
-                  <div class="mb-3 flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Promoción #{{ promotion.id }}</p>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700">↕ Arrastrar</span>
-                  </div>
-                  <div class="grid gap-3 md:grid-cols-2">
-                    <input v-model="promotion.title" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="promotion.code" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="promotion.badge" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  </div>
-                  <label class="mt-3 block text-sm font-medium text-gray-700">
-                    Fecha válida
-                    <input v-model="promotion.valid_until" type="date" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  </label>
-                  <textarea v-model="promotion.description" rows="3" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <div
-                    class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                    @dragenter.prevent
-                    @dragover.prevent
-                    @drop="onImageDropped($event, promotion, 'image_url', 'promotion')"
-                  >
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p class="text-sm font-semibold text-gray-900">Imagen de la promoción</p>
-                        <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para previsualizarla antes de guardar.</p>
-                      </div>
-                      <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                        <span>Subir imagen</span>
-                        <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, promotion, 'image_url', 'promotion')" />
-                      </label>
-                    </div>
-                    <div v-if="promotion.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                      <div class="flex flex-wrap items-center gap-3">
-                        <img :src="promotion.__uploadPreviewUrl" :alt="promotion.title" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                        <div>
-                          <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                          <p class="text-xs text-gray-500">Se aplicará al guardar la promoción.</p>
-                        </div>
-                      </div>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(promotion)">Aplicar</button>
-                        <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(promotion)">Cancelar</button>
-                      </div>
-                    </div>
-                    <div v-else-if="promotion.image_url" class="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-white p-2">
-                      <img :src="promotion.image_url" :alt="promotion.title" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <div class="flex flex-wrap gap-2">
-                        <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="removeCurrentImage(promotion, 'image_url')">Quitar imagen</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="mt-3 flex flex-wrap items-center gap-3">
-                    <label class="text-sm text-gray-700"><input v-model="promotion.is_active" type="checkbox" class="mr-2" />Activa</label>
-                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManagePromotions" @click="savePromotion(promotion)">Guardar</button>
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManagePromotions" @click="deletePromotion(promotion.id)">Eliminar</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-5 rounded-2xl border border-dashed border-gray-300 p-4">
-                <h3 class="text-sm font-semibold text-gray-900">Nueva promoción</h3>
-                <div class="mt-3 grid gap-3 md:grid-cols-2">
-                  <input v-model="newPromotion.title" type="text" placeholder="Título" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newPromotion.code" type="text" placeholder="Código" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newPromotion.badge" type="text" placeholder="Badge" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                </div>
-                <label class="mt-3 block text-sm font-medium text-gray-700">
-                  Fecha válida
-                  <input v-model="newPromotion.valid_until" type="date" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                </label>
-                <textarea v-model="newPromotion.description" rows="3" placeholder="Descripción" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <div
-                  class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                  @dragenter.prevent
-                  @dragover.prevent
-                  @drop="onImageDropped($event, newPromotion, 'image_url', 'promotion')"
-                >
-                  <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p class="text-sm font-semibold text-gray-900">Imagen de la nueva promoción</p>
-                      <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para la tarjeta promocional.</p>
-                    </div>
-                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                      <span>Subir imagen</span>
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, newPromotion, 'image_url', 'promotion')" />
-                    </label>
-                  </div>
-                  <div v-if="newPromotion.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                    <div class="flex flex-wrap items-center gap-3">
-                      <img :src="newPromotion.__uploadPreviewUrl" alt="Nueva promoción" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <div>
-                        <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                        <p class="text-xs text-gray-500">Se aplicará al crear la promoción.</p>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(newPromotion)">Aplicar</button>
-                      <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(newPromotion)">Cancelar</button>
-                    </div>
-                  </div>
-                  <div v-else-if="newPromotion.image_url" class="mt-3 flex items-center gap-3 rounded-xl bg-white p-2">
-                    <img :src="newPromotion.image_url" alt="Nueva promoción" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                    <p class="text-sm text-gray-600">Listo para guardar.</p>
-                  </div>
-                </div>
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManagePromotions" @click="createPromotion">Crear promoción</button>
-              </div>
-            </section>
-
-            <section id="branches" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Sucursales</h2>
-                  <p class="text-sm text-gray-600">Edita direcciones, horarios, teléfono y estado abierto/cerrado.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <input
-                    v-model="branchSearch"
-                    type="search"
-                    placeholder="Buscar sucursal..."
-                    class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none"
-                  />
-                  <select v-model="branchStatusFilter" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none">
-                    <option value="all">Todas</option>
-                    <option value="open">Abiertas</option>
-                    <option value="closed">Cerradas</option>
-                  </select>
-                </div>
-              </div>
-              <p class="mt-3 text-xs text-gray-500">Arrastra y suelta tarjetas para cambiar el orden de aparición en la landing.</p>
-
-              <div class="mt-4 space-y-4">
-                <div
-                  v-for="branch in filteredBranches"
-                  :key="branch.id"
-                  class="rounded-2xl border border-gray-200 bg-gray-50 p-4"
-                  :draggable="canManageBranches"
-                  @dragstart="onBranchDragStart(branch.id)"
-                  @dragend="draggedBranchId = null"
-                  @dragover.prevent
-                  @drop="onBranchDrop(branch.id)"
-                >
-                  <div class="mb-3 flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Sucursal #{{ branch.id }}</p>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700">↕ Arrastrar</span>
-                  </div>
-                  <div class="grid gap-3 md:grid-cols-2">
-                    <input v-model="branch.name" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="branch.phone" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="branch.address" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                    <input v-model="branch.schedule" type="text" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  </div>
-                  <div class="mt-3 grid gap-3 md:grid-cols-2">
-                    <input v-model="branch.map_link" type="text" placeholder="URL de Google Maps" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  </div>
-                  <div
-                    class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                    @dragenter.prevent
-                    @dragover.prevent
-                    @drop="onImageDropped($event, branch, 'image_url', 'branch')"
-                  >
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p class="text-sm font-semibold text-gray-900">Imagen de la sucursal</p>
-                        <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para esta ubicación.</p>
-                      </div>
-                      <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                        <span>Subir imagen</span>
-                        <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, branch, 'image_url', 'branch')" />
-                      </label>
-                    </div>
-                    <div v-if="branch.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                      <div class="flex flex-wrap items-center gap-3">
-                        <img :src="branch.__uploadPreviewUrl" :alt="branch.name" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                        <div>
-                          <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                          <p class="text-xs text-gray-500">Se aplicará al guardar la sucursal.</p>
-                        </div>
-                      </div>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(branch)">Aplicar</button>
-                        <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(branch)">Cancelar</button>
-                      </div>
-                    </div>
-                    <div v-else-if="branch.image_url" class="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-white p-2">
-                      <img :src="branch.image_url" :alt="branch.name" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <div class="flex flex-wrap gap-2">
-                        <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="removeCurrentImage(branch, 'image_url')">Quitar imagen</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="mt-3 flex flex-wrap items-center gap-3">
-                    <label class="text-sm text-gray-700"><input v-model="branch.is_open" type="checkbox" class="mr-2" />Abierta</label>
-                    <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageBranches" @click="saveBranch(branch)">Guardar</button>
-                    <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageBranches" @click="deleteBranch(branch.id)">Eliminar</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-5 rounded-2xl border border-dashed border-gray-300 p-4">
-                <h3 class="text-sm font-semibold text-gray-900">Nueva sucursal</h3>
-                <div class="mt-3 grid gap-3 md:grid-cols-2">
-                  <input v-model="newBranch.name" type="text" placeholder="Nombre" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newBranch.phone" type="text" placeholder="Teléfono" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newBranch.address" type="text" placeholder="Dirección" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                  <input v-model="newBranch.schedule" type="text" placeholder="Horario" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                </div>
-                <input v-model="newBranch.map_link" type="text" placeholder="URL de Google Maps" class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <div
-                  class="mt-3 rounded-2xl border border-dashed border-gray-300 p-3"
-                  @dragenter.prevent
-                  @dragover.prevent
-                  @drop="onImageDropped($event, newBranch, 'image_url', 'branch')"
-                >
-                  <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p class="text-sm font-semibold text-gray-900">Imagen de la nueva sucursal</p>
-                      <p class="text-xs text-gray-500">Arrastra una imagen o selecciónala para la tarjeta de la sucursal.</p>
-                    </div>
-                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                      <span>Subir imagen</span>
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/jpg" class="sr-only" @change="onImageSelected($event, newBranch, 'image_url', 'branch')" />
-                    </label>
-                  </div>
-                  <div v-if="newBranch.__uploadPreviewUrl" class="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                    <div class="flex flex-wrap items-center gap-3">
-                      <img :src="newBranch.__uploadPreviewUrl" alt="Nueva sucursal" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                      <div>
-                        <p class="text-sm font-semibold text-gray-800">Vista previa lista</p>
-                        <p class="text-xs text-gray-500">Se aplicará al crear la sucursal.</p>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="confirmPendingUpload(newBranch)">Aplicar</button>
-                      <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="cancelPendingUpload(newBranch)">Cancelar</button>
-                    </div>
-                  </div>
-                  <div v-else-if="newBranch.image_url" class="mt-3 flex items-center gap-3 rounded-xl bg-white p-2">
-                    <img :src="newBranch.image_url" alt="Nueva sucursal" class="h-24 w-36 rounded-lg object-cover" width="144" height="96" loading="lazy" decoding="async" fetchpriority="low" />
-                    <p class="text-sm text-gray-600">Listo para guardar.</p>
-                  </div>
-                </div>
-                <button class="mt-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300" :disabled="!canManageBranches" @click="createBranch">Crear sucursal</button>
-              </div>
-            </section>
-
-            <section id="messages" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Mensajes de contacto</h2>
-                  <p class="text-sm text-gray-600">Filtra, pagina y agrega notas de seguimiento.</p>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <input
-                    v-model="messageSearch"
-                    type="search"
-                    placeholder="Buscar mensaje..."
-                    class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none"
-                  />
-                  <select v-model="messageStatusFilter" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none">
-                    <option value="all">Todos</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="attended">Atendido</option>
-                    <option value="discarded">Descartado</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="mt-4 overflow-x-auto">
-                <table class="min-w-full border-separate border-spacing-y-3 text-left text-sm">
-                  <thead class="text-xs uppercase text-gray-500">
-                    <tr>
-                      <th class="px-3 py-2">Nombre</th>
-                      <th class="px-3 py-2">Correo</th>
-                      <th class="px-3 py-2">Mensaje</th>
-                      <th class="px-3 py-2">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="message in paginatedMessages" :key="message.id" class="rounded-2xl bg-gray-50 align-top">
-                      <td class="rounded-l-2xl px-3 py-3">
-                        <div class="font-semibold text-gray-900">{{ message.name }}</div>
-                        <div class="mt-1 text-xs text-gray-500">{{ formatDate(message.created_at) }}</div>
-                      </td>
-                      <td class="px-3 py-3">
-                        <div>{{ message.email }}</div>
-                        <div class="mt-1 text-xs text-gray-500">{{ message.phone || 'Sin teléfono' }}</div>
-                      </td>
-                      <td class="px-3 py-3 text-gray-600">
-                        <p class="line-clamp-3">{{ message.message }}</p>
-                        <textarea
-                          v-model="message.notes"
-                          rows="2"
-                          placeholder="Notas de seguimiento"
-                          class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
-                        />
-                      </td>
-                      <td class="rounded-r-2xl px-3 py-3">
-                        <select v-model="message.status" class="w-full rounded-lg border border-gray-300 px-3 py-2" @change="saveContactMessage(message)">
-                          <option value="pending">Pendiente</option>
-                          <option value="attended">Atendido</option>
-                          <option value="discarded">Descartado</option>
-                        </select>
-                        <button class="mt-2 w-full rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!canManageMessages" @click="saveContactMessage(message)">
-                          Guardar
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p class="text-sm text-gray-600">
-                  Mostrando {{ paginatedMessages.length }} de {{ filteredMessages.length }} mensajes filtrados.
-                </p>
-                <div class="flex items-center gap-2">
-                  <button
-                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40"
-                    :disabled="messagePage === 1"
-                    @click="messagePage--"
-                  >
-                    Anterior
-                  </button>
-                  <span class="text-sm font-semibold text-gray-700">
-                    Página {{ messagePage }} de {{ messagePageCount }}
-                  </span>
-                  <button
-                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40"
-                    :disabled="messagePage >= messagePageCount"
-                    @click="messagePage++"
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section id="users" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Crear usuario administrador</h2>
-                  <p class="text-sm text-gray-600">Agrega cuentas nuevas para acceso interno al panel.</p>
-                </div>
-                <button v-if="canManageAdmins" class="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black" @click="createAdminUser">
-                  Crear administrador
-                </button>
-              </div>
-
-              <p v-if="!canManageAdmins" class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                Tu rol actual ({{ currentAdmin.role || 'sin rol' }}) no permite crear usuarios administradores.
-              </p>
-
-              <div v-else class="mt-4 grid gap-3 md:grid-cols-4">
-                <input v-model="newAdminUser.name" type="text" placeholder="Nombre" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <input v-model="newAdminUser.email" type="email" placeholder="Correo" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <input v-model="newAdminUser.password" type="password" placeholder="Contraseña (mín. 8)" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
-                <select v-model="newAdminUser.role" class="rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none">
-                  <option value="content_manager">Content manager</option>
-                  <option value="support_agent">Support agent</option>
-                  <option value="super_admin">Super admin</option>
-                </select>
-              </div>
-
-              <div class="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <h3 class="text-sm font-semibold text-gray-900">Seguridad de cuenta (2FA)</h3>
-                <p class="mt-1 text-xs text-gray-600">Estado actual: {{ currentAdmin.two_factor_enabled ? 'Activado' : 'Desactivado' }}</p>
-                <div class="mt-3 flex flex-wrap gap-2">
-                  <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black" @click="setupTwoFactor">
-                    Generar secreto 2FA
-                  </button>
-                  <button v-if="!currentAdmin.two_factor_enabled" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700" @click="enableTwoFactor">
-                    Activar 2FA
-                  </button>
-                  <button v-else class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="disableTwoFactor">
-                    Desactivar 2FA
-                  </button>
-                </div>
-                <input
-                  v-model="twoFactorCode"
-                  type="text"
-                  maxlength="6"
-                  placeholder="Código 2FA de 6 dígitos"
-                  class="mt-3 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-red-500 focus:outline-none"
-                />
-                <p v-if="twoFactorSetupSecret" class="mt-2 break-all text-xs text-gray-700">
-                  Secreto: <strong>{{ twoFactorSetupSecret }}</strong>
-                </p>
-                <p v-if="twoFactorSetupUrl" class="mt-1 break-all text-[11px] text-gray-500">
-                  URL OTP: {{ twoFactorSetupUrl }}
-                </p>
-              </div>
-            </section>
-
-            <section id="history" class="mt-8 rounded-2xl border border-gray-200 p-5">
-              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-lg font-bold text-gray-900">Historial de cambios</h2>
-                  <p class="text-sm text-gray-600">Revisa quién cambió qué y cuándo.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <input v-model="historySearch" type="search" placeholder="Buscar acción..." class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none" />
-                  <select v-model="historyActionFilter" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none">
-                    <option value="">Todas las acciones</option>
-                    <option v-for="action in historyActionOptions" :key="action" :value="action">{{ action }}</option>
-                  </select>
-                  <select v-model="historyAdminFilter" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none">
-                    <option value="">Todos los admins</option>
-                    <option v-for="admin in historyAdminOptions" :key="admin.id" :value="admin.id">{{ admin.name }}</option>
-                  </select>
-                  <input v-model="historyDateFrom" type="date" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none" />
-                  <input v-model="historyDateTo" type="date" class="rounded-xl border border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none" />
-                  <button class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="fetchChangeLogs(1)">
-                    Filtrar
-                  </button>
-                  <button class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" @click="exportChangeLogs">
-                    Exportar CSV
-                  </button>
-                </div>
-              </div>
-
-              <p v-if="!canViewHistory" class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                Tu rol no tiene permiso para ver historial de cambios.
-              </p>
-
-              <div v-if="canApproveRequests" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <div class="mb-3 flex items-center justify-between">
-                  <h3 class="text-sm font-semibold text-amber-900">Cambios pendientes de aprobación</h3>
-                  <span class="text-xs font-semibold text-amber-800">{{ pendingApprovals.length }}</span>
-                </div>
-                <div v-if="pendingApprovals.length" class="space-y-2">
-                  <div v-for="request in pendingApprovals" :key="request.id" class="rounded-xl bg-white p-3">
-                    <p class="text-xs text-gray-500">{{ formatDateTime(request.created_at) }} · {{ request.admin_user?.name || 'Admin' }}</p>
-                    <p class="mt-1 text-sm font-semibold text-gray-900">{{ request.action }}</p>
-                    <p class="text-xs text-gray-600">{{ request.description || 'Sin detalle.' }}</p>
-                    <div class="mt-2 flex gap-2">
-                      <button class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700" @click="approveRequest(request.id)">
-                        Aprobar
-                      </button>
-                      <button class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700" @click="rejectRequest(request.id)">
-                        Rechazar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <p v-else class="text-xs text-amber-800">No hay solicitudes pendientes.</p>
-              </div>
-
-              <div v-else class="mt-4 overflow-x-auto">
-                <table class="min-w-full border-separate border-spacing-y-2 text-left text-sm">
-                  <thead class="text-xs uppercase text-gray-500">
-                    <tr>
-                      <th class="px-3 py-2">Fecha</th>
-                      <th class="px-3 py-2">Usuario</th>
-                      <th class="px-3 py-2">Acción</th>
-                      <th class="px-3 py-2">Detalle</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="entry in changeLogs" :key="entry.id" class="rounded-xl bg-gray-50">
-                      <td class="px-3 py-2 text-xs text-gray-500">{{ formatDateTime(entry.created_at) }}</td>
-                      <td class="px-3 py-2">
-                        <div class="font-semibold text-gray-900">{{ entry.admin_user?.name || 'Sistema' }}</div>
-                        <div class="text-xs text-gray-500">{{ entry.admin_user?.role || '-' }}</div>
-                      </td>
-                      <td class="px-3 py-2">
-                        <div class="font-medium text-gray-800">{{ entry.action }}</div>
-                        <div class="text-xs text-gray-500">{{ entry.target_type }}{{ entry.target_id ? ` #${entry.target_id}` : '' }}</div>
-                      </td>
-                      <td class="px-3 py-2 text-gray-600">{{ entry.description || 'Sin descripción' }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div v-if="canViewHistory" class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p class="text-sm text-gray-600">
-                  Mostrando {{ changeLogs.length }} registros en esta página.
-                </p>
-                <div class="flex items-center gap-2">
-                  <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40" :disabled="historyPage <= 1" @click="fetchChangeLogs(historyPage - 1)">
-                    Anterior
-                  </button>
-                  <span class="text-sm font-semibold text-gray-700">
-                    Página {{ historyPage }} de {{ historyPageCount }}
-                  </span>
-                  <button class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40" :disabled="historyPage >= historyPageCount" @click="fetchChangeLogs(historyPage + 1)">
-                    Siguiente
-                  </button>
-                </div>
-              </div>
-            </section>
-          </template>
-        </main>
-
-        <aside class="border-t border-gray-200 bg-gray-50 p-5 lg:border-t-0 lg:border-l lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
-          <template v-if="livePreviewEnabled">
-            <div class="rounded-2xl bg-white p-5 shadow-sm">
-              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Vista previa</p>
-              <h3 class="mt-2 text-2xl font-bold text-gray-900">
-                {{ settings.hero_title || 'Título principal' }}
-              </h3>
-              <p class="mt-3 text-sm leading-6 text-gray-600">
-                {{ settings.hero_description || 'Descripción del landing.' }}
-              </p>
-              <p class="mt-4 text-sm font-medium text-gray-700">
-                {{ settings.company_address || 'Dirección pendiente' }}
-              </p>
+                {{ currentRoleMeta.label }}
+              </span>
             </div>
-
-            <div class="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-gray-900">Vacantes activas</p>
-                <span class="text-xs text-gray-500">{{ filteredJobs.length }}</span>
-              </div>
-              <div class="mt-3 space-y-3">
-                <div v-for="job in previewJobs" :key="job.id" class="rounded-xl border border-gray-200 p-3">
-                  <p class="font-semibold text-gray-900">{{ job.title }}</p>
-                  <p class="mt-1 text-xs text-gray-500">{{ job.employment_type }} · {{ job.location || 'Ubicación por definir' }}</p>
-                  <p class="mt-2 text-sm text-gray-600 line-clamp-3">{{ job.description }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-gray-900">Productos destacados</p>
-                <span class="text-xs text-gray-500">{{ filteredMenuItems.length }}</span>
-              </div>
-              <div class="mt-3 space-y-3">
-                <div v-for="item in previewMenuItems" :key="item.id" class="flex gap-3 rounded-xl border border-gray-200 p-3">
-                  <img
-                    :src="item.image_url || item.image || fallbackProductImage"
-                    :alt="item.name"
-                    class="h-16 w-16 rounded-lg object-cover"
-                    width="64"
-                    height="64"
-                  />
-                  <div class="min-w-0">
-                    <p class="font-semibold text-gray-900">{{ item.name }}</p>
-                    <p class="text-xs text-gray-500">{{ item.category }}</p>
-                    <p class="mt-1 text-sm text-red-600 font-semibold">${{ Number(item.price || 0).toFixed(2) }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-gray-900">Promociones visibles</p>
-                <span class="text-xs text-gray-500">{{ filteredPromotions.length }}</span>
-              </div>
-              <div class="mt-3 space-y-3">
-                <div v-for="promotion in previewPromotions" :key="promotion.id" class="rounded-xl border border-gray-200 p-3">
-                  <img
-                    v-if="promotion.image_url"
-                    :src="promotion.image_url"
-                    :alt="promotion.title"
-                    class="h-20 w-full rounded-lg object-cover"
-                    width="320"
-                    height="80"
-                  />
-                  <p class="mt-2 font-semibold text-gray-900">{{ promotion.title }}</p>
-                  <p class="mt-1 text-xs text-gray-500">{{ promotion.is_active ? 'Activa' : 'Inactiva' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-gray-900">Sucursales</p>
-                <span class="text-xs text-gray-500">{{ filteredBranches.length }}</span>
-              </div>
-              <div class="mt-3 space-y-3">
-                <div v-for="branch in previewBranches" :key="branch.id" class="rounded-xl border border-gray-200 p-3">
-                  <img
-                    v-if="branch.image_url"
-                    :src="branch.image_url"
-                    :alt="branch.name"
-                    class="h-20 w-full rounded-lg object-cover"
-                    width="320"
-                    height="80"
-                  />
-                  <p class="mt-2 font-semibold text-gray-900">{{ branch.name }}</p>
-                  <p class="mt-1 text-xs text-gray-500">{{ branch.phone || 'Sin teléfono' }}</p>
-                  <p class="text-xs" :class="branch.is_open ? 'text-green-700' : 'text-red-700'">
-                    {{ branch.is_open ? 'Abierta' : 'Cerrada' }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </template>
-
-
-          <div v-else class="rounded-2xl bg-white p-5 shadow-sm text-sm text-gray-600">
-            La vista previa en vivo está desactivada.
           </div>
-        </aside>
+
+          <router-link
+            to="/"
+            class="text-xs font-bold text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-white transition flex items-center gap-1"
+          >
+            <span>Ver Sitio Web</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+          </router-link>
+
+          <!-- Dark Mode Toggle Button -->
+          <button
+            @click="toggleTheme"
+            class="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer transition flex items-center gap-1.5"
+            :title="theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+            :aria-label="theme === 'dark' ? 'Modo claro' : 'Modo oscuro'"
+          >
+            <span v-if="theme === 'dark'" class="text-amber-300">☀️</span>
+            <span v-else class="text-gray-600">🌙</span>
+            <span class="hidden sm:inline">{{ theme === 'dark' ? 'Claro' : 'Oscuro' }}</span>
+          </button>
+
+          <button
+            @click="handleLogout"
+            class="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-red-950/40 cursor-pointer transition"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-6 flex-1 flex flex-col md:flex-row gap-6">
+      <!-- Sidebar / Tab Navigation -->
+      <aside class="w-full md:w-64 shrink-0">
+        <div class="rounded-3xl bg-white p-3 sm:p-4 shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-800 space-y-1">
+          <button
+            v-for="tab in visibleTabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            class="w-full flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition text-left cursor-pointer"
+            :class="activeTab === tab.id
+              ? 'bg-red-600 text-white shadow-sm'
+              : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'"
+          >
+            <div class="flex items-center gap-3">
+              <span>{{ tab.icon }}</span>
+              <span>{{ tab.label }}</span>
+            </div>
+            <span
+              v-if="tab.id === 'orders' && activeOrdersList.length > 0"
+              class="rounded-full text-[10px] font-black px-2 py-0.5"
+              :class="activeTab === 'orders' ? 'bg-white text-red-600' : 'bg-red-600 text-white'"
+            >
+              {{ activeOrdersList.length }}
+            </span>
+            <span
+              v-else-if="tab.id === 'messages' && pendingMessagesCount > 0"
+              class="rounded-full text-[10px] font-black px-2 py-0.5"
+              :class="activeTab === 'messages' ? 'bg-white text-red-600' : 'bg-amber-500 text-white'"
+            >
+              {{ pendingMessagesCount }}
+            </span>
+            <span
+              v-else-if="tab.id === 'reviews'"
+              class="text-[11px] opacity-75 font-mono"
+            >
+              {{ adminReviewsList.length }}
+            </span>
+            <span
+              v-else-if="tab.id === 'users'"
+              class="text-[11px] opacity-75 font-mono"
+            >
+              {{ adminUsersList.length }}
+            </span>
+            <span
+              v-else-if="tab.id === 'menu'"
+              class="text-[11px] opacity-75 font-mono"
+            >
+              {{ menuItems.length }}
+            </span>
+          </button>
+
+          <!-- Current Role Context in Sidebar -->
+          <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 px-2 space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+              Tu Nivel de Acceso
+            </span>
+            <div class="flex items-center gap-2">
+              <span class="text-base">{{ currentRoleMeta.icon }}</span>
+              <div class="truncate">
+                <span class="block text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                  {{ currentRoleMeta.label }}
+                </span>
+                <span class="block text-[10px] text-gray-400 truncate">
+                  {{ visibleTabs.length }} áreas disponibles
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <main class="flex-1 min-w-0">
+        <!-- TAB: Resumen & Analíticas de Ventas en Vivo -->
+        <div v-if="activeTab === 'summary' || activeTab === 'analytics'" class="space-y-6">
+          <AnalyticsDashboard />
+        </div>
+
+        <!-- TAB: Pedidos en Vivo (Order Management) -->
+        <div v-else-if="activeTab === 'orders'" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-gray-900 dark:text-white">Gestión de Pedidos en Vivo</h2>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Actualiza el estado de los pedidos recibidos en sucursal</p>
+            </div>
+
+            <!-- Status filter buttons -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                v-for="f in orderFilters"
+                :key="f.id"
+                @click="orderFilter = f.id"
+                class="rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer"
+                :class="orderFilter === f.id
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300'"
+              >
+                {{ f.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders Grid -->
+          <div v-if="filteredAdminOrders.length === 0" class="rounded-3xl bg-white p-8 text-center border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <p class="font-bold text-gray-800 dark:text-gray-200">No hay pedidos en este estado.</p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <div
+              v-for="order in filteredAdminOrders"
+              :key="order.id"
+              class="rounded-3xl bg-white p-5 sm:p-6 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 space-y-4"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-gray-800">
+                <div class="flex items-center gap-3">
+                  <span class="text-lg font-black text-gray-900 dark:text-white">#{{ order.id }}</span>
+                  <span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    {{ order.order_type === 'delivery' ? '🛵 Domicilio' : '🏪 Sucursal' }}
+                  </span>
+                  <span class="text-xs text-gray-400">{{ formatDate(order.created_at) }}</span>
+                </div>
+
+                <!-- Status Badge -->
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border"
+                  :class="getStatusBadgeClass(order.status)"
+                >
+                  <span class="h-2 w-2 rounded-full" :class="getStatusDotClass(order.status)"></span>
+                  {{ getStatusLabel(order.status) }}
+                </span>
+              </div>
+
+              <!-- Customer & Order Information -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300">
+                <div>
+                  <span class="font-bold text-gray-800 dark:text-gray-200 block">Cliente:</span>
+                  <p>{{ order.customer_name }} ({{ order.customer_phone }})</p>
+                  <p class="text-gray-400">{{ order.branch }}</p>
+                </div>
+                <div>
+                  <span class="font-bold text-gray-800 dark:text-gray-200 block">Dirección / Notas:</span>
+                  <p>{{ order.address || 'Recoger en mostrador' }}</p>
+                  <p v-if="order.notes" class="text-amber-600 italic">"{{ order.notes }}"</p>
+                </div>
+                <div class="sm:text-right">
+                  <span class="font-bold text-gray-800 dark:text-gray-200 block">Total:</span>
+                  <p class="text-base font-black text-red-600">${{ order.total }} MXN</p>
+                  <p class="text-[11px] text-gray-400">{{ order.payment_method || 'Efectivo' }}</p>
+                </div>
+              </div>
+
+              <!-- Items list -->
+              <div class="rounded-2xl bg-gray-50 p-3 dark:bg-gray-800/40 text-xs">
+                <span class="font-bold text-gray-700 dark:text-gray-300 block mb-1">Productos:</span>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="item in (order.items || [])"
+                    :key="item.id"
+                    class="rounded-lg bg-white px-2.5 py-1 font-medium border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                  >
+                    {{ item.quantity || 1 }}x {{ item.name }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Admin Action Buttons (Transition Order Status) -->
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <span class="text-xs font-bold text-gray-500 mr-1">Cambiar estado:</span>
+                <button
+                  v-if="order.status !== 'preparing'"
+                  @click="updateOrderStatus(order.id, 'preparing')"
+                  class="rounded-xl bg-orange-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-orange-600 transition cursor-pointer"
+                >
+                  🔥 En preparación
+                </button>
+                <button
+                  v-if="order.status !== 'ready'"
+                  @click="updateOrderStatus(order.id, 'ready')"
+                  class="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-700 transition cursor-pointer"
+                >
+                  📦 Empacado / Listo
+                </button>
+                <button
+                  v-if="order.status !== 'on_the_way'"
+                  @click="updateOrderStatus(order.id, 'on_the_way')"
+                  class="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition cursor-pointer"
+                >
+                  🛵 En camino
+                </button>
+                <button
+                  v-if="order.status !== 'delivered'"
+                  @click="updateOrderStatus(order.id, 'delivered')"
+                  class="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition cursor-pointer"
+                >
+                  ✅ Entregado
+                </button>
+                <button
+                  v-if="order.status !== 'cancelled'"
+                  @click="updateOrderStatus(order.id, 'cancelled')"
+                  class="rounded-xl border border-gray-200 px-2.5 py-1.5 text-xs font-bold text-gray-600 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-300 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Menú (DYNAMIC MENU CRUD INTERFACE) -->
+        <div v-else-if="activeTab === 'menu'" class="space-y-6">
+          <!-- Header and Primary Action -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <span>Gestión del Menú Pollo Feliz</span>
+                <span class="rounded-full bg-red-100 text-red-700 text-xs px-2.5 py-0.5 font-bold dark:bg-red-950/60 dark:text-red-300">
+                  {{ filteredMenuItems.length }} de {{ menuItems.length }}
+                </span>
+              </h2>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Agrega nuevos platillos, edita precios e imágenes, y elimina o pausa productos en tiempo real.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <button
+                @click="handleRestoreDefaultMenu"
+                class="rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition cursor-pointer"
+                title="Restaurar el catálogo original con todos los platillos"
+              >
+                🔄 Restaurar Catálogo
+              </button>
+              <button
+                @click="handleOpenAddModal"
+                class="rounded-xl bg-linear-to-r from-red-600 to-red-700 px-4 py-2 text-xs font-black text-white shadow-md hover:from-red-700 hover:to-red-800 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>+ Agregar Platillo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Category Quick Summary Bar (Combos, Drinks, Extras, etc.) -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <button
+              v-for="catStat in categorySummaryCards"
+              :key="catStat.id"
+              @click="selectedMenuCategory = (selectedMenuCategory === catStat.id ? 'Todas' : catStat.id)"
+              class="rounded-2xl p-3 text-left transition-all cursor-pointer border flex flex-col justify-between"
+              :class="selectedMenuCategory === catStat.id
+                ? 'bg-red-600 text-white border-red-600 shadow-md ring-2 ring-red-400'
+                : 'bg-white text-gray-800 border-gray-100 hover:border-red-200 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-200 shadow-xs'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xl">{{ catStat.icon }}</span>
+                <span
+                  class="rounded-full px-2 py-0.5 text-[11px] font-black"
+                  :class="selectedMenuCategory === catStat.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+                >
+                  {{ catStat.count }}
+                </span>
+              </div>
+              <div class="mt-2">
+                <p class="text-xs font-bold truncate">{{ catStat.label }}</p>
+                <p class="text-[10px] opacity-75">{{ catStat.subtext }}</p>
+              </div>
+            </button>
+          </div>
+
+          <!-- Filters & Search Toolbar -->
+          <div class="rounded-3xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 space-y-3.5">
+            <div class="flex flex-col md:flex-row gap-3 items-center justify-between">
+              <!-- Search Input -->
+              <div class="relative w-full md:w-80">
+                <input
+                  v-model="menuSearch"
+                  type="text"
+                  placeholder="Buscar por nombre, categoría o etiqueta..."
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 pl-9 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+                <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
+
+              <!-- Quick Category Dropdown (Convenient when many categories exist) -->
+              <div class="flex items-center gap-2 w-full md:w-auto">
+                <span class="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:inline">Filtrar categoría:</span>
+                <select
+                  v-model="selectedMenuCategory"
+                  class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-bold text-gray-800 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                >
+                  <option v-for="cat in menuCategoryFilterOptions" :key="cat" :value="cat">
+                    {{ getCategoryIcon(cat) }} {{ cat }} ({{ getCategoryCount(cat) }})
+                  </option>
+                </select>
+
+                <!-- Status Switch Filter -->
+                <div class="flex items-center gap-1">
+                  <button
+                    @click="selectedMenuStatus = 'all'"
+                    class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer"
+                    :class="selectedMenuStatus === 'all' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
+                    title="Ver todos"
+                  >
+                    Todos ({{ menuItems.length }})
+                  </button>
+                  <button
+                    @click="selectedMenuStatus = 'active'"
+                    class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer"
+                    :class="selectedMenuStatus === 'active' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
+                    title="Ver activos"
+                  >
+                    Activos ({{ menuItems.filter(i => i.is_active).length }})
+                  </button>
+                  <button
+                    @click="selectedMenuStatus = 'paused'"
+                    class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer"
+                    :class="selectedMenuStatus === 'paused' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
+                    title="Ver pausados"
+                  >
+                    Pausados ({{ menuItems.filter(i => !i.is_active).length }})
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Category Pills Filter Bar -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar">
+              <button
+                v-for="cat in menuCategoryFilterOptions"
+                :key="cat"
+                @click="selectedMenuCategory = cat"
+                class="rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5 border"
+                :class="selectedMenuCategory === cat
+                  ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'"
+              >
+                <span>{{ getCategoryIcon(cat) }}</span>
+                <span>{{ cat }}</span>
+                <span
+                  class="rounded-full px-1.5 py-0.2 text-[10px] font-extrabold"
+                  :class="selectedMenuCategory === cat ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
+                >
+                  {{ getCategoryCount(cat) }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bulk Selection Floating Actions Bar -->
+          <Transition name="fade">
+            <div
+              v-if="selectedItemIds.length > 0"
+              class="sticky top-20 z-30 mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gray-900 p-3 sm:p-4 text-white shadow-xl border border-gray-700/80 dark:bg-black dark:border-gray-800"
+            >
+              <div class="flex items-center gap-2.5">
+                <span class="flex h-7 w-7 items-center justify-center rounded-xl bg-red-600 text-xs font-black text-white shadow-xs">
+                  {{ selectedItemIds.length }}
+                </span>
+                <div>
+                  <span class="text-xs sm:text-sm font-bold block leading-tight">
+                    {{ selectedItemIds.length === 1 ? '1 platillo seleccionado' : `${selectedItemIds.length} platillos seleccionados` }}
+                  </span>
+                  <button
+                    type="button"
+                    @click="clearSelection"
+                    class="text-[11px] text-gray-400 hover:text-white underline cursor-pointer"
+                  >
+                    Desmarcar todos
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bulk Action Controls -->
+              <div class="flex flex-wrap items-center gap-2">
+                <!-- Quick Bulk Category Mover -->
+                <div class="flex items-center gap-1.5 bg-gray-800 rounded-xl px-2.5 py-1.5 border border-gray-700">
+                  <span class="text-xs text-gray-400 font-semibold hidden md:inline">Mover a:</span>
+                  <select
+                    v-model="bulkTargetCategory"
+                    class="bg-transparent text-xs font-bold text-white focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="" disabled class="text-gray-900 bg-white">Elige categoría...</option>
+                    <option v-for="cat in allUniqueCategories" :key="cat" :value="cat" class="text-gray-900 bg-white">
+                      {{ getCategoryIcon(cat) }} {{ cat }}
+                    </option>
+                  </select>
+                  <button
+                    type="button"
+                    @click="handleApplyBulkCategoryQuick"
+                    :disabled="!bulkTargetCategory"
+                    class="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  >
+                    Mover
+                  </button>
+                </div>
+
+                <!-- Advanced Bulk Category Modal Trigger -->
+                <button
+                  type="button"
+                  @click="showBulkCategoryModal = true"
+                  class="rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 text-xs font-bold text-gray-200 transition cursor-pointer flex items-center gap-1.5"
+                  title="Cambiar categoría con opciones y vista previa"
+                >
+                  <span>🏷️</span>
+                  <span class="hidden sm:inline">Categoría Avanzada</span>
+                </button>
+
+                <!-- Bulk Status Toggles -->
+                <button
+                  type="button"
+                  @click="handleBulkToggleActive(true)"
+                  class="rounded-xl bg-gray-800 hover:bg-emerald-700/60 border border-gray-700 px-2.5 py-1.5 text-xs font-bold text-emerald-400 hover:text-white transition cursor-pointer"
+                  title="Activar venta en línea para todos los seleccionados"
+                >
+                  ✓ Activar
+                </button>
+                <button
+                  type="button"
+                  @click="handleBulkToggleActive(false)"
+                  class="rounded-xl bg-gray-800 hover:bg-amber-700/60 border border-gray-700 px-2.5 py-1.5 text-xs font-bold text-amber-400 hover:text-white transition cursor-pointer"
+                  title="Pausar venta para todos los seleccionados"
+                >
+                  ⏸ Pausar
+                </button>
+
+                <!-- Bulk Delete Action -->
+                <button
+                  type="button"
+                  @click="handlePromptBulkDelete"
+                  class="rounded-xl bg-red-600 hover:bg-red-700 px-3.5 py-1.5 text-xs font-black text-white shadow-md transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <span>Eliminar ({{ selectedItemIds.length }})</span>
+                </button>
+              </div>
+            </div>
+          </Transition>
+
+          <!-- Empty State -->
+          <div v-if="filteredMenuItems.length === 0" class="rounded-3xl bg-white p-10 text-center border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <span class="text-4xl block mb-2">🍗</span>
+            <p class="font-bold text-gray-800 dark:text-gray-200">No se encontraron platillos en la categoría "{{ selectedMenuCategory }}"</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4">Intenta cambiar la categoría o el término de búsqueda.</p>
+            <div class="flex items-center justify-center gap-3">
+              <button
+                @click="selectedMenuCategory = 'Todas'; menuSearch = ''"
+                class="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
+              >
+                Ver Todas las Categorías
+              </button>
+              <button
+                @click="handleOpenAddModal"
+                class="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 transition cursor-pointer"
+              >
+                + Agregar Platillo a {{ selectedMenuCategory !== 'Todas' ? selectedMenuCategory : 'Menú' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Menu Items Table (Desktop & Tablets) -->
+          <div v-else class="overflow-x-auto rounded-3xl bg-white shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+              <thead class="bg-gray-50 text-xs font-bold uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                <tr>
+                  <!-- Bulk Select All Checkbox -->
+                  <th class="px-4 py-3.5 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      :checked="isAllFilteredSelected"
+                      :indeterminate.prop="isPartiallySelected"
+                      @change="toggleSelectAll"
+                      class="h-4 w-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                      title="Seleccionar / deseleccionar todos los platillos filtrados"
+                    />
+                  </th>
+                  <th class="px-5 py-3.5">Platillo</th>
+                  <th class="px-5 py-3.5">Categoría & Clasificación</th>
+                  <th class="px-5 py-3.5">Precio</th>
+                  <th class="px-5 py-3.5">Disponibilidad</th>
+                  <th class="px-5 py-3.5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr
+                  v-for="item in filteredMenuItems"
+                  :key="item.id"
+                  class="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors"
+                  :class="{ 'bg-red-50/50 dark:bg-red-950/20': selectedItemIds.includes(item.id) }"
+                >
+                  <!-- Individual Item Checkbox -->
+                  <td class="px-4 py-3.5 text-center">
+                    <input
+                      type="checkbox"
+                      :checked="selectedItemIds.includes(item.id)"
+                      @change="toggleSelectItem(item.id)"
+                      class="h-4 w-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                    />
+                  </td>
+
+                  <!-- Item Info & Thumbnail -->
+                  <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-3">
+                      <div class="h-12 w-12 rounded-xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center shrink-0 overflow-hidden border border-gray-100 dark:border-gray-800">
+                        <img
+                          v-if="item.image_url"
+                          :src="item.image_url"
+                          :alt="item.name"
+                          class="h-full w-full object-cover"
+                          @error="(e) => e.target.style.display = 'none'"
+                        />
+                        <span v-else class="text-lg">🍗</span>
+                      </div>
+                      <div class="min-w-0 max-w-xs sm:max-w-sm">
+                        <div class="flex items-center gap-2">
+                          <h4 class="font-bold text-gray-900 dark:text-white truncate text-sm">
+                            {{ item.name }}
+                          </h4>
+                          <span
+                            v-if="item.badge"
+                            class="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 shrink-0"
+                          >
+                            {{ item.badge }}
+                          </span>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                          {{ item.description || 'Sin descripción' }}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Dynamic Categorization & In-line Quick Switcher -->
+                  <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border"
+                        :class="getCategoryBadgeClass(item.category)"
+                      >
+                        <span>{{ getCategoryIcon(item.category) }}</span>
+                        <span>{{ item.category }}</span>
+                      </span>
+
+                      <!-- Inline Quick Category Reassigner -->
+                      <select
+                        :value="item.category"
+                        @change="(e) => handleQuickCategoryChange(item, e.target.value)"
+                        class="text-[11px] font-semibold rounded-lg border border-gray-200 bg-white py-1 px-1.5 text-gray-600 hover:border-red-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer transition"
+                        title="Cambiar categoría con 1 clic"
+                      >
+                        <option v-for="cat in allUniqueCategories" :key="cat" :value="cat">
+                          {{ cat }}
+                        </option>
+                      </select>
+                    </div>
+                  </td>
+
+                  <!-- Price -->
+                  <td class="px-5 py-3.5">
+                    <span class="font-black text-red-600 dark:text-red-400 text-sm sm:text-base">
+                      ${{ Number(item.price).toFixed(0) }} MXN
+                    </span>
+                  </td>
+
+                  <!-- Availability Toggle -->
+                  <td class="px-5 py-3.5">
+                    <button
+                      @click="toggleItemActive(item)"
+                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition cursor-pointer"
+                      :class="item.is_active
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-950/60 dark:text-green-300'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'"
+                      :title="item.is_active ? 'Clic para pausar venta' : 'Clic para activar venta'"
+                    >
+                      <span class="h-2 w-2 rounded-full" :class="item.is_active ? 'bg-green-500' : 'bg-gray-400'"></span>
+                      <span>{{ item.is_active ? 'Disponible' : 'Pausado' }}</span>
+                    </button>
+                  </td>
+
+                  <!-- Edit / Remove Actions -->
+                  <td class="px-5 py-3.5 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <button
+                        @click="handleOpenEditModal(item)"
+                        class="rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-gray-700 hover:border-red-500 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-red-500 transition cursor-pointer"
+                        title="Editar platillo y categoría"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      </button>
+
+                      <button
+                        @click="handlePromptDelete(item)"
+                        class="rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-gray-700 hover:border-red-600 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-950/40 transition cursor-pointer"
+                        title="Eliminar platillo del menú"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: Promociones -->
+        <div v-else-if="activeTab === 'promotions'" class="space-y-6">
+          <!-- Header and Action -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <span>Gestión de Promociones Pollo Feliz</span>
+                <span class="rounded-full bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 font-bold dark:bg-amber-950/60 dark:text-amber-300">
+                  {{ promotions.length }} ofertas
+                </span>
+              </h2>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Crea, edita o pausa cupones de descuento y ofertas especiales para los clientes.
+              </p>
+            </div>
+
+            <button
+              @click="handleOpenAddPromo"
+              class="rounded-xl bg-linear-to-r from-red-600 to-red-700 px-4 py-2 text-xs font-black text-white shadow-md hover:from-red-700 hover:to-red-800 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>+ Nueva Promoción</span>
+            </button>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="promotions.length === 0" class="rounded-3xl bg-white p-10 text-center border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <span class="text-4xl block mb-2">🏷️</span>
+            <p class="font-bold text-gray-800 dark:text-gray-200">No hay promociones registradas</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4">Crea una nueva promoción para atraer más clientes.</p>
+            <button
+              @click="handleOpenAddPromo"
+              class="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 transition cursor-pointer"
+            >
+              + Crear Primera Promoción
+            </button>
+          </div>
+
+          <!-- Promotions Cards Grid -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="promo in promotions"
+              :key="promo.id"
+              class="rounded-3xl bg-white p-5 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
+            >
+              <!-- Promo Thumbnail Banner -->
+              <div v-if="promo.image_url" class="h-36 -mx-5 -mt-5 mb-4 overflow-hidden relative border-b border-gray-100 dark:border-gray-800">
+                <img
+                  :src="promo.image_url"
+                  :alt="promo.title"
+                  class="h-full w-full object-cover"
+                  @error="(e) => e.target.style.display = 'none'"
+                />
+                <span class="absolute top-3 left-3 rounded-full bg-red-600/90 backdrop-blur-xs px-2.5 py-1 text-[11px] font-black text-white shadow-md">
+                  {{ promo.badge || 'Oferta' }}
+                </span>
+              </div>
+              <div v-else class="flex items-center justify-between mb-3">
+                <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
+                  {{ promo.badge || 'Oferta' }}
+                </span>
+                <span
+                  class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                  :class="promo.is_active !== false ? 'bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'"
+                >
+                  {{ promo.is_active !== false ? '● Activa' : '○ Pausada' }}
+                </span>
+              </div>
+
+              <!-- Content -->
+              <div class="space-y-2 flex-1">
+                <h3 class="font-black text-gray-900 dark:text-white text-base leading-snug">
+                  {{ promo.title }}
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                  {{ promo.description }}
+                </p>
+
+                <!-- Coupon Box -->
+                <div class="flex items-center justify-between p-2.5 rounded-2xl bg-red-50/70 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 mt-3">
+                  <div>
+                    <span class="text-[10px] font-bold text-gray-400 block uppercase">Código de Cupón</span>
+                    <span class="font-mono font-black text-sm text-red-600 dark:text-red-400 tracking-wider">
+                      {{ promo.code }}
+                    </span>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-[10px] text-gray-400 block">Vigencia</span>
+                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      {{ promo.valid_until || 'Indefinida' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions Bottom Bar -->
+              <div class="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
+                <!-- Status Toggle -->
+                <button
+                  @click="togglePromoActive(promo)"
+                  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition cursor-pointer"
+                  :class="promo.is_active !== false
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-950/60 dark:text-green-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'"
+                  :title="promo.is_active !== false ? 'Pausar promoción' : 'Activar promoción'"
+                >
+                  <span class="h-2 w-2 rounded-full" :class="promo.is_active !== false ? 'bg-green-500' : 'bg-gray-400'"></span>
+                  <span>{{ promo.is_active !== false ? 'Activa' : 'Pausada' }}</span>
+                </button>
+
+                <!-- Edit / Delete Buttons -->
+                <div class="flex items-center gap-1.5">
+                  <button
+                    @click="handleOpenEditPromo(promo)"
+                    class="rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-gray-700 hover:border-red-500 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-red-500 transition cursor-pointer"
+                    title="Editar promoción"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <button
+                    @click="handlePromptDeletePromo(promo)"
+                    class="rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-gray-700 hover:border-red-600 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-950/40 transition cursor-pointer"
+                    title="Eliminar promoción"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Sucursales -->
+        <div v-else-if="activeTab === 'branches'" class="space-y-6">
+          <!-- Header and Action -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <span>Gestión de Sucursales Pollo Feliz</span>
+                <span class="rounded-full bg-red-100 text-red-700 text-xs px-2.5 py-0.5 font-bold dark:bg-red-950/60 dark:text-red-300">
+                  {{ branches.length }} puntos de venta
+                </span>
+              </h2>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Administra horarios, teléfonos, enlaces de ubicación y puntos de entrega.
+              </p>
+            </div>
+
+            <button
+              @click="handleOpenAddBranch"
+              class="rounded-xl bg-linear-to-r from-red-600 to-red-700 px-4 py-2 text-xs font-black text-white shadow-md hover:from-red-700 hover:to-red-800 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>+ Nueva Sucursal</span>
+            </button>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="branches.length === 0" class="rounded-3xl bg-white p-10 text-center border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <span class="text-4xl block mb-2">📍</span>
+            <p class="font-bold text-gray-800 dark:text-gray-200">No hay sucursales registradas</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4">Agrega tus ubicaciones para que los clientes puedan localizarlas.</p>
+            <button
+              @click="handleOpenAddBranch"
+              class="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 transition cursor-pointer"
+            >
+              + Agregar Primera Sucursal
+            </button>
+          </div>
+
+          <!-- Branches Cards Grid -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="b in branches"
+              :key="b.id"
+              class="rounded-3xl bg-white p-5 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
+            >
+              <!-- Branch Image Preview (if provided) -->
+              <div v-if="b.image_url" class="h-36 -mx-5 -mt-5 mb-4 overflow-hidden relative border-b border-gray-100 dark:border-gray-800">
+                <img
+                  :src="b.image_url"
+                  :alt="b.name"
+                  class="h-full w-full object-cover"
+                  @error="(e) => e.target.style.display = 'none'"
+                />
+                <span class="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold backdrop-blur-md"
+                  :class="b.is_open !== false ? 'bg-emerald-600/90 text-white shadow-xs' : 'bg-gray-900/90 text-gray-300'"
+                >
+                  <span class="h-2 w-2 rounded-full" :class="b.is_open !== false ? 'bg-emerald-300' : 'bg-gray-400'"></span>
+                  <span>{{ b.is_open !== false ? 'Abierta' : 'Cerrada' }}</span>
+                </span>
+              </div>
+              <div v-else class="flex items-center justify-between mb-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 font-bold text-base">
+                  🍗
+                </span>
+                <span
+                  class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
+                  :class="b.is_open !== false ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'"
+                >
+                  <span class="h-2 w-2 rounded-full" :class="b.is_open !== false ? 'bg-emerald-500' : 'bg-gray-400'"></span>
+                  <span>{{ b.is_open !== false ? 'Abierta' : 'Cerrada' }}</span>
+                </span>
+              </div>
+
+              <!-- Details -->
+              <div class="space-y-2.5 flex-1">
+                <h3 class="font-black text-gray-900 dark:text-white text-base leading-snug">
+                  {{ b.name }}
+                </h3>
+
+                <p class="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-1.5">
+                  <span class="text-red-500 mt-0.5">📍</span>
+                  <span>{{ b.address }}</span>
+                </p>
+
+                <p class="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                  <span class="text-gray-400">📞</span>
+                  <a :href="`tel:${b.phone}`" class="font-semibold text-gray-800 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400">
+                    {{ b.phone }}
+                  </a>
+                </p>
+
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl">
+                  <span>🕒</span>
+                  <span>{{ b.schedule }}</span>
+                </p>
+              </div>
+
+              <!-- Bottom Actions Bar -->
+              <div class="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="toggleBranchOpen(b)"
+                    class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer"
+                    :class="b.is_open !== false
+                      ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'"
+                    :title="b.is_open !== false ? 'Marcar como cerrada' : 'Marcar como abierta'"
+                  >
+                    <span>{{ b.is_open !== false ? 'Operando' : 'Cerrada' }}</span>
+                  </button>
+
+                  <a
+                    v-if="b.map_link"
+                    :href="b.map_link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="rounded-lg p-1.5 text-xs text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    title="Ver en Google Maps"
+                  >
+                    🗺️
+                  </a>
+                </div>
+
+                <!-- Edit / Delete -->
+                <div class="flex items-center gap-1.5">
+                  <button
+                    @click="handleOpenEditBranch(b)"
+                    class="rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-gray-700 hover:border-red-500 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-red-500 transition cursor-pointer"
+                    title="Editar sucursal"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <button
+                    @click="handlePromptDeleteBranch(b)"
+                    class="rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-gray-700 hover:border-red-600 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-950/40 transition cursor-pointer"
+                    title="Eliminar sucursal"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Mensajes -->
+        <div v-else-if="activeTab === 'messages'" class="space-y-6">
+          <!-- Header & Actions -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-black text-gray-900 dark:text-white">
+                  Bandeja de Mensajes & Consultas
+                </h2>
+                <span class="rounded-full bg-red-100 text-red-800 text-xs px-2.5 py-0.5 font-bold dark:bg-red-950/60 dark:text-red-300">
+                  {{ contactMessages.length }} total
+                </span>
+                <span v-if="pendingMessagesCount > 0" class="rounded-full bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 font-bold dark:bg-amber-950/60 dark:text-amber-300">
+                  {{ pendingMessagesCount }} pendientes
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                <span>📨 Consultas recibidas desde la página web.</span>
+                <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
+                  ✓ Despachadas a: soporte@pollofelizdgo.com
+                </span>
+              </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+              <button
+                @click="loadContactMessages"
+                class="rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <span>🔄 Actualizar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <button
+              @click="messageFilter = 'all'"
+              class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer"
+              :class="messageFilter === 'all'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'"
+            >
+              Todos ({{ contactMessages.length }})
+            </button>
+            <button
+              @click="messageFilter = 'pending'"
+              class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer"
+              :class="messageFilter === 'pending'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'"
+            >
+              Pendientes ({{ pendingMessagesCount }})
+            </button>
+            <button
+              @click="messageFilter = 'attended'"
+              class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer"
+              :class="messageFilter === 'attended'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'"
+            >
+              Atendidos ({{ contactMessages.length - pendingMessagesCount }})
+            </button>
+          </div>
+
+          <!-- Empty State -->
+          <div
+            v-if="filteredContactMessages.length === 0"
+            class="rounded-3xl bg-white p-12 text-center border border-gray-100 dark:bg-gray-900 dark:border-gray-800"
+          >
+            <span class="text-4xl block mb-2">📭</span>
+            <p class="font-bold text-gray-800 dark:text-gray-200">No hay mensajes en esta vista</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Las nuevas consultas recibidas a través del formulario de la landing page aparecerán aquí y en soporte@pollofelizdgo.com.
+            </p>
+          </div>
+
+          <!-- Message Cards List -->
+          <div v-else class="space-y-4">
+            <div
+              v-for="msg in filteredContactMessages"
+              :key="msg.id"
+              class="rounded-3xl bg-white p-6 shadow-sm border transition-shadow hover:shadow-md dark:bg-gray-900 space-y-4"
+              :class="msg.status === 'pending'
+                ? 'border-amber-200 dark:border-amber-900/50'
+                : 'border-gray-100 dark:border-gray-800'"
+            >
+              <!-- Card Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                      {{ msg.folio || `TKT-${String(msg.id).padStart(4, '0')}` }}
+                    </span>
+                    <h4 class="font-black text-gray-900 dark:text-white text-base">
+                      {{ msg.name }}
+                    </h4>
+                    <span
+                      class="rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                      :class="msg.status === 'pending'
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300'
+                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300'"
+                    >
+                      {{ msg.status === 'pending' ? '● Pendiente de atención' : '✓ Atendido' }}
+                    </span>
+                  </div>
+
+                  <!-- Details Badges -->
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400 pt-0.5">
+                    <span class="flex items-center gap-1">
+                      <span>✉️</span>
+                      <a :href="`mailto:${msg.email}`" class="text-red-600 hover:underline dark:text-red-400 font-medium">
+                        {{ msg.email || 'Sin correo' }}
+                      </a>
+                    </span>
+                    <span v-if="msg.phone" class="flex items-center gap-1">
+                      <span>📞</span>
+                      <a :href="`tel:${msg.phone}`" class="hover:underline font-medium">
+                        {{ msg.phone }}
+                      </a>
+                    </span>
+                    <span v-if="msg.subject" class="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                      🏷️ {{ msg.subject }}
+                    </span>
+                    <span v-if="msg.branch" class="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                      📍 {{ msg.branch }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="text-right shrink-0">
+                  <span class="text-[11px] text-gray-400 block">
+                    {{ formatDate(msg.created_at) }}
+                  </span>
+                  <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full mt-1">
+                    ✓ Enviado a soporte@pollofelizdgo.com
+                  </span>
+                </div>
+              </div>
+
+              <!-- Message Body -->
+              <div class="rounded-2xl bg-gray-50 p-4 text-xs sm:text-sm text-gray-800 dark:bg-gray-800/60 dark:text-gray-200 border border-gray-100 dark:border-gray-700/50 leading-relaxed whitespace-pre-wrap">
+                {{ msg.message }}
+              </div>
+
+              <!-- Quick Action Buttons -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="handleToggleMessageStatus(msg)"
+                    class="rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer border flex items-center gap-1.5"
+                    :class="msg.status === 'pending'
+                      ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                      : 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300'"
+                  >
+                    <span>{{ msg.status === 'pending' ? '✓ Marcar como Atendido' : '↩ Reabrir / Pendiente' }}</span>
+                  </button>
+
+                  <a
+                    v-if="msg.email"
+                    :href="`mailto:${msg.email}?subject=Respuesta a consulta Pollo Feliz (${msg.folio || 'TKT-' + msg.id})`"
+                    class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>✉️ Responder por Correo</span>
+                  </a>
+
+                  <a
+                    v-if="msg.phone"
+                    :href="`https://wa.me/52${msg.phone.replace(/\\D/g, '')}?text=${encodeURIComponent('¡Hola ' + msg.name + '! Nos comunicamos de Pollo Feliz respecto a tu consulta (' + (msg.folio || 'TKT-' + msg.id) + ').')}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>💬 WhatsApp</span>
+                  </a>
+                </div>
+
+                <button
+                  @click="handleDeleteContactMessage(msg.id)"
+                  class="rounded-xl px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                  title="Eliminar mensaje"
+                >
+                  ✕ Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Reseñas & Opiniones de Clientes -->
+        <div v-else-if="activeTab === 'reviews'" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-black text-gray-900 dark:text-white">
+                  Reseñas & Opiniones de Clientes
+                </h2>
+                <span class="rounded-full bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 font-bold dark:bg-amber-950/60 dark:text-amber-300">
+                  {{ adminReviewsStats.average_rating || 4.9 }} ★
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Modera opiniones públicas, destaca testimonios en la portada y responde oficialmente a tus comensales.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                @click="loadAdminReviews"
+                class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🔄 Actualizar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats Overview Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-4 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-gray-400 block">Promedio General</span>
+              <div class="flex items-baseline gap-1 mt-1">
+                <span class="text-2xl font-black text-gray-900 dark:text-white">{{ adminReviewsStats.average_rating || 4.9 }}</span>
+                <span class="text-amber-400 text-lg">★</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-gray-400 block">Total de Reseñas</span>
+              <span class="text-2xl font-black text-gray-900 dark:text-white block mt-1">
+                {{ adminReviewsList.length }}
+              </span>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-gray-400 block">Aprobadas (Visibles)</span>
+              <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 block mt-1">
+                {{ adminReviewsList.filter(r => r.status === 'approved').length }}
+              </span>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-xs">
+              <span class="text-[10px] font-bold uppercase text-gray-400 block">Destacadas en Portada</span>
+              <span class="text-2xl font-black text-amber-500 block mt-1">
+                {{ adminReviewsList.filter(r => r.is_featured).length }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Filters Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                v-for="f in [
+                  { id: 'all', label: 'Todas' },
+                  { id: 'approved', label: 'Aprobadas' },
+                  { id: 'pending', label: 'Pendientes' },
+                  { id: 'rejected', label: 'Rechazadas' },
+                  { id: 'featured', label: 'Destacadas 🏆' },
+                ]"
+                :key="f.id"
+                @click="adminReviewFilter = f.id"
+                class="rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer"
+                :class="adminReviewFilter === f.id
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300'"
+              >
+                {{ f.label }}
+              </button>
+            </div>
+
+            <div class="relative w-full sm:w-64">
+              <input
+                v-model="adminReviewSearch"
+                type="text"
+                placeholder="Buscar por cliente, sucursal o texto..."
+                class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-xs outline-hidden focus:border-red-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <!-- Reviews Moderation List -->
+          <div v-if="filteredAdminReviews.length === 0" class="rounded-3xl bg-white p-10 text-center border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+            <span class="text-3xl block mb-2">⭐</span>
+            <p class="font-bold text-gray-800 dark:text-gray-200">No hay reseñas que coincidan con el filtro.</p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <div
+              v-for="rev in filteredAdminReviews"
+              :key="rev.id"
+              class="rounded-3xl bg-white p-5 sm:p-6 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 space-y-4 hover:border-gray-200 transition"
+            >
+              <!-- Card Header -->
+              <div class="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 flex items-center justify-center font-black text-sm shrink-0">
+                    {{ rev.customer_name ? rev.customer_name.charAt(0).toUpperCase() : 'C' }}
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-black text-gray-900 dark:text-white text-sm">
+                        {{ rev.customer_name }}
+                      </span>
+                      <span
+                        v-if="rev.is_featured"
+                        class="rounded-full bg-amber-100 text-amber-800 text-[10px] px-2 py-0.2 font-black dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/60"
+                      >
+                        🏆 Destacada
+                      </span>
+                      <span
+                        class="rounded-full text-[10px] px-2 py-0.2 font-bold border"
+                        :class="rev.status === 'approved'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300'
+                          : rev.status === 'pending'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300'
+                            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300'"
+                      >
+                        {{ rev.status === 'approved' ? '✓ Visible en Sitio' : rev.status === 'pending' ? '⏳ Pendiente' : '✕ Oculta / Rechazada' }}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                      <span>{{ formatDate(rev.created_at) }}</span>
+                      <span>·</span>
+                      <span>📍 {{ rev.branch || 'Sucursal Principal' }}</span>
+                      <span v-if="rev.favorite_dish">· 🍗 {{ rev.favorite_dish }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Star Rating Badge -->
+                <div class="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full border border-amber-200/60 text-xs font-black text-amber-800 dark:text-amber-300">
+                  <span class="text-sm text-amber-400">★</span>
+                  <span>{{ rev.rating }} / 5</span>
+                </div>
+              </div>
+
+              <!-- Comment & Tags -->
+              <div>
+                <p class="text-xs sm:text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-normal">
+                  "{{ rev.comment }}"
+                </p>
+
+                <div v-if="rev.tags && rev.tags.length" class="flex flex-wrap gap-1 mt-2.5">
+                  <span
+                    v-for="tag in rev.tags"
+                    :key="tag"
+                    class="rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 text-[10px] px-2 py-0.5 font-semibold"
+                  >
+                    #{{ tag }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Existing Admin Reply (if any) -->
+              <div
+                v-if="rev.admin_reply"
+                class="rounded-2xl bg-red-50/70 dark:bg-red-950/30 p-3.5 border border-red-100 dark:border-red-900/40 space-y-1"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1">
+                    <span>🍗</span> {{ rev.admin_reply.author || 'Respuesta Oficial' }}
+                  </span>
+                  <span class="text-[10px] text-gray-400">
+                    {{ formatDate(rev.admin_reply.created_at) }}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-700 dark:text-gray-300 leading-normal">
+                  {{ rev.admin_reply.message }}
+                </p>
+              </div>
+
+              <!-- Inline Reply Input Box (when active) -->
+              <div
+                v-if="activeReplyReviewId === rev.id"
+                class="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 space-y-2.5"
+              >
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-200">
+                  Escribir respuesta oficial de Pollo Feliz:
+                </label>
+                <textarea
+                  v-model="replyTextInput"
+                  rows="2"
+                  placeholder="¡Muchas gracias por visitarnos! Nos da gusto que hayas disfrutado..."
+                  class="w-full rounded-xl border border-gray-200 p-2.5 text-xs outline-hidden focus:border-red-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white resize-none"
+                ></textarea>
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    @click="activeReplyReviewId = null"
+                    class="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    @click="handleSaveReviewReply(rev)"
+                    class="rounded-xl bg-red-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-red-700 transition cursor-pointer"
+                  >
+                    Publicar Respuesta
+                  </button>
+                </div>
+              </div>
+
+              <!-- Action Buttons Bar -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs">
+                <!-- Status & Featured Toggles -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button
+                    @click="handleToggleReviewStatus(rev)"
+                    class="rounded-xl border px-3 py-1.5 font-bold transition cursor-pointer"
+                    :class="rev.status === 'approved'
+                      ? 'border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300'
+                      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300'"
+                  >
+                    {{ rev.status === 'approved' ? 'Ocultar / Pausar' : '✓ Aprobar & Mostrar' }}
+                  </button>
+
+                  <button
+                    @click="handleToggleReviewFeatured(rev)"
+                    class="rounded-xl border px-3 py-1.5 font-bold transition cursor-pointer flex items-center gap-1"
+                    :class="rev.is_featured
+                      ? 'border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300'"
+                  >
+                    <span>{{ rev.is_featured ? '⭐ Destacada' : 'Marcar Destacada' }}</span>
+                  </button>
+
+                  <button
+                    @click="openReplyInput(rev)"
+                    class="rounded-xl border border-gray-200 px-3 py-1.5 font-bold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>💬</span>
+                    <span>{{ rev.admin_reply ? 'Editar Respuesta' : 'Responder' }}</span>
+                  </button>
+                </div>
+
+                <!-- Delete Review Button -->
+                <button
+                  @click="handleDeleteReview(rev)"
+                  class="rounded-xl px-2.5 py-1.5 font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                  title="Eliminar reseña"
+                >
+                  ✕ Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Editar Landing Completo -->
+        <div v-else-if="activeTab === 'landing'" class="space-y-6">
+          <LandingEditor />
+        </div>
+
+        <!-- TAB: Usuarios & Roles Administrativos -->
+        <div v-else-if="activeTab === 'users'" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-black text-gray-900 dark:text-white">
+                  Usuarios & Control de Roles
+                </h2>
+                <span class="rounded-full bg-purple-100 text-purple-800 text-xs px-2.5 py-0.5 font-bold dark:bg-purple-950/60 dark:text-purple-300">
+                  {{ adminUsersList.length }} cuentas
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Administra permisos, credenciales y niveles de acceso (Super Admin, Gerente, Cocina, Atención, Cajero).
+              </p>
+            </div>
+
+            <button
+              @click="handleOpenAddUser"
+              class="rounded-xl bg-linear-to-r from-red-600 to-red-700 px-4 py-2 text-xs font-black text-white shadow-md hover:from-red-700 hover:to-red-800 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>+ Nuevo Usuario</span>
+            </button>
+          </div>
+
+          <!-- Roles Info Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div
+              v-for="r in ROLES_CONFIG"
+              :key="r.id"
+              class="p-3.5 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 space-y-1 shadow-xs"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1">
+                  <span>{{ r.icon }}</span> {{ r.label }}
+                </span>
+                <span class="text-xs font-mono font-bold text-gray-500">
+                  {{ adminUsersList.filter(u => u.role === r.id).length }}
+                </span>
+              </div>
+              <p class="text-[10px] text-gray-400 line-clamp-2 leading-tight">
+                {{ r.description }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Users Table / Cards List -->
+          <div class="rounded-3xl bg-white shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 overflow-hidden">
+            <div class="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+                Personal y Cuentas Activas
+              </h3>
+              <button
+                @click="loadAdminUsers"
+                class="text-xs text-red-600 hover:underline dark:text-red-400 font-semibold cursor-pointer"
+              >
+                🔄 Recargar lista
+              </button>
+            </div>
+
+            <div class="divide-y divide-gray-100 dark:divide-gray-800">
+              <div
+                v-for="u in adminUsersList"
+                :key="u.id"
+                class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition"
+              >
+                <!-- User Info -->
+                <div class="flex items-center gap-3.5">
+                  <div
+                    class="h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center font-bold text-sm shadow-xs"
+                    :class="u.role === 'super_admin'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300'
+                      : u.role === 'gerente'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300'
+                        : u.role === 'cocina'
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300'
+                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300'"
+                  >
+                    {{ u.name[0] }}
+                  </div>
+
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-bold text-gray-900 dark:text-white text-sm">
+                        {{ u.name }}
+                      </span>
+                      <span
+                        v-if="u.id === adminUser?.id"
+                        class="rounded-full bg-red-100 text-red-700 text-[10px] px-2 py-0.2 font-black dark:bg-red-950/70 dark:text-red-300"
+                      >
+                        (Tu sesión actual)
+                      </span>
+                      <span
+                        class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                        :class="getRoleMeta(u.role).badgeClass"
+                      >
+                        {{ getRoleMeta(u.role).icon }} {{ getRoleMeta(u.role).label }}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <span>{{ u.email }}</span>
+                      <span>·</span>
+                      <span>Registrado: {{ formatDate(u.created_at) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    @click="handleOpenEditUser(u)"
+                    class="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 transition cursor-pointer"
+                  >
+                    ✏️ Editar Rol / Clave
+                  </button>
+
+                  <button
+                    v-if="u.id !== 1 && u.id !== adminUser?.id"
+                    @click="handleDeleteUser(u)"
+                    class="rounded-xl px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                    title="Eliminar usuario"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-  </div>
 
-  <ConfirmDialog
-    ref="confirmDialog"
-    title="Confirmar acción"
-    message="¿Estás seguro de que deseas continuar?"
-    @confirm="executeDeleteAction"
-  />
+    <!-- Modals for Menu CRUD & Bulk Operations -->
+    <MenuItemModal
+      :is-open="showItemModal"
+      :item-to-edit="itemToEdit"
+      :existing-categories="allUniqueCategories"
+      @close="showItemModal = false"
+      @save="handleSaveMenuItem"
+    />
 
-  <LoadingSpinner ref="loadingSpinner" />
-  <ImageCropper ref="imageCropper" @crop="onImageCropped" @cancel="cropTarget = null" />
+    <BulkCategoryModal
+      :is-open="showBulkCategoryModal"
+      :items="selectedItemsList"
+      :existing-categories="allUniqueCategories"
+      @close="showBulkCategoryModal = false"
+      @confirm="handleConfirmBulkCategory"
+    />
 
-  <div class="fixed bottom-6 right-6 z-30 flex flex-col gap-3">
-    <div class="relative">
-      <button
-        class="rounded-full bg-linear-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition hover:scale-105 dark:from-green-700 dark:to-green-800"
-        title="Exportar datos"
-        @click="showExportMenu = !showExportMenu"
-      >
-        📥 Exportar
-      </button>
-      <div v-if="showExportMenu" class="absolute bottom-full right-0 mb-2 rounded-lg bg-white shadow-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700 min-w-40">
-        <button
-          @click="exportData('menu')"
-          class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-        >
-          📋 Menú
-        </button>
-        <button
-          @click="exportData('jobs')"
-          class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-        >
-          💼 Vacantes
-        </button>
-        <button
-          @click="exportData('promotions')"
-          class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-        >
-          🎉 Promociones
-        </button>
-        <button
-          @click="exportData('branches')"
-          class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-        >
-          🏪 Sucursales
-        </button>
-        <button
-          @click="exportData('all')"
-          class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white border-t border-gray-200 dark:border-gray-700 font-bold"
-        >
-          📦 Todo
-        </button>
-      </div>
-    </div>
+    <DeleteConfirmModal
+      :is-open="showDeleteModal"
+      :title="deleteModalTitle"
+      :message="deleteModalMessage"
+      :item-name="itemToDelete?.name || itemToDelete?.title"
+      :items-list="itemsToDeleteNames"
+      :is-bulk="isBulkDelete"
+      @cancel="showDeleteModal = false"
+      @confirm="handleConfirmDelete"
+    />
 
-    <button
-      v-if="canViewHistory"
-      class="rounded-full bg-linear-to-r from-red-600 to-red-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition hover:scale-105 dark:from-red-700 dark:to-red-800"
-      :title="lastOperation ? 'Deshacer: ' + lastOperation : 'Sin cambios para deshacer'"
-      :disabled="!lastOperation"
-      @click="undoLastChange"
-    >
-      ↶ Deshacer
-    </button>
+    <!-- Modal for Promotions CRUD -->
+    <PromotionModal
+      :is-open="showPromoModal"
+      :promo-to-edit="promoToEdit"
+      @close="showPromoModal = false"
+      @save="handleSavePromo"
+    />
+
+    <!-- Modal for Branches CRUD -->
+    <BranchModal
+      :is-open="showBranchModal"
+      :branch-to-edit="branchToEdit"
+      @close="showBranchModal = false"
+      @save="handleSaveBranch"
+    />
+
+    <!-- Modal for User & Role CRUD -->
+    <UserModal
+      :is-open="showUserModal"
+      :user-to-edit="userToEdit"
+      @close="showUserModal = false"
+      @save="handleSaveUser"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import api from '@/plugins/axios'
-import { clearAdminToken } from '@/composables/useAdminAuth'
-import { useLandingContent } from '@/composables/useLandingContent'
+import logo from '@/assets/images/logo.png'
+import { useAdminAuth, hasAdminToken } from '@/composables/useAdminAuth'
 import { useToasts } from '@/composables/useToasts'
+import MenuItemModal from '@/components/admin/MenuItemModal.vue'
+import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal.vue'
+import BulkCategoryModal from '@/components/admin/BulkCategoryModal.vue'
+import PromotionModal from '@/components/admin/PromotionModal.vue'
+import BranchModal from '@/components/admin/BranchModal.vue'
+import UserModal from '@/components/admin/UserModal.vue'
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard.vue'
+import LandingEditor from '@/components/admin/LandingEditor.vue'
 import { useTheme } from '@/composables/useTheme'
-import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
-import GlobalSearch from '@/components/admin/GlobalSearch.vue'
-import ModalEditor from '@/components/admin/ModalEditor.vue'
-import LoadingSpinner from '@/components/admin/LoadingSpinner.vue'
-import AdminOverviewSummary from '@/components/admin/AdminOverviewSummary.vue'
-import MenuCardGrid from '@/components/admin/MenuCardGrid.vue'
-import ImageCropper from '@/components/admin/ImageCropper.vue'
-import SessionTimeout from '@/components/admin/SessionTimeout.vue'
-import fallbackProductImage from '@/assets/images/3-sm.webp'
 
 const router = useRouter()
-const { loadLandingContent } = useLandingContent()
+const route = useRoute()
+const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta } = useAdminAuth()
 const { addToast } = useToasts()
 const { theme, toggleTheme } = useTheme()
 
-const confirmDialog = ref(null)
-const deleteAction = ref(null)
-const modalEditor = ref(null)
-const loadingSpinner = ref(null)
-const imageCropper = ref(null)
-const cropTarget = ref(null)
-const lastOperation = ref(null)
-const showExportMenu = ref(false)
-const bulkMode = ref(false)
-const bulkSelectedIds = ref([])
-const lastDraftSavedAt = ref('')
-const hasRestoredDrafts = ref(false)
+const activeTab = ref(route.query?.tab || 'summary')
+const orderFilter = ref('all')
 
-const loading = ref(true)
-const settings = ref({
-  hero_title: '',
-  hero_description: '',
-  hero_image_url: '',
-  company_address: '',
-})
-const dashboardSummary = ref({
-  active_jobs: 0,
-  active_menu_items: 0,
-  contact_messages: 0,
-  pending_contact_messages: 0,
-  admin_users: 0,
-  change_logs: 0,
-})
-const jobs = ref([])
-const menuItems = ref([])
-const contactMessages = ref([])
-const changeLogs = ref([])
-const statusMessage = ref('')
-const statusError = ref('')
-const livePreviewEnabled = ref(true)
-const activeSection = ref('overview')
-const jobSearch = ref('')
-const menuSearch = ref('')
-const promotionSearch = ref('')
-const promotionStatusFilter = ref('all')
-const branchSearch = ref('')
-const branchStatusFilter = ref('all')
-const messageSearch = ref('')
-const messageStatusFilter = ref('all')
-const messagePage = ref(1)
-const messagePageSize = ref(6)
-const historySearch = ref('')
-const historyActionFilter = ref('')
-const historyDateFrom = ref('')
-const historyDateTo = ref('')
-const historyAdminFilter = ref('')
-const historyPage = ref(1)
-const historyPageCount = ref(1)
-const trashedJobs = ref([])
-const trashedMenuItems = ref([])
-let scrollFrame = null
-
-const sections = [
-  { id: 'overview', label: 'Vista rápida', shortcut: '01' },
-  { id: 'content', label: 'Contenido', shortcut: '02' },
-  { id: 'jobs', label: 'Vacantes', shortcut: '03' },
-  { id: 'menu', label: 'Menú', shortcut: '04' },
-  { id: 'promotions', label: 'Promos', shortcut: '05' },
-  { id: 'branches', label: 'Sucursales', shortcut: '06' },
-  { id: 'messages', label: 'Mensajes', shortcut: '07' },
-  { id: 'users', label: 'Usuarios', shortcut: '08' },
-  { id: 'history', label: 'Historial', shortcut: '09' },
+const tabs = [
+  { id: 'summary', label: 'Ventas & Analíticas', icon: '📈' },
+  { id: 'menu', label: 'Gestión Menú', icon: '🍗' },
+  { id: 'landing', label: 'Editar Landing', icon: '🎨' },
+  { id: 'orders', label: 'Pedidos en Vivo', icon: '🛵' },
+  { id: 'promotions', label: 'Promociones', icon: '🏷️' },
+  { id: 'branches', label: 'Sucursales', icon: '📍' },
+  { id: 'reviews', label: 'Reseñas & Opiniones', icon: '⭐' },
+  { id: 'messages', label: 'Mensajes', icon: '💬' },
+  { id: 'users', label: 'Usuarios & Roles', icon: '👥' },
 ]
 
-const newJob = ref({
-  title: '',
-  description: '',
-  employment_type: 'Tiempo completo',
-  location: '',
-  schedule: '',
-  image_url: '',
+const visibleTabs = computed(() => {
+  return tabs.filter(t => canAccessTab(t.id))
 })
 
-const newMenuItem = ref({
-  name: '',
-  description: '',
-  price: 0,
-  image_url: '',
-  badge: '',
-  category: 'Paquetes',
-})
-const selectedMenuItemId = ref(null)
+const currentRoleMeta = computed(() => getRoleMeta(adminUser.value?.role || 'super_admin'))
 
-const newAdminUser = ref({
-  name: '',
-  email: '',
-  password: '',
-  role: 'content_manager',
-})
-const currentAdmin = ref({
-  id: null,
-  name: '',
-  email: '',
-  role: '',
-  permissions: [],
-  two_factor_enabled: false,
-})
-const twoFactorSetupSecret = ref('')
-const twoFactorSetupUrl = ref('')
-const twoFactorCode = ref('')
-const systemAlerts = ref({
-  pending_approvals: 0,
-  pending_messages: 0,
-  alerts: [],
-  recent_pending_approvals: [],
-})
-const pendingApprovals = ref([])
-let alertsIntervalId = null
-const imageGallery = ref([])
+const orderFilters = [
+  { id: 'all', label: 'Todos' },
+  { id: 'active', label: 'En proceso' },
+  { id: 'delivered', label: 'Entregados' },
+]
+
+// State for content
+const summary = ref({})
+const menuItems = ref([])
 const promotions = ref([])
 const branches = ref([])
-const draggedPromotionId = ref(null)
-const draggedBranchId = ref(null)
-const persistingPromotionOrder = ref(false)
-const persistingBranchOrder = ref(false)
-const newPromotion = ref({
-  title: '',
-  description: '',
-  image_url: '',
-  valid_until: '',
-  code: '',
-  badge: '',
-  is_active: true,
-})
-const newBranch = ref({
-  name: '',
-  address: '',
-  phone: '',
-  schedule: '',
-  image_url: '',
-  map_link: '',
-  is_open: true,
+const contactMessages = ref([])
+const messageFilter = ref('all') // 'all' | 'pending' | 'attended'
+const orders = ref([])
+const adminUsersList = ref([])
+const showUserModal = ref(false)
+const userToEdit = ref(null)
+
+// Reviews Moderation State
+const adminReviewsList = ref([])
+const adminReviewsStats = ref({})
+const adminReviewFilter = ref('all') // 'all' | 'approved' | 'pending' | 'rejected' | 'featured'
+const adminReviewSearch = ref('')
+const activeReplyReviewId = ref(null)
+const replyTextInput = ref('')
+
+const pendingMessagesCount = computed(() => {
+  return contactMessages.value.filter(m => m.status === 'pending').length
 })
 
-const revokePendingUpload = (target) => {
-  if (!target) {
-    return
+const filteredContactMessages = computed(() => {
+  if (messageFilter.value === 'pending') {
+    return contactMessages.value.filter(m => m.status === 'pending')
   }
-
-  if (target.__uploadPreviewUrl && String(target.__uploadPreviewUrl).startsWith('blob:')) {
-    URL.revokeObjectURL(target.__uploadPreviewUrl)
+  if (messageFilter.value === 'attended') {
+    return contactMessages.value.filter(m => m.status !== 'pending')
   }
+  return contactMessages.value
+})
 
-  delete target.__uploadPreviewUrl
-  delete target.__uploadFile
-  delete target.__uploadContext
-  delete target.__uploadFieldName
-  delete target.__uploading
-}
+// State for Menu CRUD operations
+const menuSearch = ref('')
+const selectedMenuCategory = ref('Todas')
+const selectedMenuStatus = ref('all') // 'all', 'active', 'paused'
+const showItemModal = ref(false)
+const itemToEdit = ref(null)
+const showDeleteModal = ref(false)
+const itemToDelete = ref(null)
+const deleteItemType = ref('menu') // 'menu' | 'promotion' | 'branch'
+const deleteModalTitle = ref('')
+const deleteModalMessage = ref('')
 
-const setPendingUpload = (target, file, fieldName, context) => {
-  if (!target) {
-    return
+// State for Promotions & Branches CRUD operations
+const showPromoModal = ref(false)
+const promoToEdit = ref(null)
+const showBranchModal = ref(false)
+const branchToEdit = ref(null)
+
+// Bulk selection & actions state
+const selectedItemIds = ref([])
+const bulkTargetCategory = ref('')
+const showBulkCategoryModal = ref(false)
+const isBulkDelete = ref(false)
+
+const selectedItemsList = computed(() => {
+  return menuItems.value.filter(i => selectedItemIds.value.includes(i.id))
+})
+
+const isAllFilteredSelected = computed(() => {
+  return filteredMenuItems.value.length > 0 &&
+    filteredMenuItems.value.every(item => selectedItemIds.value.includes(item.id))
+})
+
+const isPartiallySelected = computed(() => {
+  const count = filteredMenuItems.value.filter(item => selectedItemIds.value.includes(item.id)).length
+  return count > 0 && count < filteredMenuItems.value.length
+})
+
+const itemsToDeleteNames = computed(() => {
+  if (isBulkDelete.value) {
+    return selectedItemsList.value.map(i => i.name)
   }
+  return itemToDelete.value ? [itemToDelete.value.name || itemToDelete.value.title] : []
+})
 
-  revokePendingUpload(target)
-  target.__uploadFile = file
-  target.__uploadFieldName = fieldName
-  target.__uploadContext = context
-  target.__uploadPreviewUrl = URL.createObjectURL(file)
-  target.__uploading = false
-}
-
-const setSuccess = (message) => {
-  statusMessage.value = message
-  statusError.value = ''
-  addToast(message, 'success')
-}
-
-const formatDateTime = (value) => {
-  if (!value) {
-    return '-'
+const toggleSelectAll = () => {
+  if (isAllFilteredSelected.value) {
+    const filteredIds = new Set(filteredMenuItems.value.map(i => i.id))
+    selectedItemIds.value = selectedItemIds.value.filter(id => !filteredIds.has(id))
+  } else {
+    const set = new Set(selectedItemIds.value)
+    filteredMenuItems.value.forEach(i => set.add(i.id))
+    selectedItemIds.value = Array.from(set)
   }
-
-  return new Date(value).toLocaleString('es-MX', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
-const setError = (message) => {
-  statusError.value = message
-  statusMessage.value = ''
-  addToast(message, 'error')
-}
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-'
+const toggleSelectItem = (id) => {
+  const idx = selectedItemIds.value.indexOf(id)
+  if (idx > -1) {
+    selectedItemIds.value.splice(idx, 1)
+  } else {
+    selectedItemIds.value.push(id)
   }
-
-  return new Date(value).toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
 }
 
-const dashboardCards = computed(() => {
-  const jobsWithoutImage = jobs.value.filter(j => !j.image_url).length
-  const itemsWithoutImage = menuItems.value.filter(m => !m.image_url).length
-  const pendingMessages = dashboardSummary.value.pending_contact_messages || 0
+const clearSelection = () => {
+  selectedItemIds.value = []
+}
 
-  return [
-    {
-      label: 'Vacantes Activas',
-      value: dashboardSummary.value.active_jobs,
-      subtext: `${jobsWithoutImage} sin imagen`,
-      color: 'bg-blue-50 border-blue-200',
-      icon: '📋'
-    },
-    {
-      label: 'Productos Activos',
-      value: dashboardSummary.value.active_menu_items,
-      subtext: `${itemsWithoutImage} sin imagen`,
-      color: 'bg-green-50 border-green-200',
-      icon: '🍗'
-    },
-    {
-      label: 'Mensajes Totales',
-      value: dashboardSummary.value.contact_messages,
-      subtext: `${pendingMessages} pendientes`,
-      color: 'bg-yellow-50 border-yellow-200',
-      icon: '✉️'
-    },
-    {
-      label: 'Usuarios Admin',
-      value: dashboardSummary.value.admin_users,
-      subtext: 'Con acceso al panel',
-      color: 'bg-purple-50 border-purple-200',
-      icon: '👥'
-    },
-    {
-      label: 'Cambios Registrados',
-      value: dashboardSummary.value.change_logs || 0,
-      subtext: 'En historial de auditoría',
-      color: 'bg-orange-50 border-orange-200',
-      icon: '📝'
-    },
-    {
-      label: 'Estado',
-      value: currentAdmin.value?.name || 'Admin',
-      subtext: currentAdmin.value?.role ? `Rol: ${currentAdmin.value.role}` : 'Conectado',
-      color: 'bg-gray-50 border-gray-200',
-      icon: '✅'
+const defaultCategoryPresets = [
+  'Combos',
+  'Bebidas',
+  'Extras',
+  'Pollo Entero',
+  'Medio Pollo',
+  'Paquetes',
+  'Complementos',
+  'Tacos',
+  'Ensaladas',
+  'Postres',
+]
+
+// Dynamic Categories computed from items + presets
+const allUniqueCategories = computed(() => {
+  const set = new Set()
+  defaultCategoryPresets.forEach(preset => set.add(preset))
+  menuItems.value.forEach(item => {
+    if (item.category && item.category.trim()) {
+      set.add(item.category.trim())
     }
-  ]
-})
-const hasPermission = (permission) => currentAdmin.value.permissions.includes(permission)
-const canManageAdmins = computed(() => hasPermission('admin.manage'))
-const canManageSettings = computed(() => hasPermission('landing.settings.manage') || hasPermission('landing.manage'))
-const canManageJobs = computed(() => hasPermission('landing.jobs.manage') || hasPermission('landing.manage'))
-const canManageMenu = computed(() => hasPermission('landing.menu.manage') || hasPermission('landing.manage'))
-const canManagePromotions = computed(() => hasPermission('landing.promotions.manage') || hasPermission('landing.manage'))
-const canManageBranches = computed(() => hasPermission('landing.branches.manage') || hasPermission('landing.manage'))
-const canManageLanding = computed(() => (
-  canManageSettings.value
-  || canManageJobs.value
-  || canManageMenu.value
-  || canManagePromotions.value
-  || canManageBranches.value
-))
-const canManageMessages = computed(() => hasPermission('messages.manage'))
-const canViewHistory = computed(() => hasPermission('history.view'))
-const canApproveRequests = computed(() => hasPermission('approval.manage'))
-const historyActionOptions = computed(() => {
-  return Array.from(new Set(changeLogs.value.map((entry) => entry.action).filter(Boolean)))
-})
-const historyAdminOptions = computed(() => {
-  const admins = changeLogs.value
-    .map((entry) => entry.admin_user)
-    .filter(Boolean)
-
-  return Array.from(new Map(admins.map((admin) => [admin.id, admin])).values())
-})
-
-const filteredJobs = computed(() => {
-  const query = jobSearch.value.trim().toLowerCase()
-  return jobs.value.filter((job) => {
-    if (!query) {
-      return true
-    }
-
-    return [job.title, job.description, job.location, job.schedule, job.employment_type]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(query))
   })
+  return Array.from(set)
 })
 
+// Categories that currently have items + default key categories
+const menuCategoryFilterOptions = computed(() => {
+  const set = new Set(['Todas'])
+  // Add active categories with items first
+  menuItems.value.forEach(item => {
+    if (item.category && item.category.trim()) {
+      set.add(item.category.trim())
+    }
+  })
+  // Include key categories for easy access
+  set.add('Combos')
+  set.add('Bebidas')
+  set.add('Extras')
+  set.add('Pollo Entero')
+  set.add('Medio Pollo')
+  return Array.from(set)
+})
+
+// Count items per category
+const getCategoryCount = (categoryName) => {
+  if (categoryName === 'Todas') return menuItems.value.length
+  return menuItems.value.filter(
+    i => (i.category || '').toLowerCase().trim() === categoryName.toLowerCase().trim()
+  ).length
+}
+
+// Category summary cards widget (Combos, Drinks, Extras, Pollo, etc.)
+const categorySummaryCards = computed(() => [
+  {
+    id: 'Combos',
+    label: 'Combos',
+    subtext: 'Paquetes completos',
+    icon: '🍱',
+    count: getCategoryCount('Combos') + getCategoryCount('Paquetes'),
+  },
+  {
+    id: 'Bebidas',
+    label: 'Bebidas',
+    subtext: 'Drinks & Refrescos',
+    icon: '🥤',
+    count: getCategoryCount('Bebidas') + getCategoryCount('Drinks'),
+  },
+  {
+    id: 'Extras',
+    label: 'Extras',
+    subtext: 'Papas, salsas, etc.',
+    icon: '🍟',
+    count: getCategoryCount('Extras') + getCategoryCount('Complementos'),
+  },
+  {
+    id: 'Pollo Entero',
+    label: 'Pollo Entero',
+    subtext: 'Al carbón tradicional',
+    icon: '🍗',
+    count: getCategoryCount('Pollo Entero'),
+  },
+  {
+    id: 'Medio Pollo',
+    label: 'Medio Pollo',
+    subtext: 'Porción individual',
+    icon: '🍗',
+    count: getCategoryCount('Medio Pollo'),
+  },
+  {
+    id: 'Tacos',
+    label: 'Tacos & Más',
+    subtext: 'Especialidades',
+    icon: '🌮',
+    count: getCategoryCount('Tacos') + getCategoryCount('Ensaladas'),
+  },
+])
+
+// Category visual styling helper
+const getCategoryBadgeClass = (category) => {
+  const cat = (category || '').toLowerCase()
+  if (cat.includes('combo')) return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-900'
+  if (cat.includes('bebida') || cat.includes('drink')) return 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-900'
+  if (cat.includes('extra') || cat.includes('complemento')) return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900'
+  if (cat.includes('entero')) return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-900'
+  if (cat.includes('medio')) return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900'
+  if (cat.includes('taco')) return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-900'
+  if (cat.includes('ensalada')) return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/60 dark:text-green-300 dark:border-green-900'
+  if (cat.includes('postre')) return 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/60 dark:text-pink-300 dark:border-pink-900'
+  if (cat.includes('paquete')) return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-900'
+  return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
+}
+
+const getCategoryIcon = (category) => {
+  const cat = (category || '').toLowerCase()
+  if (cat === 'todas') return '🍽️'
+  if (cat.includes('combo')) return '🍱'
+  if (cat.includes('bebida') || cat.includes('drink')) return '🥤'
+  if (cat.includes('extra')) return '🍟'
+  if (cat.includes('complemento')) return '🥔'
+  if (cat.includes('entero') || cat.includes('medio') || cat.includes('pollo')) return '🍗'
+  if (cat.includes('taco')) return '🌮'
+  if (cat.includes('ensalada')) return '🥗'
+  if (cat.includes('postre')) return '🍮'
+  if (cat.includes('paquete')) return '📦'
+  return '✨'
+}
+
+// In-line Quick Category Switcher
+const handleQuickCategoryChange = async (item, newCategory) => {
+  if (!newCategory || item.category === newCategory) return
+  const oldCategory = item.category
+  item.category = newCategory
+  try {
+    await api.patch(`/admin/menu-items/${item.id}`, { category: newCategory })
+    addToast(`Categoría de "${item.name}" cambiada a "${newCategory}".`, 'success')
+  } catch (err) {
+    item.category = oldCategory
+    addToast('Error al actualizar la categoría.', 'error')
+  }
+}
+
+const loadContactMessages = async () => {
+  try {
+    const res = await api.get('/admin/contact-messages')
+    if (res.data && Array.isArray(res.data)) {
+      contactMessages.value = res.data
+    }
+  } catch (err) {
+    console.warn('Error cargando mensajes de contacto', err)
+  }
+}
+
+const handleToggleMessageStatus = async (msg) => {
+  const newStatus = msg.status === 'pending' ? 'attended' : 'pending'
+  try {
+    await api.patch(`/admin/contact-messages/${msg.id}`, { status: newStatus })
+    msg.status = newStatus
+    addToast(
+      newStatus === 'attended'
+        ? `Mensaje ${msg.folio || '#' + msg.id} marcado como atendido.`
+        : `Mensaje ${msg.folio || '#' + msg.id} marcado como pendiente.`,
+      'success'
+    )
+  } catch (err) {
+    addToast('Error al actualizar el estado del mensaje.', 'error')
+  }
+}
+
+const handleDeleteContactMessage = async (msgId) => {
+  try {
+    await api.delete(`/admin/contact-messages/${msgId}`)
+    contactMessages.value = contactMessages.value.filter(m => m.id !== msgId)
+    addToast('Mensaje de contacto eliminado.', 'info')
+  } catch (err) {
+    addToast('Error al eliminar el mensaje.', 'error')
+  }
+}
+
+const loadData = async () => {
+  try {
+    const res = await api.get('/admin/dashboard-content').catch(() => api.get('/landing/content'))
+    if (res.data) {
+      summary.value = res.data.summary || {}
+      menuItems.value = res.data.menu_items || []
+      promotions.value = res.data.promotions || []
+      branches.value = res.data.branches || []
+      if (res.data.contact_messages && Array.isArray(res.data.contact_messages)) {
+        contactMessages.value = res.data.contact_messages
+      }
+    }
+  } catch (err) {
+    console.error('Error cargando datos del panel admin', err)
+  }
+
+  await loadContactMessages()
+
+  if (canAccessTab('users')) {
+    await loadAdminUsers()
+  }
+
+  if (canAccessTab('reviews')) {
+    await loadAdminReviews()
+  }
+
+  try {
+    const ordersRes = await api.get('/api/orders')
+    if (ordersRes.data) {
+      orders.value = ordersRes.data.orders || []
+    }
+  } catch (err) {
+    console.warn('Error cargando pedidos', err)
+  }
+}
+
+// Menu Filter Logic (supporting Combos, Drinks, Extras & aliases)
 const filteredMenuItems = computed(() => {
-  const query = menuSearch.value.trim().toLowerCase()
-  return menuItems.value.filter((item) => {
-    if (!query) {
-      return true
-    }
+  let list = [...menuItems.value]
 
-    return [item.name, item.description, item.category, item.badge]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(query))
-  })
-})
-
-const filteredPromotions = computed(() => {
-  const query = promotionSearch.value.trim().toLowerCase()
-  return promotions.value.filter((promotion) => {
-    const statusMatches = promotionStatusFilter.value === 'all'
-      || (promotionStatusFilter.value === 'active' && Boolean(promotion.is_active))
-      || (promotionStatusFilter.value === 'inactive' && !Boolean(promotion.is_active))
-
-    if (!statusMatches) {
+  if (selectedMenuCategory.value !== 'Todas') {
+    const target = selectedMenuCategory.value.toLowerCase().trim()
+    list = list.filter(i => {
+      const itemCat = (i.category || '').toLowerCase().trim()
+      if (itemCat === target) return true
+      if (target === 'combos' && (itemCat === 'paquetes' || itemCat.includes('combo'))) return true
+      if ((target === 'bebidas' || target === 'drinks') && (itemCat === 'drinks' || itemCat.includes('bebida'))) return true
+      if ((target === 'extras' || target === 'complementos') && (itemCat === 'complementos' || itemCat.includes('extra'))) return true
       return false
-    }
+    })
+  }
 
-    if (!query) {
-      return true
-    }
+  if (selectedMenuStatus.value === 'active') {
+    list = list.filter(i => i.is_active)
+  } else if (selectedMenuStatus.value === 'paused') {
+    list = list.filter(i => !i.is_active)
+  }
 
-    return [promotion.title, promotion.description, promotion.code, promotion.badge]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(query))
-  })
+  if (menuSearch.value.trim()) {
+    const q = menuSearch.value.trim().toLowerCase()
+    list = list.filter(i =>
+      i.name.toLowerCase().includes(q) ||
+      (i.category && i.category.toLowerCase().includes(q)) ||
+      (i.description && i.description.toLowerCase().includes(q)) ||
+      (i.badge && i.badge.toLowerCase().includes(q))
+    )
+  }
+
+  return list
 })
 
-const filteredBranches = computed(() => {
-  const query = branchSearch.value.trim().toLowerCase()
-  return branches.value.filter((branch) => {
-    const statusMatches = branchStatusFilter.value === 'all'
-      || (branchStatusFilter.value === 'open' && Boolean(branch.is_open))
-      || (branchStatusFilter.value === 'closed' && !Boolean(branch.is_open))
-
-    if (!statusMatches) {
-      return false
-    }
-
-    if (!query) {
-      return true
-    }
-
-    return [branch.name, branch.address, branch.phone, branch.schedule]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(query))
-  })
-})
-
-const filteredMessages = computed(() => {
-  const query = messageSearch.value.trim().toLowerCase()
-  return contactMessages.value.filter((message) => {
-    const statusMatches = messageStatusFilter.value === 'all' || message.status === messageStatusFilter.value
-
-    if (!statusMatches) {
-      return false
-    }
-
-    if (!query) {
-      return true
-    }
-
-    return [message.name, message.email, message.phone, message.message, message.notes]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(query))
-  })
-})
-
-const messagePageCount = computed(() => Math.max(1, Math.ceil(filteredMessages.value.length / messagePageSize.value)))
-
-const paginatedMessages = computed(() => {
-  const start = (messagePage.value - 1) * messagePageSize.value
-  return filteredMessages.value.slice(start, start + messagePageSize.value)
-})
-
-const previewJobs = computed(() => filteredJobs.value.slice(0, 2))
-const previewMenuItems = computed(() => filteredMenuItems.value.slice(0, 3))
-const previewPromotions = computed(() => filteredPromotions.value.slice(0, 2))
-const previewBranches = computed(() => filteredBranches.value.slice(0, 2))
-const selectedMenuItem = computed(() => menuItems.value.find((item) => item.id === selectedMenuItemId.value) || null)
-const MAX_ADMIN_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
-const ADMIN_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const ADMIN_IMAGE_MIN_DIMENSIONS = {
-  hero: { width: 700, height: 500 },
-  job: { width: 500, height: 350 },
-  menu: { width: 300, height: 200 },
-  promotion: { width: 600, height: 400 },
-  branch: { width: 600, height: 400 },
-  general: { width: 400, height: 300 },
+// Menu Item Actions
+const handleOpenAddModal = () => {
+  itemToEdit.value = null
+  showItemModal.value = true
 }
-const DRAFT_STORAGE_KEY = 'admin_panel_drafts_v1'
 
-watch(menuItems, (items) => {
-  if (!items.length) {
-    selectedMenuItemId.value = null
+const handleOpenEditModal = (item) => {
+  itemToEdit.value = { ...item }
+  showItemModal.value = true
+}
+
+const handleSaveMenuItem = async (formData) => {
+  try {
+    if (formData.id) {
+      // Edit existing item
+      const res = await api.patch(`/admin/menu-items/${formData.id}`, formData)
+      const updated = res.data?.item
+      const idx = menuItems.value.findIndex(i => i.id === formData.id)
+      if (idx >= 0 && updated) {
+        menuItems.value[idx] = updated
+      } else {
+        await loadData()
+      }
+      addToast(`Platillo "${formData.name}" actualizado correctamente.`, 'success')
+    } else {
+      // Create new item
+      const res = await api.post('/admin/menu-items', formData)
+      const created = res.data?.item
+      if (created) {
+        menuItems.value.unshift(created)
+      } else {
+        await loadData()
+      }
+      addToast(`¡Platillo "${formData.name}" agregado al menú con éxito!`, 'success')
+    }
+    showItemModal.value = false
+  } catch (err) {
+    console.error('Error al guardar platillo', err)
+    addToast(err.response?.data?.message || 'Error al guardar el platillo.', 'error')
+  }
+}
+
+const handlePromptDelete = (item) => {
+  deleteItemType.value = 'menu'
+  isBulkDelete.value = false
+  itemToDelete.value = item
+  deleteModalTitle.value = '¿Eliminar platillo del menú?'
+  deleteModalMessage.value = `Estás a punto de eliminar "${item.name}". Ya no estará disponible en el catálogo de Pollo Feliz.`
+  showDeleteModal.value = true
+}
+
+const handlePromptBulkDelete = () => {
+  if (!selectedItemIds.value.length) return
+  deleteItemType.value = 'menu'
+  isBulkDelete.value = true
+  itemToDelete.value = null
+  deleteModalTitle.value = `¿Eliminar ${selectedItemIds.value.length} platillos del menú?`
+  deleteModalMessage.value = `Estás a punto de eliminar los siguientes ${selectedItemIds.value.length} platillos seleccionados en lote.`
+  showDeleteModal.value = true
+}
+
+const handleConfirmDelete = async () => {
+  if (deleteItemType.value === 'promotion') {
+    if (!itemToDelete.value) return
+    const id = itemToDelete.value.id
+    const title = itemToDelete.value.title
+    try {
+      await api.delete(`/admin/promotions/${id}`)
+      promotions.value = promotions.value.filter(p => p.id !== id)
+      addToast(`Promoción "${title}" eliminada correctamente.`, 'info')
+      showDeleteModal.value = false
+      itemToDelete.value = null
+    } catch (err) {
+      console.error('Error al eliminar promoción', err)
+      addToast('Error al eliminar la promoción.', 'error')
+    }
     return
   }
 
-  const hasSelectedItem = items.some((item) => item.id === selectedMenuItemId.value)
-  if (!hasSelectedItem) {
-    selectedMenuItemId.value = items[0].id
+  if (deleteItemType.value === 'branch') {
+    if (!itemToDelete.value) return
+    const id = itemToDelete.value.id
+    const name = itemToDelete.value.name
+    try {
+      await api.delete(`/admin/branches/${id}`)
+      branches.value = branches.value.filter(b => b.id !== id)
+      addToast(`Sucursal "${name}" eliminada correctamente.`, 'info')
+      showDeleteModal.value = false
+      itemToDelete.value = null
+    } catch (err) {
+      console.error('Error al eliminar sucursal', err)
+      addToast('Error al eliminar la sucursal.', 'error')
+    }
+    return
+  }
+
+  // Deletion for menu items
+  if (isBulkDelete.value) {
+    if (!selectedItemIds.value.length) return
+    const ids = [...selectedItemIds.value]
+    try {
+      await api.post('/admin/menu-items/bulk-delete', { ids })
+      const idSet = new Set(ids)
+      menuItems.value = menuItems.value.filter(i => !idSet.has(i.id))
+      addToast(`Se eliminaron ${ids.length} platillos correctamente del menú.`, 'info')
+      showDeleteModal.value = false
+      clearSelection()
+    } catch (err) {
+      console.error('Error al eliminar platillos en lote', err)
+      addToast('Error al eliminar los platillos en lote.', 'error')
+    }
+  } else {
+    if (!itemToDelete.value) return
+    const id = itemToDelete.value.id
+    const name = itemToDelete.value.name
+    try {
+      await api.delete(`/admin/menu-items/${id}`)
+      menuItems.value = menuItems.value.filter(i => i.id !== id)
+      selectedItemIds.value = selectedItemIds.value.filter(selectedId => selectedId !== id)
+      addToast(`Platillo "${name}" eliminado correctamente del menú.`, 'info')
+      showDeleteModal.value = false
+      itemToDelete.value = null
+    } catch (err) {
+      console.error('Error eliminando platillo', err)
+      addToast('Error al eliminar el platillo.', 'error')
+    }
+  }
+}
+
+// ==================== PROMOTIONS CRUD HANDLERS ====================
+const handleOpenAddPromo = () => {
+  promoToEdit.value = null
+  showPromoModal.value = true
+}
+
+const handleOpenEditPromo = (promo) => {
+  promoToEdit.value = { ...promo }
+  showPromoModal.value = true
+}
+
+const handleSavePromo = async (formData) => {
+  try {
+    if (formData.id) {
+      const res = await api.patch(`/admin/promotions/${formData.id}`, formData)
+      const updated = res.data?.promotion
+      const idx = promotions.value.findIndex(p => p.id === formData.id)
+      if (idx >= 0 && updated) {
+        promotions.value[idx] = updated
+      } else {
+        await loadData()
+      }
+      addToast(`Promoción "${formData.title}" actualizada correctamente.`, 'success')
+    } else {
+      const res = await api.post('/admin/promotions', formData)
+      const created = res.data?.promotion
+      if (created) {
+        promotions.value.unshift(created)
+      } else {
+        await loadData()
+      }
+      addToast(`¡Promoción "${formData.title}" creada con éxito!`, 'success')
+    }
+    showPromoModal.value = false
+  } catch (err) {
+    console.error('Error al guardar promoción', err)
+    addToast(err.response?.data?.message || 'Error al guardar la promoción.', 'error')
+  }
+}
+
+const togglePromoActive = async (promo) => {
+  const newActive = promo.is_active === false ? true : false
+  try {
+    await api.patch(`/admin/promotions/${promo.id}`, { is_active: newActive })
+    promo.is_active = newActive
+    addToast(
+      `Promoción "${promo.title}" ${newActive ? 'activada' : 'pausada temporalmente'}.`,
+      newActive ? 'success' : 'info'
+    )
+  } catch (err) {
+    addToast('Error al actualizar el estado de la promoción.', 'error')
+  }
+}
+
+const handlePromptDeletePromo = (promo) => {
+  deleteItemType.value = 'promotion'
+  itemToDelete.value = promo
+  isBulkDelete.value = false
+  deleteModalTitle.value = '¿Eliminar promoción?'
+  deleteModalMessage.value = `Estás a punto de eliminar "${promo.title}". Ya no aparecerá disponible para los clientes.`
+  showDeleteModal.value = true
+}
+
+// ==================== BRANCHES CRUD HANDLERS ====================
+const handleOpenAddBranch = () => {
+  branchToEdit.value = null
+  showBranchModal.value = true
+}
+
+const handleOpenEditBranch = (b) => {
+  branchToEdit.value = { ...b }
+  showBranchModal.value = true
+}
+
+const handleSaveBranch = async (formData) => {
+  try {
+    if (formData.id) {
+      const res = await api.patch(`/admin/branches/${formData.id}`, formData)
+      const updated = res.data?.branch
+      const idx = branches.value.findIndex(b => b.id === formData.id)
+      if (idx >= 0 && updated) {
+        branches.value[idx] = updated
+      } else {
+        await loadData()
+      }
+      addToast(`Sucursal "${formData.name}" actualizada correctamente.`, 'success')
+    } else {
+      const res = await api.post('/admin/branches', formData)
+      const created = res.data?.branch
+      if (created) {
+        branches.value.push(created)
+      } else {
+        await loadData()
+      }
+      addToast(`¡Sucursal "${formData.name}" agregada con éxito!`, 'success')
+    }
+    showBranchModal.value = false
+  } catch (err) {
+    console.error('Error al guardar sucursal', err)
+    addToast(err.response?.data?.message || 'Error al guardar la sucursal.', 'error')
+  }
+}
+
+const toggleBranchOpen = async (b) => {
+  const newOpen = b.is_open === false ? true : false
+  try {
+    await api.patch(`/admin/branches/${b.id}`, { is_open: newOpen })
+    b.is_open = newOpen
+    addToast(
+      `Sucursal "${b.name}" marcada como ${newOpen ? 'Abierta / Operando' : 'Cerrada'}.`,
+      newOpen ? 'success' : 'info'
+    )
+  } catch (err) {
+    addToast('Error al actualizar el estado de la sucursal.', 'error')
+  }
+}
+
+const handlePromptDeleteBranch = (b) => {
+  deleteItemType.value = 'branch'
+  itemToDelete.value = b
+  isBulkDelete.value = false
+  deleteModalTitle.value = '¿Eliminar sucursal?'
+  deleteModalMessage.value = `Estás a punto de eliminar la sucursal "${b.name}".`
+  showDeleteModal.value = true
+}
+
+// Bulk Category Handlers
+const handleApplyBulkCategoryQuick = async () => {
+  if (!bulkTargetCategory.value || !selectedItemIds.value.length) return
+  await handleConfirmBulkCategory(bulkTargetCategory.value)
+  bulkTargetCategory.value = ''
+}
+
+const handleConfirmBulkCategory = async (newCategory) => {
+  if (!selectedItemIds.value.length || !newCategory) return
+  const ids = [...selectedItemIds.value]
+  try {
+    await api.post('/admin/menu-items/bulk-update-category', {
+      ids,
+      category: newCategory,
+    })
+    const idSet = new Set(ids)
+    menuItems.value.forEach(i => {
+      if (idSet.has(i.id)) {
+        i.category = newCategory
+      }
+    })
+    addToast(`Categoría actualizada a "${newCategory}" para ${ids.length} platillos.`, 'success')
+    showBulkCategoryModal.value = false
+    clearSelection()
+  } catch (err) {
+    console.error('Error al actualizar categorías en lote', err)
+    addToast('Error al actualizar las categorías en lote.', 'error')
+  }
+}
+
+// Bulk Toggle Availability
+const handleBulkToggleActive = async (isActive) => {
+  if (!selectedItemIds.value.length) return
+  const ids = [...selectedItemIds.value]
+  try {
+    await api.post('/admin/menu-items/bulk-toggle-active', {
+      ids,
+      is_active: isActive,
+    })
+    const idSet = new Set(ids)
+    menuItems.value.forEach(i => {
+      if (idSet.has(i.id)) {
+        i.is_active = isActive
+      }
+    })
+    addToast(
+      `${ids.length} platillos fueron ${isActive ? 'activados' : 'pausados'} en lote.`,
+      isActive ? 'success' : 'info'
+    )
+    clearSelection()
+  } catch (err) {
+    console.error('Error al actualizar disponibilidad en lote', err)
+    addToast('Error al actualizar la disponibilidad en lote.', 'error')
+  }
+}
+
+const toggleItemActive = async (item) => {
+  const newActive = !item.is_active
+  try {
+    await api.patch(`/admin/menu-items/${item.id}`, { is_active: newActive })
+    item.is_active = newActive
+    addToast(
+      `"${item.name}" ahora está ${newActive ? 'activo en el menú' : 'pausado temporalmente'}`,
+      newActive ? 'success' : 'info'
+    )
+  } catch (err) {
+    item.is_active = !newActive
+    addToast('Error al actualizar disponibilidad del platillo.', 'error')
+  }
+}
+
+const handleRestoreDefaultMenu = async () => {
+  if (!confirm('¿Deseas restaurar el menú con los 27 platillos y especialidades oficiales de Pollo Feliz?')) return
+  try {
+    await api.post('/admin/menu-items/restore-default')
+    await loadData()
+    addToast('Menú oficial de Pollo Feliz restaurado con éxito.', 'success')
+  } catch (err) {
+    addToast('Error al restaurar el menú por defecto.', 'error')
+  }
+}
+
+// Order Management Helpers
+const activeOrdersList = computed(() => {
+  return orders.value.filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
+})
+
+const filteredAdminOrders = computed(() => {
+  if (orderFilter.value === 'active') {
+    return orders.value.filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
+  }
+  if (orderFilter.value === 'delivered') {
+    return orders.value.filter(o => o.status === 'delivered')
+  }
+  return orders.value
+})
+
+const updateOrderStatus = async (orderId, newStatus) => {
+  try {
+    const res = await api.patch(`/api/orders/${orderId}/status`, { status: newStatus })
+    if (res.data?.order) {
+      const idx = orders.value.findIndex(o => o.id === orderId)
+      if (idx >= 0) {
+        orders.value[idx] = res.data.order
+      }
+      addToast(`Pedido #${orderId} actualizado a '${res.data.order.status_label}'`, 'success')
+    }
+  } catch (err) {
+    addToast('Error al actualizar el estado del pedido', 'error')
+  }
+}
+
+const getStatusBadgeClass = (status) => {
+  if (status === 'pending') return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300'
+  if (status === 'preparing') return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/70 dark:text-orange-300'
+  if (status === 'ready') return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/70 dark:text-purple-300'
+  if (status === 'on_the_way') return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/70 dark:text-blue-300'
+  if (status === 'delivered') return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/70 dark:text-emerald-300'
+  return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300'
+}
+
+const getStatusDotClass = (status) => {
+  if (status === 'pending') return 'bg-amber-500'
+  if (status === 'preparing') return 'bg-orange-500'
+  if (status === 'ready') return 'bg-purple-500'
+  if (status === 'on_the_way') return 'bg-blue-500 animate-ping'
+  if (status === 'delivered') return 'bg-emerald-500'
+  return 'bg-gray-400'
+}
+
+const getStatusLabel = (status) => {
+  const map = {
+    pending: 'Pendiente',
+    preparing: 'En preparación',
+    ready: 'Empacado / Listo',
+    on_the_way: 'En camino',
+    delivered: 'Entregado',
+    cancelled: 'Cancelado',
+  }
+  return map[status] || status
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('es-MX', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+  } catch {
+    return dateStr
+  }
+}
+
+// ==================== USERS & ROLES CRUD HANDLERS ====================
+const loadAdminUsers = async () => {
+  if (!canAccessTab('users')) return
+  try {
+    const res = await api.get('/admin/users')
+    if (res.data && Array.isArray(res.data.users)) {
+      adminUsersList.value = res.data.users
+    }
+  } catch (err) {
+    console.warn('Error cargando usuarios administrativos', err)
+  }
+}
+
+const handleOpenAddUser = () => {
+  userToEdit.value = null
+  showUserModal.value = true
+}
+
+const handleOpenEditUser = (user) => {
+  userToEdit.value = { ...user }
+  showUserModal.value = true
+}
+
+const handleSaveUser = async (formData) => {
+  try {
+    if (formData.id) {
+      const res = await api.patch(`/admin/users/${formData.id}`, formData)
+      const updated = res.data?.user
+      const idx = adminUsersList.value.findIndex(u => u.id === formData.id)
+      if (idx >= 0 && updated) {
+        adminUsersList.value[idx] = updated
+      } else {
+        await loadAdminUsers()
+      }
+      addToast(`Usuario "${formData.name}" actualizado correctamente.`, 'success')
+    } else {
+      const res = await api.post('/admin/users', formData)
+      const created = res.data?.user
+      if (created) {
+        adminUsersList.value.push(created)
+      } else {
+        await loadAdminUsers()
+      }
+      addToast(`¡Usuario "${formData.name}" creado con éxito con rol "${getRoleMeta(formData.role).label}"!`, 'success')
+    }
+    showUserModal.value = false
+  } catch (err) {
+    console.error('Error al guardar usuario', err)
+    addToast(err.response?.data?.message || 'Error al guardar el usuario.', 'error')
+  }
+}
+
+const handleDeleteUser = async (user) => {
+  if (!confirm(`¿Estás seguro de eliminar el acceso para "${user.name}" (${user.email})?`)) return
+  try {
+    await api.delete(`/admin/users/${user.id}`)
+    adminUsersList.value = adminUsersList.value.filter(u => u.id !== user.id)
+    addToast(`Usuario "${user.name}" eliminado correctamente.`, 'info')
+  } catch (err) {
+    console.error('Error al eliminar usuario', err)
+    addToast(err.response?.data?.message || 'Error al eliminar usuario.', 'error')
+  }
+}
+
+// ==================== REVIEWS MODERATION HANDLERS ====================
+// Filtra las reseñas según el estado seleccionado (aprobadas, pendientes, rechazadas, destacadas) y el término de búsqueda
+const filteredAdminReviews = computed(() => {
+  let list = [...adminReviewsList.value]
+  if (adminReviewFilter.value === 'approved') list = list.filter(r => r.status === 'approved')
+  else if (adminReviewFilter.value === 'pending') list = list.filter(r => r.status === 'pending')
+  else if (adminReviewFilter.value === 'rejected') list = list.filter(r => r.status === 'rejected')
+  else if (adminReviewFilter.value === 'featured') list = list.filter(r => r.is_featured)
+
+  if (adminReviewSearch.value.trim()) {
+    const q = adminReviewSearch.value.trim().toLowerCase()
+    list = list.filter(r =>
+      r.customer_name?.toLowerCase().includes(q) ||
+      r.comment?.toLowerCase().includes(q) ||
+      r.branch?.toLowerCase().includes(q) ||
+      (r.favorite_dish && r.favorite_dish.toLowerCase().includes(q))
+    )
+  }
+  return list
+})
+
+// Carga todas las reseñas desde el backend administrativo con sus estadísticas
+const loadAdminReviews = async () => {
+  if (!canAccessTab('reviews')) return
+  try {
+    const res = await api.get('/admin/reviews')
+    if (res.data) {
+      if (Array.isArray(res.data.reviews)) {
+        adminReviewsList.value = res.data.reviews
+      }
+      if (res.data.stats) {
+        adminReviewsStats.value = res.data.stats
+      }
+    }
+  } catch (err) {
+    console.warn('Error cargando reseñas en panel admin', err)
+  }
+}
+
+// Abre el formulario en línea para responder a un cliente
+const openReplyInput = (rev) => {
+  activeReplyReviewId.value = rev.id
+  replyTextInput.value = rev.admin_reply?.message || ''
+}
+
+// Guarda la respuesta oficial de la empresa a la reseña
+const handleSaveReviewReply = async (rev) => {
+  try {
+    const res = await api.patch(`/admin/reviews/${rev.id}`, {
+      admin_reply: replyTextInput.value
+    })
+    if (res.data?.review) {
+      const idx = adminReviewsList.value.findIndex(r => r.id === rev.id)
+      if (idx >= 0) adminReviewsList.value[idx] = res.data.review
+    }
+    addToast('Respuesta oficial guardada con éxito.', 'success')
+    activeReplyReviewId.value = null
+    replyTextInput.value = ''
+  } catch (err) {
+    addToast('Error al guardar respuesta.', 'error')
+  }
+}
+
+// Alterna la visibilidad pública de una reseña (aprobada vs rechazada/oculta)
+const handleToggleReviewStatus = async (rev) => {
+  const newStatus = rev.status === 'approved' ? 'rejected' : 'approved'
+  try {
+    await api.patch(`/admin/reviews/${rev.id}`, { status: newStatus })
+    rev.status = newStatus
+    addToast(newStatus === 'approved' ? 'Reseña aprobada y visible en el sitio.' : 'Reseña ocultada del sitio.', 'info')
+  } catch (err) {
+    addToast('Error al actualizar estado de la reseña.', 'error')
+  }
+}
+
+// Alterna si la reseña aparece destacada con trofeo y tarjeta dorada
+const handleToggleReviewFeatured = async (rev) => {
+  const newFeatured = !rev.is_featured
+  try {
+    await api.patch(`/admin/reviews/${rev.id}`, { is_featured: newFeatured })
+    rev.is_featured = newFeatured
+    addToast(newFeatured ? 'Reseña marcada como destacada.' : 'Reseña desmarcada de destacadas.', 'info')
+  } catch (err) {
+    addToast('Error al actualizar estado destacado.', 'error')
+  }
+}
+
+// Elimina una reseña del sistema de forma permanente
+const handleDeleteReview = async (rev) => {
+  if (!confirm(`¿Eliminar la reseña de "${rev.customer_name}"?`)) return
+  try {
+    await api.delete(`/admin/reviews/${rev.id}`)
+    adminReviewsList.value = adminReviewsList.value.filter(r => r.id !== rev.id)
+    addToast('Reseña eliminada correctamente.', 'info')
+  } catch (err) {
+    addToast('Error al eliminar reseña.', 'error')
+  }
+}
+
+const handleLogout = () => {
+  logout()
+  addToast('Has cerrado sesión correctamente.', 'info')
+  router.push('/admin/login')
+}
+
+// Watchers para seguridad de pestañas y carga bajo demanda
+watch(visibleTabs, (newTabs) => {
+  if (newTabs.length > 0 && !newTabs.some(t => t.id === activeTab.value)) {
+    activeTab.value = newTabs[0].id
   }
 }, { immediate: true })
 
-const getImageDimensions = (file) => new Promise((resolve, reject) => {
-  const url = URL.createObjectURL(file)
-  const image = new Image()
-  image.onload = () => {
-    const width = image.width
-    const height = image.height
-    URL.revokeObjectURL(url)
-    resolve({ width, height })
-  }
-  image.onerror = () => {
-    URL.revokeObjectURL(url)
-    reject(new Error('No se pudieron leer las dimensiones de la imagen.'))
-  }
-  image.src = url
-})
-
-const validateImageFile = async (file, context = 'general') => {
-  if (!ADMIN_IMAGE_TYPES.includes(file.type)) {
-    setError('Usa una imagen JPG, PNG o WebP.')
-    return false
-  }
-
-  if (file.size > MAX_ADMIN_IMAGE_SIZE_BYTES) {
-    setError('La imagen no debe pesar más de 10 MB.')
-    return false
-  }
-
-  try {
-    const { width, height } = await getImageDimensions(file)
-    const minimum = ADMIN_IMAGE_MIN_DIMENSIONS[context] || ADMIN_IMAGE_MIN_DIMENSIONS.general
-    if (width < minimum.width || height < minimum.height) {
-      setError(`La imagen es muy pequeña para ${context}. Mínimo ${minimum.width}x${minimum.height}px.`)
-      return false
-    }
-  } catch (requestError) {
-    setError(requestError.message || 'No se pudo validar la imagen seleccionada.')
-    return false
-  }
-
-  return true
-}
-
-const persistDrafts = () => {
-  const payload = {
-    settings: sanitizePayload(settings.value),
-    newJob: sanitizePayload(newJob.value),
-    newMenuItem: sanitizePayload(newMenuItem.value),
-    newPromotion: sanitizePayload(newPromotion.value),
-    newBranch: sanitizePayload(newBranch.value),
-    timestamp: new Date().toISOString(),
-  }
-  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload))
-  lastDraftSavedAt.value = payload.timestamp
-}
-
-const restoreDrafts = () => {
-  const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
-  if (!raw) {
-    return
-  }
-
-  try {
-    const data = JSON.parse(raw)
-    if (data.settings) {
-      settings.value = { ...settings.value, ...data.settings }
-    }
-    if (data.newJob) {
-      newJob.value = { ...newJob.value, ...data.newJob }
-    }
-    if (data.newMenuItem) {
-      newMenuItem.value = { ...newMenuItem.value, ...data.newMenuItem }
-    }
-    if (data.newPromotion) {
-      newPromotion.value = { ...newPromotion.value, ...data.newPromotion }
-    }
-    if (data.newBranch) {
-      newBranch.value = { ...newBranch.value, ...data.newBranch }
-    }
-    lastDraftSavedAt.value = data.timestamp || ''
-  } catch (requestError) {
-    localStorage.removeItem(DRAFT_STORAGE_KEY)
-    lastDraftSavedAt.value = ''
-  }
-}
-
-const fetchImageGallery = async () => {
-  if (!canManageLanding.value) {
-    imageGallery.value = []
-    return
-  }
-
-  try {
-    const response = await api.get('/admin/uploads/gallery')
-    imageGallery.value = response.data?.images || []
-  } catch (requestError) {
-    imageGallery.value = []
-  }
-}
-
-const fetchAll = async () => {
-  loading.value = true
-  statusError.value = ''
-
-  try {
-    const meResponse = await api.get('/admin/auth/me')
-    currentAdmin.value = {
-      id: meResponse.data?.user?.id || null,
-      name: meResponse.data?.user?.name || '',
-      email: meResponse.data?.user?.email || '',
-      role: meResponse.data?.user?.role || '',
-      permissions: meResponse.data?.user?.permissions || [],
-      two_factor_enabled: Boolean(meResponse.data?.user?.two_factor_enabled),
-    }
-
-    const shouldLoadMessages = canManageMessages.value
-    const shouldLoadHistory = canViewHistory.value
-    const shouldLoadTrash = canManageJobs.value || canManageMenu.value
-
-    const requests = [api.get('/admin/dashboard-content')]
-    if (canManageLanding.value) {
-      requests.push(api.get('/admin/uploads/gallery'))
-    }
-    if (shouldLoadTrash) {
-      requests.push(api.get('/admin/jobs/trash'))
-      requests.push(api.get('/admin/menu-items/trash'))
-    }
-    if (shouldLoadMessages) {
-      requests.push(api.get('/admin/contact-messages'))
-    }
-    if (shouldLoadHistory) {
-      requests.push(fetchChangeLogs(1))
-    }
-    requests.push(api.get('/admin/system-alerts'))
-    if (canApproveRequests.value) {
-      requests.push(api.get('/admin/approvals?status=pending'))
-    }
-
-    const responses = await Promise.all(requests)
-    const dashboardResponse = responses[0]
-    let responseIndex = 1
-    const galleryResponse = canManageLanding.value ? responses[responseIndex++] : null
-    const jobsTrashResponse = shouldLoadTrash ? responses[responseIndex++] : null
-    const menuTrashResponse = shouldLoadTrash ? responses[responseIndex++] : null
-    const messagesResponse = shouldLoadMessages ? responses[responseIndex++] : null
-    const alertsResponse = responses[responseIndex++]
-    const approvalsResponse = canApproveRequests.value ? responses[responseIndex++] : null
-
-    settings.value = {
-      hero_title: dashboardResponse.data?.settings?.hero_title || '',
-      hero_description: dashboardResponse.data?.settings?.hero_description || '',
-      hero_image_url: dashboardResponse.data?.settings?.hero_image_url || '',
-      company_address: dashboardResponse.data?.settings?.company_address || '',
-    }
-
-    dashboardSummary.value = dashboardResponse.data?.summary || dashboardSummary.value
-    jobs.value = dashboardResponse.data?.jobs || []
-    menuItems.value = dashboardResponse.data?.menu_items || []
-    promotions.value = dashboardResponse.data?.promotions || []
-    branches.value = dashboardResponse.data?.branches || []
-    imageGallery.value = galleryResponse?.data?.images || []
-    trashedJobs.value = jobsTrashResponse?.data?.jobs || []
-    trashedMenuItems.value = menuTrashResponse?.data?.items || []
-    contactMessages.value = shouldLoadMessages ? (messagesResponse?.data || []) : []
-    systemAlerts.value = alertsResponse?.data || systemAlerts.value
-    pendingApprovals.value = approvalsResponse?.data?.requests || []
-    if (!shouldLoadHistory) {
-      changeLogs.value = []
-      historyPage.value = 1
-      historyPageCount.value = 1
-    }
-
-    if (!hasRestoredDrafts.value) {
-      restoreDrafts()
-      hasRestoredDrafts.value = true
-    }
-  } catch (requestError) {
-    if (requestError.response?.status === 401) {
-      clearAdminToken()
-      await router.push('/admin/login')
-      return
-    }
-    setError(requestError.userMessage || 'No se pudo cargar la información del panel.')
-  } finally {
-    loading.value = false
-  }
-}
-
-const fetchChangeLogs = async (page = 1) => {
-  if (!canViewHistory.value) {
-    return
-  }
-
-  try {
-    const response = await api.get('/admin/change-logs', {
-      params: {
-        page,
-        per_page: 10,
-        search: historySearch.value || undefined,
-        action: historyActionFilter.value || undefined,
-        admin_user_id: historyAdminFilter.value || undefined,
-        date_from: historyDateFrom.value || undefined,
-        date_to: historyDateTo.value || undefined,
-      },
-    })
-
-    changeLogs.value = response.data?.data || []
-    historyPage.value = response.data?.current_page || page
-    historyPageCount.value = response.data?.last_page || 1
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo cargar el historial de cambios.')
-  }
-}
-
-const exportChangeLogs = async () => {
-  if (!canViewHistory.value) {
-    return
-  }
-
-  try {
-    const response = await api.get('/admin/change-logs/export', {
-      params: {
-        search: historySearch.value || undefined,
-        action: historyActionFilter.value || undefined,
-        admin_user_id: historyAdminFilter.value || undefined,
-        date_from: historyDateFrom.value || undefined,
-        date_to: historyDateTo.value || undefined,
-      },
-      responseType: 'blob',
-    })
-
-    const link = document.createElement('a')
-    const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
-    const url = window.URL.createObjectURL(blob)
-    link.href = url
-    link.download = 'admin-change-history.csv'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    setSuccess('Historial exportado correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo exportar el historial.')
-  }
-}
-
-const validateSettings = () => {
-  if (!settings.value.hero_title?.trim()) {
-    return 'El título principal no puede quedar vacío.'
-  }
-  if (!settings.value.hero_description?.trim()) {
-    return 'La descripción principal no puede quedar vacía.'
-  }
-  if (!settings.value.company_address?.trim()) {
-    return 'La dirección no puede quedar vacía.'
-  }
-  return ''
-}
-
-const validateJob = (job) => {
-  if (!job.title?.trim()) {
-    return 'La vacante necesita un título.'
-  }
-  if (!job.description?.trim()) {
-    return 'La vacante necesita una descripción.'
-  }
-  if (!job.employment_type?.trim()) {
-    return 'La vacante necesita un tipo de empleo.'
-  }
-  return ''
-}
-
-const validateMenuItem = (item) => {
-  if (!item.name?.trim()) {
-    return 'El producto necesita un nombre.'
-  }
-  if (!item.description?.trim()) {
-    return 'El producto necesita una descripción.'
-  }
-  if (!item.category?.trim()) {
-    return 'El producto necesita una categoría.'
-  }
-  if (Number.isNaN(Number(item.price)) || Number(item.price) < 0) {
-    return 'El precio debe ser un número válido mayor o igual a 0.'
-  }
-  return ''
-}
-
-const selectMenuItem = (itemId) => {
-  selectedMenuItemId.value = itemId
-}
-
-const validatePromotion = (promotion) => {
-  if (!promotion.title?.trim()) {
-    return 'La promoción necesita un título.'
-  }
-  if (!promotion.description?.trim()) {
-    return 'La promoción necesita una descripción.'
-  }
-  return ''
-}
-
-const validateBranch = (branch) => {
-  if (!branch.name?.trim()) {
-    return 'La sucursal necesita un nombre.'
-  }
-  if (!branch.address?.trim()) {
-    return 'La sucursal necesita una dirección.'
-  }
-  return ''
-}
-
-const validateAdminUser = () => {
-  if (!newAdminUser.value.name?.trim()) {
-    return 'El usuario admin necesita un nombre.'
-  }
-  if (!newAdminUser.value.email?.trim()) {
-    return 'El usuario admin necesita un correo.'
-  }
-  if ((newAdminUser.value.password || '').length < 8) {
-    return 'La contraseña debe tener al menos 8 caracteres.'
-  }
-  if (!newAdminUser.value.role) {
-    return 'Selecciona un rol para el administrador.'
-  }
-  return ''
-}
-
-const finalizePendingUpload = async (target, fieldName = 'image_url') => {
-  if (!target?.__uploadFile) {
-    return false
-  }
-
-  try {
-    const uploadedUrl = await uploadImage(target.__uploadFile, target.__uploadContext || 'general')
-    if (uploadedUrl) {
-      target[fieldName] = uploadedUrl
-      revokePendingUpload(target)
-      return true
-    }
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo subir la imagen seleccionada.')
-    revokePendingUpload(target)
-    return false
-  }
-
-  return false
-}
-
-const sanitizePayload = (payload) => {
-  if (!payload || typeof payload !== 'object') {
-    return payload
-  }
-
-  const sanitized = { ...payload }
-  delete sanitized.__uploadFile
-  delete sanitized.__uploadFieldName
-  delete sanitized.__uploadContext
-  delete sanitized.__uploadPreviewUrl
-  delete sanitized.__uploading
-  return sanitized
-}
-
-const saveSettings = async () => {
-  if (!canManageSettings.value) {
-    setError('Tu rol no tiene permisos para editar el landing.')
-    return
-  }
-
-  const validationError = validateSettings()
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (settings.value.__uploadFile) {
-      await finalizePendingUpload(settings.value, 'hero_image_url')
-    }
-    await api.put('/admin/settings', sanitizePayload(settings.value))
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Contenido principal actualizado.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudieron guardar los cambios del contenido principal.')
-  }
-}
-
-const createJob = async () => {
-  if (!canManageJobs.value) {
-    setError('Tu rol no tiene permisos para crear vacantes.')
-    return
-  }
-
-  const validationError = validateJob(newJob.value)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (newJob.value.__uploadFile) {
-      await finalizePendingUpload(newJob.value, 'image_url')
-    }
-    const response = await api.post('/admin/jobs', { ...sanitizePayload(newJob.value), is_active: true, sort_order: jobs.value.length + 1 })
-    jobs.value.push(response.data.job)
-    newJob.value = { title: '', description: '', employment_type: 'Tiempo completo', location: '', schedule: '', image_url: '' }
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Vacante creada correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo crear la vacante.')
-  }
-}
-
-const saveJob = async (job) => {
-  if (!canManageJobs.value) {
-    setError('Tu rol no tiene permisos para editar vacantes.')
-    return
-  }
-
-  const validationError = validateJob(job)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (job.__uploadFile) {
-      await finalizePendingUpload(job, 'image_url')
-    }
-    await api.patch(`/admin/jobs/${job.id}`, sanitizePayload(job))
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Vacante actualizada.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo actualizar la vacante.')
-  }
-}
-
-const promptDeleteConfirmation = (action, title = 'Confirmar acción') => {
-  deleteAction.value = action
-  confirmDialog.value?.show(title, '')
-}
-
-const executeDeleteAction = async () => {
-  if (!deleteAction.value) {
-    return
-  }
-
-  const action = deleteAction.value
-  deleteAction.value = null
-
-  try {
-    await action()
-  } catch (requestError) {
-    setError(requestError?.userMessage || 'No se pudo completar la acción solicitada.')
-  }
-}
-
-const deleteJob = async (jobId) => {
-  if (!canManageJobs.value) {
-    setError('Tu rol no tiene permisos para eliminar vacantes.')
-    return
-  }
-
-  promptDeleteConfirmation(async () => {
-    try {
-      await api.delete(`/admin/jobs/${jobId}`)
-      jobs.value = jobs.value.filter((job) => job.id !== jobId)
-      trashedJobs.value = await api.get('/admin/jobs/trash').then((response) => response.data?.jobs || [])
-      await loadLandingContent(true)
-      setSuccess('Vacante enviada a la papelera.')
-    } catch (requestError) {
-      setError(requestError.userMessage || 'No se pudo eliminar la vacante.')
-    }
-  }, '¿Enviar vacante a la papelera?')
-}
-
-const restoreJob = async (jobId) => {
-  if (!canManageJobs.value) {
-    setError('Tu rol no tiene permisos para restaurar vacantes.')
-    return
-  }
-
-  try {
-    await api.post(`/admin/jobs/${jobId}/restore`)
-    trashedJobs.value = await api.get('/admin/jobs/trash').then((response) => response.data?.jobs || [])
-    jobs.value = await api.get('/admin/dashboard-content').then((response) => response.data?.jobs || [])
-    await loadLandingContent(true)
-    setSuccess('Vacante restaurada.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo restaurar la vacante.')
-  }
-}
-
-const uploadImage = async (file, context = 'general') => {
-  const formData = new FormData()
-  formData.append('image', file)
-  formData.append('context', context)
-
-  const response = await api.post('/admin/uploads/image', formData)
-
-  return response.data?.url || ''
-}
-
-const onImageSelected = async (event, target, fieldName = 'image_url', context = 'general') => {
-  const contextPermissions = {
-    hero: canManageSettings.value,
-    job: canManageJobs.value,
-    menu: canManageMenu.value,
-    promotion: canManagePromotions.value,
-    branch: canManageBranches.value,
-    general: canManageLanding.value,
-  }
-
-  if (!contextPermissions[context]) {
-    setError('Tu rol no tiene permisos para subir imágenes.')
-    return
-  }
-
-  const [file] = event.target.files || []
-  if (!file) {
-    return
-  }
-  if (!(await validateImageFile(file, context))) {
-    event.target.value = ''
-    return
-  }
-
-  setPendingUpload(target, file, fieldName, context)
-  setSuccess('Vista previa lista. Confirma para aplicar la imagen.')
-  event.target.value = ''
-}
-
-const onImageDropped = async (event, target, fieldName = 'image_url', context = 'general') => {
-  event.preventDefault()
-  const contextPermissions = {
-    hero: canManageSettings.value,
-    job: canManageJobs.value,
-    menu: canManageMenu.value,
-    promotion: canManagePromotions.value,
-    branch: canManageBranches.value,
-    general: canManageLanding.value,
-  }
-
-  if (!contextPermissions[context]) {
-    setError('Tu rol no tiene permisos para subir imágenes.')
-    return
-  }
-
-  const [file] = event.dataTransfer?.files || []
-  if (!file) {
-    return
-  }
-  if (!(await validateImageFile(file, context))) {
-    return
-  }
-
-  setPendingUpload(target, file, fieldName, context)
-  setSuccess('Imagen lista para confirmar.')
-}
-
-const confirmPendingUpload = async (target) => {
-  if (!target?.__uploadFile) {
-    return
-  }
-
-  await finalizePendingUpload(target, target.__uploadFieldName || 'image_url')
-}
-
-const cancelPendingUpload = (target) => {
-  revokePendingUpload(target)
-  setSuccess('Se canceló la selección de imagen.')
-}
-
-const applyGalleryImage = (target, fieldName = 'image_url', imageUrl) => {
-  if (!target || !imageUrl) {
-    return
-  }
-
-  revokePendingUpload(target)
-  target[fieldName] = imageUrl
-  setSuccess('Se aplicó una imagen de la galería.')
-}
-
-const removeCurrentImage = async (target, fieldName = 'image_url') => {
-  if (!canManageLanding.value) {
-    setError('Tu rol no tiene permisos para quitar imágenes.')
-    return
-  }
-
-  const currentUrl = target?.[fieldName]
-  if (!currentUrl) {
-    return
-  }
-
-  try {
-    await api.delete('/admin/uploads/image', {
-      data: { url: currentUrl },
-    })
-    target[fieldName] = ''
-    setSuccess('Imagen removida correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo remover la imagen.')
-  }
-}
-
-const createMenuItem = async () => {
-  if (!canManageMenu.value) {
-    setError('Tu rol no tiene permisos para crear productos.')
-    return
-  }
-
-  const validationError = validateMenuItem(newMenuItem.value)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (newMenuItem.value.__uploadFile) {
-      await finalizePendingUpload(newMenuItem.value, 'image_url')
-    }
-    const response = await api.post('/admin/menu-items', {
-      ...sanitizePayload(newMenuItem.value),
-      is_featured: true,
-      is_active: true,
-      sort_order: menuItems.value.length + 1,
-    })
-    menuItems.value.push(response.data.item)
-    selectedMenuItemId.value = response.data.item.id
-    newMenuItem.value = { name: '', description: '', price: 0, image_url: '', badge: '', category: 'Paquetes' }
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Producto creado correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo crear el producto.')
-  }
-}
-
-const saveMenuItem = async (item, skipToast = false) => {
-  if (!canManageMenu.value) {
-    setError('Tu rol no tiene permisos para editar productos.')
-    return
-  }
-
-  const validationError = validateMenuItem(item)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (item.__uploadFile) {
-      await finalizePendingUpload(item, 'image_url')
-    }
-    await api.patch(`/admin/menu-items/${item.id}`, sanitizePayload(item))
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    if (!skipToast) {
-      setSuccess('Producto actualizado.')
-    }
-    await loadLastOperation()
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo actualizar el producto.')
-  }
-}
-
-const deleteMenuItem = async (itemId) => {
-  if (!canManageMenu.value) {
-    setError('Tu rol no tiene permisos para eliminar productos.')
-    return
-  }
-
-  promptDeleteConfirmation(async () => {
-    try {
-      await api.delete(`/admin/menu-items/${itemId}`)
-      menuItems.value = menuItems.value.filter((item) => item.id !== itemId)
-      trashedMenuItems.value = await api.get('/admin/menu-items/trash').then((response) => response.data?.items || [])
-      await loadLandingContent(true)
-      setSuccess('Producto enviado a la papelera.')
-    } catch (requestError) {
-      setError(requestError.userMessage || 'No se pudo eliminar el producto.')
-    }
-  }, '¿Enviar producto a la papelera?')
-}
-
-const restoreMenuItem = async (itemId) => {
-  if (!canManageMenu.value) {
-    setError('Tu rol no tiene permisos para restaurar productos.')
-    return
-  }
-
-  try {
-    await api.post(`/admin/menu-items/${itemId}/restore`)
-    trashedMenuItems.value = await api.get('/admin/menu-items/trash').then((response) => response.data?.items || [])
-    menuItems.value = await api.get('/admin/dashboard-content').then((response) => response.data?.menu_items || [])
-    await loadLandingContent(true)
-    setSuccess('Producto restaurado.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo restaurar el producto.')
-  }
-}
-
-const restoreDefaultMenu = async () => {
-  if (!canManageMenu.value) {
-    setError('Tu rol no tiene permisos para restaurar el menú.')
-    return
-  }
-
-  promptDeleteConfirmation(async () => {
-    try {
-      const response = await api.post('/admin/menu-items/restore-default')
-      addToast('Menú restaurado exitosamente', 'success')
-      await loadLandingContent(true)
-      await fetchImageGallery()
-      menuItems.value = await api.get('/admin/dashboard-content').then((response) => response.data?.menu_items || [])
-    } catch (requestError) {
-      setError(requestError.userMessage || 'No se pudo restaurar el menú predeterminado.')
-    }
-  }, '¿Restaurar los 20 productos por defecto? Se añadirán al menú actual.')
-}
-
-const reorderById = (collection, sourceId, targetId) => {
-  const sourceIndex = collection.findIndex((item) => item.id === sourceId)
-  const targetIndex = collection.findIndex((item) => item.id === targetId)
-  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
-    return collection
-  }
-
-  const next = [...collection]
-  const [sourceItem] = next.splice(sourceIndex, 1)
-  next.splice(targetIndex, 0, sourceItem)
-  return next
-}
-
-const persistPromotionSortOrder = async () => {
-  if (persistingPromotionOrder.value) {
-    return
-  }
-
-  persistingPromotionOrder.value = true
-  try {
-    const requests = promotions.value.map((promotion, index) => {
-      const payload = sanitizePayload(promotion)
-      if (!payload.valid_until) {
-        payload.valid_until = null
-      }
-      payload.sort_order = index + 1
-      return api.patch(`/admin/promotions/${promotion.id}`, payload)
-    })
-    await Promise.all(requests)
-    await loadLandingContent(true)
-    setSuccess('Orden de promociones actualizado.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo guardar el nuevo orden de promociones.')
-  } finally {
-    persistingPromotionOrder.value = false
-  }
-}
-
-const persistBranchSortOrder = async () => {
-  if (persistingBranchOrder.value) {
-    return
-  }
-
-  persistingBranchOrder.value = true
-  try {
-    const requests = branches.value.map((branch, index) => {
-      const payload = sanitizePayload(branch)
-      if (!payload.map_link) {
-        payload.map_link = null
-      }
-      payload.sort_order = index + 1
-      return api.patch(`/admin/branches/${branch.id}`, payload)
-    })
-    await Promise.all(requests)
-    await loadLandingContent(true)
-    setSuccess('Orden de sucursales actualizado.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo guardar el nuevo orden de sucursales.')
-  } finally {
-    persistingBranchOrder.value = false
-  }
-}
-
-const onPromotionDragStart = (promotionId) => {
-  draggedPromotionId.value = promotionId
-}
-
-const onPromotionDrop = async (targetPromotionId) => {
-  if (!canManageLanding.value || draggedPromotionId.value === null) {
-    return
-  }
-
-  const before = promotions.value
-  const reordered = reorderById(before, draggedPromotionId.value, targetPromotionId)
-  draggedPromotionId.value = null
-  if (reordered === before) {
-    return
-  }
-
-  promotions.value = reordered
-  await persistPromotionSortOrder()
-}
-
-const onBranchDragStart = (branchId) => {
-  draggedBranchId.value = branchId
-}
-
-const onBranchDrop = async (targetBranchId) => {
-  if (!canManageLanding.value || draggedBranchId.value === null) {
-    return
-  }
-
-  const before = branches.value
-  const reordered = reorderById(before, draggedBranchId.value, targetBranchId)
-  draggedBranchId.value = null
-  if (reordered === before) {
-    return
-  }
-
-  branches.value = reordered
-  await persistBranchSortOrder()
-}
-
-const createPromotion = async () => {
-  if (!canManagePromotions.value) {
-    setError('Tu rol no tiene permisos para crear promociones.')
-    return
-  }
-
-  const validationError = validatePromotion(newPromotion.value)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (newPromotion.value.__uploadFile) {
-      await finalizePendingUpload(newPromotion.value, 'image_url')
-    }
-    const payload = sanitizePayload(newPromotion.value)
-    if (!payload.valid_until) {
-      payload.valid_until = null
-    }
-    const response = await api.post('/admin/promotions', {
-      ...payload,
-      sort_order: promotions.value.length + 1,
-    })
-    promotions.value.push(response.data.promotion)
-    newPromotion.value = { title: '', description: '', image_url: '', valid_until: '', code: '', badge: '', is_active: true }
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Promoción creada correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo crear la promoción.')
-  }
-}
-
-const savePromotion = async (promotion) => {
-  if (!canManagePromotions.value) {
-    setError('Tu rol no tiene permisos para editar promociones.')
-    return
-  }
-
-  const validationError = validatePromotion(promotion)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (promotion.__uploadFile) {
-      await finalizePendingUpload(promotion, 'image_url')
-    }
-    const payload = sanitizePayload(promotion)
-    if (!payload.valid_until) {
-      payload.valid_until = null
-    }
-    await api.patch(`/admin/promotions/${promotion.id}`, payload)
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Promoción actualizada.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo actualizar la promoción.')
-  }
-}
-
-const deletePromotion = async (promotionId) => {
-  if (!canManagePromotions.value) {
-    setError('Tu rol no tiene permisos para eliminar promociones.')
-    return
-  }
-
-  promptDeleteConfirmation(async () => {
-    try {
-      await api.delete(`/admin/promotions/${promotionId}`)
-      promotions.value = promotions.value.filter((promotion) => promotion.id !== promotionId)
-      await loadLandingContent(true)
-      setSuccess('Promoción eliminada.')
-    } catch (requestError) {
-      setError(requestError.userMessage || 'No se pudo eliminar la promoción.')
-    }
-  }, '¿Eliminar esta promoción?')
-}
-
-const createBranch = async () => {
-  if (!canManageBranches.value) {
-    setError('Tu rol no tiene permisos para crear sucursales.')
-    return
-  }
-
-  const validationError = validateBranch(newBranch.value)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (newBranch.value.__uploadFile) {
-      await finalizePendingUpload(newBranch.value, 'image_url')
-    }
-    const payload = sanitizePayload(newBranch.value)
-    if (!payload.map_link) {
-      payload.map_link = null
-    }
-    const response = await api.post('/admin/branches', {
-      ...payload,
-      sort_order: branches.value.length + 1,
-    })
-    branches.value.push(response.data.branch)
-    newBranch.value = { name: '', address: '', phone: '', schedule: '', image_url: '', map_link: '', is_open: true }
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Sucursal creada correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo crear la sucursal.')
-  }
-}
-
-const saveBranch = async (branch) => {
-  if (!canManageBranches.value) {
-    setError('Tu rol no tiene permisos para editar sucursales.')
-    return
-  }
-
-  const validationError = validateBranch(branch)
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    if (branch.__uploadFile) {
-      await finalizePendingUpload(branch, 'image_url')
-    }
-    const payload = sanitizePayload(branch)
-    if (!payload.map_link) {
-      payload.map_link = null
-    }
-    await api.patch(`/admin/branches/${branch.id}`, payload)
-    await loadLandingContent(true)
-    await fetchImageGallery()
-    setSuccess('Sucursal actualizada.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo actualizar la sucursal.')
-  }
-}
-
-const deleteBranch = async (branchId) => {
-  if (!canManageBranches.value) {
-    setError('Tu rol no tiene permisos para eliminar sucursales.')
-    return
-  }
-
-  promptDeleteConfirmation(async () => {
-    try {
-      await api.delete(`/admin/branches/${branchId}`)
-      branches.value = branches.value.filter((branch) => branch.id !== branchId)
-      await loadLandingContent(true)
-      setSuccess('Sucursal eliminada.')
-    } catch (requestError) {
-      setError(requestError.userMessage || 'No se pudo eliminar la sucursal.')
-    }
-  }, '¿Eliminar esta sucursal?')
-}
-
-const saveContactMessage = async (message) => {
-  if (!canManageMessages.value) {
-    setError('Tu rol no tiene permisos para gestionar mensajes.')
-    return
-  }
-
-  try {
-    await api.patch(`/admin/contact-messages/${message.id}`, {
-      status: message.status,
-      notes: message.notes || null,
-    })
-    setSuccess('Mensaje actualizado con notas de seguimiento.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo actualizar el estado del mensaje.')
-  }
-}
-
-const createAdminUser = async () => {
-  if (!canManageAdmins.value) {
-    setError('Tu rol no tiene permisos para crear usuarios administradores.')
-    return
-  }
-
-  const validationError = validateAdminUser()
-  if (validationError) {
-    setError(validationError)
-    return
-  }
-
-  try {
-    await api.post('/admin/users', newAdminUser.value)
-    newAdminUser.value = { name: '', email: '', password: '', role: 'content_manager' }
-    setSuccess('Usuario administrador creado.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo crear el usuario administrador.')
-  }
-}
-
-const fetchSystemAlerts = async () => {
-  if (!canViewHistory.value) {
-    return
-  }
-
-  try {
-    const response = await api.get('/admin/system-alerts')
-    systemAlerts.value = response.data || systemAlerts.value
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudieron actualizar las alertas internas.')
-  }
-}
-
-const fetchPendingApprovals = async () => {
-  if (!canApproveRequests.value) {
-    pendingApprovals.value = []
-    return
-  }
-
-  try {
-    const response = await api.get('/admin/approvals?status=pending')
-    pendingApprovals.value = response.data?.requests || []
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudieron cargar las aprobaciones pendientes.')
-  }
-}
-
-const approveRequest = async (requestId) => {
-  try {
-    await api.post(`/admin/approvals/${requestId}/approve`)
-    await fetchPendingApprovals()
-    await fetchSystemAlerts()
-    setSuccess('Solicitud aprobada.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo aprobar la solicitud.')
-  }
-}
-
-const rejectRequest = async (requestId) => {
-  try {
-    await api.post(`/admin/approvals/${requestId}/reject`)
-    await fetchPendingApprovals()
-    await fetchSystemAlerts()
-    setSuccess('Solicitud rechazada.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo rechazar la solicitud.')
-  }
-}
-
-const setupTwoFactor = async () => {
-  try {
-    const response = await api.post('/admin/auth/2fa/setup')
-    twoFactorSetupSecret.value = response.data?.secret || ''
-    twoFactorSetupUrl.value = response.data?.otpauth_url || ''
-    setSuccess('Se generó el secreto 2FA. Ingresa un código para activarlo.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo iniciar la configuración 2FA.')
-  }
-}
-
-const enableTwoFactor = async () => {
-  try {
-    await api.post('/admin/auth/2fa/enable', { code: twoFactorCode.value.trim() })
-    twoFactorCode.value = ''
-    twoFactorSetupSecret.value = ''
-    twoFactorSetupUrl.value = ''
-    currentAdmin.value.two_factor_enabled = true
-    setSuccess('2FA activado correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo activar 2FA.')
-  }
-}
-
-const disableTwoFactor = async () => {
-  try {
-    await api.post('/admin/auth/2fa/disable', { code: twoFactorCode.value.trim() })
-    twoFactorCode.value = ''
-    twoFactorSetupSecret.value = ''
-    twoFactorSetupUrl.value = ''
-    currentAdmin.value.two_factor_enabled = false
-    setSuccess('2FA desactivado correctamente.')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo desactivar 2FA.')
-  }
-}
-
-const logout = async () => {
-  try {
-    await api.post('/admin/auth/logout')
-  } catch (requestError) {
-    setError(requestError.userMessage || 'No se pudo cerrar la sesión remota, pero se cerrará localmente.')
-  } finally {
-    clearAdminToken()
-    await router.push('/admin/login')
-  }
-}
-
-const scrollToSection = (sectionId) => {
-  activeSection.value = sectionId
-  const target = document.getElementById(sectionId)
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-}
-
-const handleSearchSelect = (result) => {
-  if (result.type === 'job') {
-    scrollToSection('jobs')
-  } else if (result.type === 'menuItem') {
-    scrollToSection('menu')
-    selectMenuItem(result.data.id)
-  } else if (result.type === 'promotion') {
-    scrollToSection('promotions')
-  } else if (result.type === 'branch') {
-    scrollToSection('branches')
-  } else if (result.type === 'message') {
-    scrollToSection('messages')
-    messagePage.value = 1
-  }
-}
-
-const cleanupPendingUploads = () => {
-  [settings.value, newJob.value, newMenuItem.value, newPromotion.value, newBranch.value].forEach((target) => revokePendingUpload(target))
-  jobs.value.forEach((job) => revokePendingUpload(job))
-  menuItems.value.forEach((item) => revokePendingUpload(item))
-  promotions.value.forEach((promotion) => revokePendingUpload(promotion))
-  branches.value.forEach((branch) => revokePendingUpload(branch))
-}
-
-const updateActiveSection = () => {
-  if (scrollFrame !== null) {
-    return
-  }
-
-  scrollFrame = requestAnimationFrame(() => {
-    const sectionElements = sections
-      .map((section) => document.getElementById(section.id))
-      .filter(Boolean)
-
-    const scrollPosition = window.scrollY + 180
-    let current = 'overview'
-
-    sectionElements.forEach((section) => {
-      if (section.offsetTop <= scrollPosition) {
-        current = section.id
-      }
-    })
-
-    activeSection.value = current
-    scrollFrame = null
-  })
-}
-
-watch([messageSearch, messageStatusFilter], () => {
-  messagePage.value = 1
-})
-
-watch(filteredMessages, () => {
-  if (messagePage.value > messagePageCount.value) {
-    messagePage.value = messagePageCount.value
+watch(activeTab, (newTab) => {
+  if (newTab === 'messages') {
+    loadContactMessages()
+  } else if (newTab === 'users' && canAccessTab('users')) {
+    loadAdminUsers()
+  } else if (newTab === 'reviews' && canAccessTab('reviews')) {
+    loadAdminReviews()
   }
 })
 
-watch([historySearch, historyActionFilter, historyDateFrom, historyDateTo, historyAdminFilter], () => {
-  if (canViewHistory.value) {
-    fetchChangeLogs(1)
-  }
-})
-
-watch(
-  [settings, newJob, newMenuItem, newPromotion, newBranch],
-  () => {
-    if (hasRestoredDrafts.value) {
-      persistDrafts()
-    }
-  },
-  { deep: true }
-)
-
-const undoLastChange = async () => {
-  if (!canViewHistory.value) {
-    setError('No tienes permisos para deshacer cambios.')
+onMounted(() => {
+  // Validación estricta de seguridad: si no hay token válido, redirigir de inmediato al login
+  if (!hasAdminToken() || !adminUser.value) {
+    router.replace('/admin/login')
     return
   }
-
-  loadingSpinner.value?.show()
-  try {
-    const response = await api.post('/admin/change-logs/revert-last')
-    lastOperation.value = null
-    loadingSpinner.value?.hide()
-    addToast(`Cambio deshecho: ${response.data.last_change?.description}`, 'success')
-    await loadLandingContent(true)
-    await fetchChangeLogs(1)
-  } catch (error) {
-    loadingSpinner.value?.hide()
-    setError(error.userMessage || 'No se pudo deshacer el cambio.')
-  }
-}
-
-const loadLastOperation = async () => {
-  try {
-    const response = await api.get('/admin/change-logs', { params: { per_page: 1 } })
-    if (response.data?.data?.[0]) {
-      lastOperation.value = response.data.data[0].description
-    }
-  } catch (error) {
-    lastOperation.value = null
-  }
-}
-
-const exportData = async (type) => {
-  try {
-    const response = await api.get('/admin/export-data', {
-      params: { type },
-      responseType: 'blob'
-    })
-    // Axios returns Blob payload in response.data; using response object breaks downloads.
-    const url = window.URL.createObjectURL(response.data)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `admin-export-${type}-${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    addToast(`Archivo ${type} exportado correctamente`, 'success')
-  } catch (error) {
-    setError('No se pudo exportar los datos.')
-  } finally {
-    showExportMenu.value = false
-  }
-}
-
-const dataUrlToFile = (dataUrl, filename = 'cropped-image.png') => {
-  // Convert cropper base64 output to File so existing upload pipeline can be reused.
-  const [meta, base64] = dataUrl.split(',')
-  const mime = (meta.match(/data:(.*?);base64/) || [])[1] || 'image/png'
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i)
-  }
-  return new File([bytes], filename, { type: mime })
-}
-
-const openImageCropper = (target, ratio = '4/3') => {
-  if (!target?.__uploadPreviewUrl) {
-    setError('Primero selecciona una imagen para recortar.')
-    return
-  }
-  cropTarget.value = target
-  imageCropper.value?.show(target.__uploadPreviewUrl, ratio)
-}
-
-const onImageCropped = (croppedImage) => {
-  if (!cropTarget.value) {
-    return
-  }
-
-  const target = cropTarget.value
-  const file = dataUrlToFile(croppedImage, `cropped-${Date.now()}.png`)
-  const fieldName = target.__uploadFieldName || 'image_url'
-  const context = target.__uploadContext || 'general'
-  setPendingUpload(target, file, fieldName, context)
-  cropTarget.value = null
-  addToast('Imagen recortada y lista para aplicar.', 'success')
-}
-
-const bulkActionChangeStatus = async (status) => {
-  if (!canManageMenu.value) {
-    setError('No tienes permisos para esta acción.')
-    return
-  }
-  
-  loadingSpinner.value?.show()
-  try {
-    for (const id of bulkSelectedIds.value) {
-      const item = menuItems.value.find(m => m.id === id)
-      if (item) {
-        item.is_active = status
-        await saveMenuItem(item, true)
-      }
-    }
-    addToast(`${bulkSelectedIds.value.length} producto(s) actualizado(s)`, 'success')
-    bulkMode.value = false
-    bulkSelectedIds.value = []
-    loadingSpinner.value?.hide()
-  } catch (error) {
-    loadingSpinner.value?.hide()
-    setError('Error al actualizar los productos.')
-  }
-}
-
-const bulkActionToggleFeatured = async () => {
-  if (!canManageMenu.value) {
-    setError('No tienes permisos para esta acción.')
-    return
-  }
-  
-  loadingSpinner.value?.show()
-  try {
-    for (const id of bulkSelectedIds.value) {
-      const item = menuItems.value.find(m => m.id === id)
-      if (item) {
-        item.is_featured = !item.is_featured
-        await saveMenuItem(item, true)
-      }
-    }
-    addToast(`${bulkSelectedIds.value.length} producto(s) actualizado(s)`, 'success')
-    bulkMode.value = false
-    bulkSelectedIds.value = []
-    loadingSpinner.value?.hide()
-  } catch (error) {
-    loadingSpinner.value?.hide()
-    setError('Error al actualizar los productos.')
-  }
-}
-
-const toggleBulkSelect = (itemId) => {
-  const index = bulkSelectedIds.value.indexOf(itemId)
-  if (index === -1) {
-    bulkSelectedIds.value.push(itemId)
-  } else {
-    bulkSelectedIds.value.splice(index, 1)
-  }
-}
-
-onMounted(async () => {
-  await fetchAll()
-  await loadLastOperation()
-  if (canViewHistory.value) {
-    alertsIntervalId = window.setInterval(() => {
-      fetchSystemAlerts()
-      if (canApproveRequests.value) {
-        fetchPendingApprovals()
-      }
-    }, 60000)
-  }
-  window.addEventListener('scroll', updateActiveSection, { passive: true })
-  updateActiveSection()
-})
-
-onBeforeUnmount(() => {
-  cleanupPendingUploads()
-  window.removeEventListener('scroll', updateActiveSection)
-  if (alertsIntervalId !== null) {
-    clearInterval(alertsIntervalId)
-    alertsIntervalId = null
-  }
-  if (scrollFrame !== null) {
-    cancelAnimationFrame(scrollFrame)
-  }
+  loadData()
 })
 </script>
-
-<style scoped>
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

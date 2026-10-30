@@ -1,57 +1,23 @@
-// src/config/company.js
 export default {
-  name: "PolloFeliz",
-  tagline: "El mejor pollo asado de México",
-  description: "Sabor y tradición en cada bocado. Pollo asado con la receta secreta que nos hace únicos en Durango.",
-  
-  phone: "6181293730",
-  email: "contacto@pollofeliz.com",
-  address: "Av. Principal #123, Centro, Durango",
-  
-  social: {
-    facebook: "https://facebook.com/pollofeliz",
-    instagram: "https://instagram.com/pollofeliz",
-    twitter: "https://twitter.com/pollofeliz",
-    youtube: "https://youtube.com/pollofeliz"
-  },
-  
+  name: 'Pollo Feliz',
+  tagline: 'El mejor Pollo Asado de Durango',
+  description: 'Descubre el auténtico sabor que reúne a la familia. Pollo marinado con receta secreta de especias naturales y asado pacientemente al carbón de mezquite.',
+  phone: '618-123-3694',
+  whatsapp: '521551234567',
+  email: 'soporte@pollofelizdgo.com',
+  address: 'Av. 5 de Mayo #123, Zona Centro, Durango, Dgo.',
   workingHours: {
-    monday: "11:00 - 18:30",
-    tuesday: "11:00 - 18:30",
-    wednesday: "11:00 - 18:30",
-    thursday: "11:00 - 18:30",
-    friday: "11:00 - 18:30",
-    saturday: "11:00 - 18:30",
-    sunday: "11:00 - 18:30"
+    monday: '10:00 AM - 10:00 PM',
+    tuesday: '10:00 AM - 10:00 PM',
+    wednesday: '10:00 AM - 10:00 PM',
+    thursday: '10:00 AM - 10:00 PM',
+    friday: '10:00 AM - 11:00 PM',
+    saturday: '10:00 AM - 11:00 PM',
+    sunday: '10:00 AM - 10:00 PM',
   },
-  
   stats: [
-    { number: "15+", label: "Años de experiencia", icon: "StarIcon" },
-    { number: "50K+", label: "Clientes felices", icon: "UsersIcon" },
-    { number: "100%", label: "Ingredientes frescos", icon: "CheckBadgeIcon" },
-    { number: "4.9", label: "Calificación promedio", icon: "HeartIcon" }
+    { number: '100%', label: 'Al Carbón' },
+    { number: '4.9 ★', label: '+2,500 Reseñas' },
+    { number: '3', label: 'Sucursales' },
   ],
-  
-  features: [
-    {
-      icon: "FireIcon",
-      title: "Sabor Único",
-      description: "Nuestra receta secreta con especias especiales"
-    },
-    {
-      icon: "StarIcon",
-      title: "Calidad Premium",
-      description: "Pollo fresco de la más alta calidad"
-    },
-    {
-      icon: "ClockIcon",
-      title: "Servicio Rápido",
-      description: "Tu pedido listo en menos de 30 minutos"
-    },
-    {
-      icon: "HeartIcon",
-      title: "Hecho con Amor",
-      description: "Preparado con la pasión de siempre"
-    }
-  ]
 }
