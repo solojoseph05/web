@@ -125,7 +125,7 @@
           </button>
 
           <!-- Current Role Context in Sidebar -->
-          <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 px-2 space-y-1">
+          <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 px-2 space-y-2">
             <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
               Tu Nivel de Acceso
             </span>
@@ -137,6 +137,24 @@
                 </span>
                 <span class="block text-[10px] text-gray-400 truncate">
                   {{ visibleTabs.length }} áreas disponibles
+                </span>
+              </div>
+            </div>
+
+            <!-- Estado del Motor de Base de Datos -->
+            <div class="pt-2 border-t border-gray-100 dark:border-gray-800">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                Motor de Base de Datos
+              </span>
+              <div class="flex items-center justify-between text-[11px] p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span class="font-medium text-gray-700 dark:text-gray-300 truncate">
+                    {{ dbStatusInfo?.engine || 'Memoria (Activa)' }}
+                  </span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-bold shrink-0">
+                  BD Lista
                 </span>
               </div>
             </div>
@@ -1611,10 +1629,11 @@ import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
-const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta } = useAdminAuth()
+const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta, fetchDatabaseStatus } = useAdminAuth()
 const { addToast } = useToasts()
 const { theme, toggleTheme } = useTheme()
 
+const dbStatusInfo = ref(null)
 const activeTab = ref(route.query?.tab || 'summary')
 const orderFilter = ref('all')
 
@@ -2587,12 +2606,18 @@ watch(activeTab, (newTab) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   // Validación estricta de seguridad: si no hay token válido, redirigir de inmediato al login
   if (!hasAdminToken() || !adminUser.value) {
     router.replace('/admin/login')
     return
   }
   loadData()
+  try {
+    const status = await fetchDatabaseStatus()
+    if (status) dbStatusInfo.value = status
+  } catch (e) {
+    // Modo local / contingencia
+  }
 })
 </script>

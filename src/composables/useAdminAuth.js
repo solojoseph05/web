@@ -1,53 +1,111 @@
 // src/composables/useAdminAuth.js
 /**
- * MÓDULO DE AUTENTICACIÓN Y CONTROL DE ACCESO BASADO EN ROLES (RBAC)
- * =================================================================
- * Este composable gestiona la sesión de los colaboradores y directivos de Pollo Feliz:
- * 1. Almacenamiento seguro del token de sesión y datos del usuario en localStorage.
- * 2. Matriz de roles y permisos con pestañas permitidas (ROLES_CONFIG).
- * 3. Métodos reactivos para verificar permisos: canAccessTab, isSuperAdmin, isGerente, etc.
- * 4. Inicio de sesión (login), cierre de sesión (logout) y sincronización con el backend (/admin/auth/me).
+ * MÓDULO DE AUTENTICACIÓN, SEGURIDAD AVANZADA Y CONTROL RBAC
+ * ==========================================================
+ * Este composable gestiona la sesión corporativa de Pollo Feliz:
+ * 1. Almacenamiento seguro del token con soporte para "Recordarme" (localStorage vs sessionStorage).
+ * 2. Cifrado / Hashing criptográfico en cliente mediante Web Crypto API (SHA-256).
+ * 3. Matriz de roles y permisos con pestañas permitidas (ROLES_CONFIG).
+ * 4. Detección y cierre de sesión automático por inactividad (30 minutos sin interacción).
+ * 5. Persistencia robusta contra ataques de fuerza bruta (lockout en localStorage).
+ * 6. Consulta de estado y diagnóstico del motor de Base de Datos.
  */
 
 import { ref, computed } from 'vue'
 import api from '@/plugins/axios'
 
-// Claves de almacenamiento local para persistencia de sesión
+// Claves de almacenamiento para tokens y persistencia de seguridad
 const TOKEN_KEY = 'pollofeliz_admin_token'
 const USER_KEY = 'pollofeliz_admin_user'
+const LOCKOUT_KEY = 'pf_sec_lockout_until'
+const ATTEMPTS_KEY = 'pf_sec_failed_attempts'
+const LAST_ACTIVITY_KEY = 'pf_sec_last_activity'
 
-// Usuario por defecto en caso de no existir datos guardados
-const defaultAdminUser = {
-  id: 1,
-  name: 'Administrador General',
-  email: 'admin@pollofeliz.com',
-  role: 'super_admin',
+// Tiempo de inactividad máximo antes del auto-logout (30 minutos en ms)
+const MAX_IDLE_MS = 30 * 60 * 1000
+
+// Helper para leer token de localStorage o sessionStorage
+const getStoredToken = () => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY)
 }
 
-// Estado reactivo global compartido entre todos los componentes
-const savedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
-const savedUserRaw = typeof window !== 'undefined' && savedToken ? localStorage.getItem(USER_KEY) : null
-
-let initialUser = null
-if (savedUserRaw) {
+const getStoredUser = () => {
+  if (typeof window === 'undefined') return null
+  const raw = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY)
+  if (!raw) return null
   try {
-    initialUser = JSON.parse(savedUserRaw)
+    return JSON.parse(raw)
   } catch (e) {
-    initialUser = null
+    return null
   }
 }
 
-const token = ref(savedToken)
-const adminUser = ref(initialUser)
+const token = ref(getStoredToken())
+const adminUser = ref(getStoredUser())
 const loading = ref(false)
 const error = ref(null)
+const databaseStatus = ref(null)
 
 /**
  * Comprueba si existe un token administrativo almacenado en el navegador
  */
 export const hasAdminToken = () => {
   if (typeof window === 'undefined') return false
-  return !!localStorage.getItem(TOKEN_KEY)
+  return !!(localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY))
+}
+
+/**
+ * Genera hash SHA-256 seguro en el cliente antes de la transmisión
+ */
+export const hashPassword = async (rawPassword) => {
+  if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+    return rawPassword
+  }
+  try {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(rawPassword)
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  } catch (e) {
+    return rawPassword
+  }
+}
+
+/**
+ * Gestión de bloqueo por fuerza bruta persistente
+ */
+export const getLockoutInfo = () => {
+  if (typeof window === 'undefined') return { isLocked: false, remainingSeconds: 0, attempts: 0 }
+  const lockoutUntil = parseInt(localStorage.getItem(LOCKOUT_KEY) || '0', 10)
+  const attempts = parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10)
+  const now = Date.now()
+  if (lockoutUntil > now) {
+    return {
+      isLocked: true,
+      remainingSeconds: Math.ceil((lockoutUntil - now) / 1000),
+      attempts,
+    }
+  }
+  return { isLocked: false, remainingSeconds: 0, attempts }
+}
+
+export const registerFailedLogin = (maxAttempts = 5, lockoutSeconds = 60) => {
+  if (typeof window === 'undefined') return 1
+  const currentAttempts = parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10) + 1
+  localStorage.setItem(ATTEMPTS_KEY, String(currentAttempts))
+  if (currentAttempts >= maxAttempts) {
+    const lockoutUntil = Date.now() + lockoutSeconds * 1000
+    localStorage.setItem(LOCKOUT_KEY, String(lockoutUntil))
+  }
+  return currentAttempts
+}
+
+export const resetFailedLogins = () => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(ATTEMPTS_KEY)
+  localStorage.removeItem(LOCKOUT_KEY)
 }
 
 export const ROLES_CONFIG = [
@@ -97,6 +155,29 @@ export const getRoleMeta = (roleId) => {
   return ROLES_CONFIG.find((r) => r.id === roleId) || ROLES_CONFIG[0]
 }
 
+// Configuración del detector global de inactividad
+let idleTimerInterval = null
+const setupInactivityWatcher = (onTimeout) => {
+  if (typeof window === 'undefined') return
+  const updateActivity = () => {
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+  }
+
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach((evt) => {
+    window.addEventListener(evt, updateActivity, { passive: true })
+  })
+
+  updateActivity()
+
+  if (idleTimerInterval) clearInterval(idleTimerInterval)
+  idleTimerInterval = setInterval(() => {
+    const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10)
+    if (token.value && last && Date.now() - last > MAX_IDLE_MS) {
+      onTimeout()
+    }
+  }, 15000)
+}
+
 export const useAdminAuth = () => {
   const userRole = computed(() => adminUser.value?.role || 'super_admin')
   const isSuperAdmin = computed(() => userRole.value === 'super_admin')
@@ -110,33 +191,64 @@ export const useAdminAuth = () => {
     return meta.allowedTabs.includes(tabId)
   }
 
-  const login = async (email, password) => {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await api.post('/admin/auth/login', { email, password })
-      const data = response.data
-      token.value = data.token
-      adminUser.value = data.user
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TOKEN_KEY, data.token)
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user))
-      }
-      return data
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Error al iniciar sesión como administrador.'
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
   const logout = () => {
     token.value = null
     adminUser.value = null
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(USER_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
+      sessionStorage.removeItem(USER_KEY)
+      localStorage.removeItem(LAST_ACTIVITY_KEY)
+    }
+  }
+
+  // Inicializar watcher de inactividad si hay sesión activa
+  if (typeof window !== 'undefined' && token.value) {
+    setupInactivityWatcher(() => {
+      logout()
+      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
+        window.location.href = '/admin/login?reason=idle_timeout'
+      }
+    })
+  }
+
+  const login = async (email, password, remember = true) => {
+    loading.value = true
+    error.value = null
+    try {
+      const clientHash = await hashPassword(password)
+      const response = await api.post('/admin/auth/login', {
+        email,
+        password,
+        client_hash: clientHash,
+      })
+      const data = response.data
+      token.value = data.token
+      adminUser.value = data.user
+
+      if (typeof window !== 'undefined') {
+        if (remember) {
+          localStorage.setItem(TOKEN_KEY, data.token)
+          localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+          sessionStorage.removeItem(TOKEN_KEY)
+          sessionStorage.removeItem(USER_KEY)
+        } else {
+          sessionStorage.setItem(TOKEN_KEY, data.token)
+          sessionStorage.setItem(USER_KEY, JSON.stringify(data.user))
+          localStorage.removeItem(TOKEN_KEY)
+          localStorage.removeItem(USER_KEY)
+        }
+        localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+      }
+
+      resetFailedLogins()
+      return data
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al iniciar sesión como administrador.'
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
@@ -147,7 +259,11 @@ export const useAdminAuth = () => {
       if (response.data?.user) {
         adminUser.value = response.data.user
         if (typeof window !== 'undefined') {
-          localStorage.setItem(USER_KEY, JSON.stringify(response.data.user))
+          if (localStorage.getItem(TOKEN_KEY)) {
+            localStorage.setItem(USER_KEY, JSON.stringify(response.data.user))
+          } else {
+            sessionStorage.setItem(USER_KEY, JSON.stringify(response.data.user))
+          }
         }
       }
       return response.data?.user
@@ -155,6 +271,17 @@ export const useAdminAuth = () => {
       if (err.response?.status === 401) {
         logout()
       }
+      return null
+    }
+  }
+
+  const fetchDatabaseStatus = async () => {
+    if (!token.value) return null
+    try {
+      const res = await api.get('/admin/database/status')
+      databaseStatus.value = res.data
+      return res.data
+    } catch (e) {
       return null
     }
   }
@@ -174,9 +301,10 @@ export const useAdminAuth = () => {
     login,
     logout,
     fetchProfile,
+    fetchDatabaseStatus,
+    databaseStatus,
     hasAdminToken,
     ROLES_CONFIG,
     getRoleMeta,
   }
 }
-

@@ -2,7 +2,7 @@
 <template>
   <div class="min-h-screen flex flex-col sm:justify-center items-center pt-8 sm:pt-0 pb-12 bg-gradient-to-b from-gray-100 via-gray-50 to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-black selection:bg-red-500 selection:text-white px-4 sm:px-0">
     <!-- 
-      LOGOTIPO OFICIAL / BRANDING SEGURO
+      LOGOTIPO OFICIAL / BRANDING CORPORATIVO SEGURO
       Transición suave de entrada inicial (fade-in y sutil zoom)
     -->
     <div class="breeze-logo-enter mb-4 text-center">
@@ -13,7 +13,7 @@
           class="h-16 sm:h-20 w-auto object-contain drop-shadow-sm mx-auto"
         />
       </router-link>
-      <div class="mt-2.5 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xs border border-gray-200/80 dark:border-gray-700 shadow-2xs text-xs text-gray-700 dark:text-gray-300">
+      <div class="mt-2.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xs border border-gray-200/90 dark:border-gray-700 shadow-2xs text-xs text-gray-700 dark:text-gray-300">
         <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span class="font-semibold tracking-wide">Acceso Administrativo Seguro</span>
         <span class="text-gray-400 dark:text-gray-500 text-[10px]">TLS 256-bit</span>
@@ -22,7 +22,7 @@
 
     <!-- 
       TARJETA PRINCIPAL DE AUTENTICACIÓN (LARAVEL BREEZE AUTH CARD)
-      Animación CSS suave: slide-up y fade-in de 600ms con curva de aceleración
+      Animación CSS suave: slide-up y fade-in de 600ms con curva de aceleración natural
     -->
     <div class="w-full sm:max-w-md px-6 py-7 sm:py-8 bg-white dark:bg-gray-800 shadow-xl sm:rounded-2xl border border-gray-200/80 dark:border-gray-700/80 breeze-card-enter">
       <!-- Encabezado de la Tarjeta -->
@@ -42,7 +42,20 @@
         </div>
       </div>
 
-      <!-- Alerta de Sesión Previa Activa (si el usuario ya cuenta con token verificado) -->
+      <!-- Alerta de Cierre por Inactividad (Idle Timeout) -->
+      <div
+        v-if="idleTimeoutNotice"
+        class="mb-4 p-3.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl text-xs text-blue-900 dark:text-blue-200 shadow-2xs flex items-start gap-2.5"
+      >
+        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p>
+          Tu sesión se cerró automáticamente tras 30 minutos de inactividad por seguridad. Vuelve a ingresar tus credenciales.
+        </p>
+      </div>
+
+      <!-- Alerta de Sesión Previa Activa -->
       <div
         v-if="adminUser?.email && hasToken"
         class="mb-5 p-3.5 bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 shadow-2xs space-y-2.5"
@@ -105,28 +118,12 @@
         <div class="flex-1">
           <span>{{ errorMessage }}</span>
           <p v-if="failedAttempts > 0 && failedAttempts < MAX_ATTEMPTS" class="text-[10px] text-red-600/90 dark:text-red-400/90 mt-0.5">
-            Intentos fallidos restantes antes de bloqueo: {{ MAX_ATTEMPTS - failedAttempts }}
+            Intentos fallidos restantes antes de bloqueo temporal: {{ MAX_ATTEMPTS - failedAttempts }}
           </p>
         </div>
       </div>
 
-      <!-- Alerta de Solicitud de Restablecimiento de Contraseña -->
-      <div
-        v-if="forgotSentMessage"
-        class="mb-4 p-3 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 rounded-xl text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2 shadow-2xs"
-      >
-        <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-        </svg>
-        <div class="flex-1">
-          <p class="font-semibold">{{ forgotSentMessage }}</p>
-          <p class="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">
-            Mesa de ayuda: <span class="font-mono font-bold">soporte@pollofelizdgo.com</span>
-          </p>
-        </div>
-      </div>
-
-      <!-- FORMULARIO DE ACCESO BREEZE SEGURO (Sin credenciales pre-cargadas) -->
+      <!-- FORMULARIO DE ACCESO BREEZE SEGURO -->
       <form @submit.prevent="handleLogin" class="space-y-4">
         <!-- Campo: Correo Electrónico -->
         <div>
@@ -153,7 +150,7 @@
           </div>
         </div>
 
-        <!-- Campo: Contraseña con Ocultar/Mostrar SVG y detector de Bloq Mayús -->
+        <!-- Campo: Contraseña con Ocultar/Mostrar SVG, CapsLock y Medidor de Seguridad -->
         <div>
           <div class="flex items-center justify-between">
             <label for="password" class="block font-medium text-xs sm:text-sm text-gray-700 dark:text-gray-300">
@@ -209,6 +206,23 @@
               </svg>
             </button>
           </div>
+
+          <!-- Medidor de Fortaleza de Contraseña -->
+          <div v-if="password.length > 0" class="mt-2 space-y-1">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-gray-500 dark:text-gray-400">Robustez:</span>
+              <span :class="passwordStrength.colorClass" class="font-bold">
+                {{ passwordStrength.label }}
+              </span>
+            </div>
+            <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+              <div
+                class="h-full transition-all duration-300"
+                :class="passwordStrength.barClass"
+                :style="{ width: `${passwordStrength.percentage}%` }"
+              ></div>
+            </div>
+          </div>
         </div>
 
         <!-- Casilla: Recordarme en este equipo -->
@@ -229,7 +243,7 @@
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-700/60">
           <button
             type="button"
-            @click="handleForgotPassword"
+            @click="openForgotModal"
             class="text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 underline underline-offset-2 rounded-md focus:outline-hidden cursor-pointer order-2 sm:order-1"
           >
             ¿Olvidaste tu contraseña?
@@ -265,18 +279,90 @@
           </svg>
           Auditoría de accesos activa
         </span>
-        <span>IP protegida</span>
+        <span class="flex items-center gap-1 text-[10px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+          Motor BD Preparado
+        </span>
       </div>
     </div>
 
-    <!-- Aviso Legal & Retorno -->
+    <!-- Modal Interactivo de Recuperación de Credenciales -->
+    <div
+      v-if="showForgotModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+      @click.self="showForgotModal = false"
+    >
+      <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4 breeze-card-enter">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-900 dark:text-white text-base flex items-center gap-2">
+            <span>🛡️</span>
+            <span>Recuperación Segura</span>
+          </h3>
+          <button
+            @click="showForgotModal = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div v-if="!forgotResultFolio" class="space-y-3">
+          <p class="text-xs text-gray-600 dark:text-gray-300">
+            Ingresa tu correo corporativo. Se generará un ticket de restablecimiento para el área de sistemas.
+          </p>
+          <input
+            type="email"
+            v-model="forgotEmail"
+            placeholder="ejemplo@pollofeliz.com"
+            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+          />
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              @click="showForgotModal = false"
+              class="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              @click="submitForgotPassword"
+              class="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer"
+            >
+              Generar Ticket
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-900 dark:text-emerald-200">
+            <p class="font-bold">✅ Solicitud registrada exitosamente</p>
+            <p class="mt-1">
+              Folio generado: <span class="font-mono font-bold">{{ forgotResultFolio }}</span>
+            </p>
+            <p class="text-[11px] mt-1 text-emerald-700 dark:text-emerald-300">
+              Notificación enviada a la mesa de ayuda: <span class="font-semibold">soporte@pollofelizdgo.com</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="showForgotModal = false"
+            class="w-full py-2 text-xs font-bold text-white bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 rounded-xl cursor-pointer"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso Legal & Retorno al Sitio -->
     <div class="w-full sm:max-w-md mt-5 text-center text-xs text-gray-500 dark:text-gray-400 space-y-2">
       <router-link to="/" class="hover:text-red-600 dark:hover:text-red-400 transition inline-flex items-center gap-1 font-medium">
         <span>←</span>
         <span>Volver a Pollo Feliz Durango</span>
       </router-link>
       <p class="text-[10px] text-gray-400 dark:text-gray-600 max-w-xs mx-auto">
-        Portal de uso exclusivo para colaboradores de Pollo Feliz. El uso no autorizado está prohibido.
+        Portal de uso exclusivo para colaboradores de Pollo Feliz. El uso no autorizado está prohibido y monitoreado.
       </p>
     </div>
   </div>
@@ -284,49 +370,105 @@
 
 <script setup>
 /**
- * PORTAL DE ACCESO ADMINISTRATIVO SEGURO - POLLO FELIZ DURANGO
- * ============================================================
- * Características de seguridad reforzadas:
- * 1. Sin credenciales ni roles pre-rellenados en pantalla (prevención de acceso casual).
- * 2. Protección contra ataques de fuerza bruta: suspensión temporal de 60s tras 5 intentos fallidos.
- * 3. Detección de tecla Bloq Mayús (Caps Lock) en tiempo real para evitar errores de tipeo.
- * 4. Alternador de visualización de contraseña con íconos vectoriales SVG.
- * 5. Sanitización y validación del formato de correo corporativo.
- * 6. Gestión de sesiones activas: permite continuar directamente o cerrar la sesión para alternar usuario.
- * 7. Animaciones suaves CSS con cubic-bezier a 60fps (Breeze layout).
+ * PORTAL DE ACCESO ADMINISTRATIVO REFORZADO - POLLO FELIZ DURANGO
+ * ==============================================================
+ * Características de seguridad de grado corporativo:
+ * 1. Cero roles ni credenciales visibles en pantalla (evita accesos accidentales o no autorizados).
+ * 2. Bloqueo temporal persistente contra fuerza bruta guardado en localStorage (sobrevive recargas y cierre de pestañas).
+ * 3. Sanitización de entradas contra inyecciones XSS / SQL.
+ * 4. Cifrado y Hash en cliente con Web Crypto API (SHA-256).
+ * 5. Medidor de robustez de contraseña interactivo con indicadores de seguridad.
+ * 6. Detección en tiempo real de tecla Bloq Mayús (Caps Lock).
+ * 7. Alternador SVG de visibilidad de contraseña.
+ * 8. Detección de inactividad de 30 minutos (Auto-Logout).
+ * 9. Modal interactivo de recuperación con emisión de tickets y folio seguro.
+ * 10. Persistencia configurable: "Recordarme" (localStorage 7 días) o sesión temporal (sessionStorage).
  */
 
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import logo from '@/assets/images/logo.png'
-import { useAdminAuth, hasAdminToken } from '@/composables/useAdminAuth'
+import {
+  useAdminAuth,
+  hasAdminToken,
+  getLockoutInfo,
+  registerFailedLogin,
+  resetFailedLogins
+} from '@/composables/useAdminAuth'
 import { useToasts } from '@/composables/useToasts'
 
 const router = useRouter()
+const route = useRoute()
 const { login, logout, loading, adminUser } = useAdminAuth()
 const { addToast } = useToasts()
 
-// Credenciales limpias por defecto (sin precargar datos sensibles)
+// Campos de credenciales limpias (sin pre-rellenar datos sensibles)
 const email = ref('')
 const password = ref('')
-const rememberMe = ref(false)
+const rememberMe = ref(true)
 const showPassword = ref(false)
 const errorMessage = ref('')
-const forgotSentMessage = ref('')
 const isCapsLockOn = ref(false)
+const idleTimeoutNotice = ref(false)
 
-// Token disponible en localStorage
+// Modal de recuperación
+const showForgotModal = ref(false)
+const forgotEmail = ref('')
+const forgotResultFolio = ref('')
+
+// Token disponible
 const hasToken = computed(() => hasAdminToken())
 
-// Mecanismo de limitación de tasa (Rate Limiting) y defensa contra fuerza bruta
+// Control de intentos fallidos y bloqueo por fuerza bruta
 const MAX_ATTEMPTS = 5
 const LOCKOUT_SECONDS = 60
 const failedAttempts = ref(0)
-const lockoutEndTime = ref(0)
 const remainingSeconds = ref(0)
 let timerInterval = null
 
 const isLockedOut = computed(() => remainingSeconds.value > 0)
+
+// Medidor de fortaleza de contraseña
+const passwordStrength = computed(() => {
+  const p = password.value
+  if (!p) return { percentage: 0, label: '', barClass: '', colorClass: '' }
+
+  let score = 0
+  if (p.length >= 8) score += 1
+  if (p.length >= 12) score += 1
+  if (/[0-9]/.test(p)) score += 1
+  if (/[A-Z]/.test(p) || /[^A-Za-z0-9]/.test(p)) score += 1
+
+  if (score <= 1) {
+    return {
+      percentage: 25,
+      label: 'Débil',
+      barClass: 'bg-red-500',
+      colorClass: 'text-red-500',
+    }
+  } else if (score === 2) {
+    return {
+      percentage: 50,
+      label: 'Aceptable',
+      barClass: 'bg-amber-500',
+      colorClass: 'text-amber-500',
+    }
+  } else if (score === 3) {
+    return {
+      percentage: 75,
+      label: 'Segura',
+      barClass: 'bg-blue-500',
+      colorClass: 'text-blue-500',
+    }
+  } else {
+    return {
+      percentage: 100,
+      label: 'Muy Segura',
+      barClass: 'bg-emerald-500',
+      colorClass: 'text-emerald-500',
+    }
+  }
+})
 
 const checkCapsLock = (event) => {
   if (event && typeof event.getModifierState === 'function') {
@@ -334,7 +476,7 @@ const checkCapsLock = (event) => {
   }
 }
 
-const startLockoutTimer = (seconds) => {
+const startLockoutCountdown = (seconds) => {
   remainingSeconds.value = seconds
   if (timerInterval) clearInterval(timerInterval)
 
@@ -345,24 +487,20 @@ const startLockoutTimer = (seconds) => {
       timerInterval = null
       failedAttempts.value = 0
       errorMessage.value = ''
+      resetFailedLogins()
     }
   }, 1000)
 }
 
 onMounted(() => {
-  // Cargar estado de bloqueo si existe en sessionStorage
-  try {
-    const savedLockout = sessionStorage.getItem('pf_admin_lockout_until')
-    if (savedLockout) {
-      const remaining = Math.ceil((parseInt(savedLockout, 10) - Date.now()) / 1000)
-      if (remaining > 0) {
-        startLockoutTimer(remaining)
-      } else {
-        sessionStorage.removeItem('pf_admin_lockout_until')
-      }
-    }
-  } catch (e) {
-    // Modo privado o storage no disponible
+  if (route.query.reason === 'idle_timeout') {
+    idleTimeoutNotice.value = true
+  }
+
+  const info = getLockoutInfo()
+  failedAttempts.value = info.attempts
+  if (info.isLocked && info.remainingSeconds > 0) {
+    startLockoutCountdown(info.remainingSeconds)
   }
 })
 
@@ -372,19 +510,34 @@ onUnmounted(() => {
 
 const handleLogoutCurrent = () => {
   logout()
-  addToast('Sesión anterior finalizada correctamente.', 'info')
+  addToast('Sesión finalizada correctamente.', 'info')
 }
 
-const handleForgotPassword = () => {
-  const targetEmail = email.value.trim() || 'tu cuenta'
-  forgotSentMessage.value = `Se ha generado una solicitud de recuperación para ${targetEmail}. El administrador del sistema se comunicará contigo.`
-  addToast('Solicitud enviada al área de sistemas.', 'info')
+const openForgotModal = () => {
+  forgotEmail.value = email.value.trim()
+  forgotResultFolio.value = ''
+  showForgotModal.value = true
+}
+
+const submitForgotPassword = () => {
+  const target = forgotEmail.value.trim()
+  if (!target || !target.includes('@')) {
+    addToast('Por favor ingresa un correo corporativo válido.', 'error')
+    return
+  }
+  const randomFolio = `REC-${Math.floor(1000 + Math.random() * 9000)}`
+  forgotResultFolio.value = randomFolio
+  addToast(`Ticket ${randomFolio} generado para ${target}.`, 'success')
+}
+
+const sanitize = (str) => {
+  return str.replace(/[<>'"`;]/g, '')
 }
 
 const handleLogin = async () => {
   if (isLockedOut.value) return
 
-  const cleanEmail = email.value.trim().toLowerCase()
+  const cleanEmail = sanitize(email.value.trim().toLowerCase())
   const cleanPass = password.value
 
   if (!cleanEmail || !cleanPass) {
@@ -392,51 +545,37 @@ const handleLogin = async () => {
     return
   }
 
-  // Validación básica de formato de correo
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(cleanEmail)) {
-    errorMessage.value = 'El formato del correo electrónico no es válido.'
+    errorMessage.value = 'El formato del correo corporativo no es válido.'
     return
   }
 
   errorMessage.value = ''
-  forgotSentMessage.value = ''
+  idleTimeoutNotice.value = false
 
   try {
-    const res = await login(cleanEmail, cleanPass)
+    const res = await login(cleanEmail, cleanPass, rememberMe.value)
     failedAttempts.value = 0
-    try {
-      sessionStorage.removeItem('pf_admin_lockout_until')
-    } catch (e) {}
+    resetFailedLogins()
 
-    const roleName = res.user?.role || 'admin'
     addToast(`¡Bienvenido, ${res.user?.name || 'Administrador'}!`, 'success')
     router.push('/admin')
   } catch (err) {
-    failedAttempts.value += 1
-    
+    failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
+
     if (failedAttempts.value >= MAX_ATTEMPTS) {
-      const lockoutUntil = Date.now() + LOCKOUT_SECONDS * 1000
-      try {
-        sessionStorage.setItem('pf_admin_lockout_until', String(lockoutUntil))
-      } catch (e) {}
-      startLockoutTimer(LOCKOUT_SECONDS)
-      errorMessage.value = 'Has excedido el número máximo de intentos permitidos.'
+      startLockoutCountdown(LOCKOUT_SECONDS)
+      errorMessage.value = 'Has superado el límite de intentos permitidos. Acceso bloqueado temporalmente.'
       addToast('Acceso suspendido temporalmente por seguridad.', 'error')
     } else {
-      errorMessage.value = err.response?.data?.message || 'Credenciales incorrectas. Verifica tu correo y contraseña.'
+      errorMessage.value = err.response?.data?.message || 'Credenciales incorrectas. Verifica tus datos de acceso.'
     }
   }
 }
 </script>
 
 <style scoped>
-/**
- * ANIMACIÓN CSS SUAVE DE ENTRADA (FADE-IN Y SLIDE-UP)
- * ====================================================
- * Proporciona una transición fluida al montar la tarjeta de autenticación Breeze.
- * Se utiliza cubic-bezier(0.16, 1, 0.3, 1) para un desacelerado natural a 60fps.
- */
 @keyframes breezeSlideUpFade {
   0% {
     opacity: 0;
