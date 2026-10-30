@@ -25,12 +25,20 @@ const defaultAdminUser = {
 }
 
 // Estado reactivo global compartido entre todos los componentes
-const token = ref(typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null)
-const adminUser = ref(
-  typeof window !== 'undefined'
-    ? JSON.parse(localStorage.getItem(USER_KEY) || JSON.stringify(defaultAdminUser))
-    : defaultAdminUser
-)
+const savedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+const savedUserRaw = typeof window !== 'undefined' && savedToken ? localStorage.getItem(USER_KEY) : null
+
+let initialUser = null
+if (savedUserRaw) {
+  try {
+    initialUser = JSON.parse(savedUserRaw)
+  } catch (e) {
+    initialUser = null
+  }
+}
+
+const token = ref(savedToken)
+const adminUser = ref(initialUser)
 const loading = ref(false)
 const error = ref(null)
 
