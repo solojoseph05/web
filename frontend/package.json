@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "serve -s dist -l $PORT",
-    "deploy": "echo 'Deploy command completed successfully'"
+    "deploy": "bash ../deploy.sh || npm run build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",
