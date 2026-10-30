@@ -41,15 +41,11 @@
 
       <!-- Right Actions Container (Never overlaps) -->
       <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-        <!-- Admin Access / Login Button -->
-        <router-link
-          :to="adminUser?.email ? '/admin' : '/admin/login'"
-          class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50/90 px-3 py-1.5 text-xs font-bold text-gray-700 hover:border-red-500 hover:text-red-600 hover:bg-red-50/50 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-200 dark:hover:bg-gray-800 transition shadow-2xs shrink-0 cursor-pointer"
-          :title="adminUser?.email ? 'Ir al Panel Administrativo' : 'Iniciar Sesión en el Administrador'"
-        >
-          <ShieldCheckIcon class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
-          <span class="whitespace-nowrap">{{ adminUser?.email ? 'Panel Admin' : 'Iniciar Sesión' }}</span>
-        </router-link>
+        <!-- 
+          ACCESO ADMINISTRATIVO PRIVADO:
+          Oculto de la interfaz pública para mayor seguridad.
+          El personal autorizado accede directamente mediante la ruta /admin/login.
+        -->
 
         <!-- CTA: Ordenar -->
         <button
@@ -122,15 +118,6 @@
 
           <!-- Quick Actions in Mobile Menu -->
           <div class="pt-2 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2.5">
-            <router-link
-              :to="adminUser?.email ? '/admin' : '/admin/login'"
-              @click="mobileMenuOpen = false"
-              class="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs font-bold text-gray-800 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 transition"
-            >
-              <ShieldCheckIcon class="w-4 h-4 text-red-600" />
-              <span>{{ adminUser?.email ? 'Panel Administrativo (' + (adminUser.name || 'Admin') + ')' : 'Iniciar Sesión (Administrador)' }}</span>
-            </router-link>
-
             <button
               @click="handleOrderClick"
               class="w-full rounded-xl bg-linear-to-r from-red-600 to-red-700 px-5 py-3 text-center text-xs sm:text-sm font-black text-white shadow-md hover:from-red-700 hover:to-red-800 cursor-pointer"
@@ -153,7 +140,6 @@ import {
   XMarkIcon,
   MoonIcon,
   SunIcon,
-  ShieldCheckIcon,
 } from '@heroicons/vue/24/outline'
 import navigation from '@/config/navigation'
 import logo from '@/assets/images/logo.png'

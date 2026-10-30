@@ -1597,7 +1597,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/plugins/axios'
 import logo from '@/assets/images/logo.png'
-import { useAdminAuth } from '@/composables/useAdminAuth'
+import { useAdminAuth, hasAdminToken } from '@/composables/useAdminAuth'
 import { useToasts } from '@/composables/useToasts'
 import MenuItemModal from '@/components/admin/MenuItemModal.vue'
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal.vue'
@@ -2588,6 +2588,11 @@ watch(activeTab, (newTab) => {
 })
 
 onMounted(() => {
+  // Validación estricta de seguridad: si no hay token válido, redirigir de inmediato al login
+  if (!hasAdminToken() || !adminUser.value) {
+    router.replace('/admin/login')
+    return
+  }
   loadData()
 })
 </script>

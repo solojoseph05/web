@@ -56,21 +56,6 @@
                 {{ item.label }}
               </a>
             </li>
-            <li class="pt-1.5 space-y-1">
-              <router-link
-                to="/admin/login"
-                class="text-gray-400 hover:text-red-500 transition-colors text-sm font-semibold flex items-center gap-1.5"
-              >
-                <span>🔒 Iniciar Sesión (Admin)</span>
-                <span class="text-[10px] bg-red-900/60 text-red-300 px-1.5 py-0.5 rounded font-bold">Login</span>
-              </router-link>
-              <router-link
-                to="/admin"
-                class="text-gray-500 hover:text-gray-300 transition-colors text-xs flex items-center gap-1"
-              >
-                <span>Panel de Administración</span>
-              </router-link>
-            </li>
           </ul>
         </div>
 
@@ -151,8 +136,6 @@
           <router-link to="/vision-mision" class="hover:text-red-500 transition-colors">Visión y Misión</router-link>
           <span>·</span>
           <router-link to="/sucursales" class="hover:text-red-500 transition-colors">Sucursales</router-link>
-          <span>·</span>
-          <router-link to="/admin/login" class="text-gray-400 hover:text-red-400 transition-colors">Portal Administrador</router-link>
         </div>
       </div>
     </div>
