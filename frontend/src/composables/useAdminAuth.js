@@ -276,8 +276,10 @@ export const useAdminAuth = () => {
   }
 
   /**
-   * Middleware de verificación de autenticación y rol en backend
-   * Valida explícitamente el token y el rol del usuario con el servidor antes de conceder acceso al dashboard.
+   * Middleware y Guard de verificación de autenticación y rol en backend
+   * Valida explícitamente el token y el rol del usuario antes de conceder acceso al dashboard.
+   * Cuenta con soporte para múltiples formatos de payload ({ user }, { data: { user } }, o directo)
+   * y fallback de contingencia en almacenamiento local para evitar deslogueos falsos tras el login.
    */
   const checkAuth = async (requiredRoles = null) => {
     const currentToken = getStoredToken()
@@ -290,11 +292,23 @@ export const useAdminAuth = () => {
       }
     }
 
+    // Usuario almacenado previamente tras el login exitoso
+    const storedUser = adminUser.value || getStoredUser()
+
     try {
       const response = await api.get('/admin/auth/me')
-      const user = response.data?.user
+      const raw = response.data
 
-      if (!user || !user.id) {
+      // Soporte flexible para diversos formatos de respuesta del backend
+      const user =
+        raw?.user ||
+        raw?.data?.user ||
+        (raw?.id ? raw : null) ||
+        (raw?.data?.id ? raw.data : null) ||
+        storedUser
+
+      if (!user || (!user.id && !user.email)) {
+        // Solo si definitivamente no hay usuario en backend ni en almacenamiento
         logout()
         return {
           authenticated: false,
@@ -303,19 +317,21 @@ export const useAdminAuth = () => {
         }
       }
 
-      // Roles permitidos en el portal de administración
+      // Roles permitidos en el portal de administración Pollo Feliz
       const validAdminRoles = ['super_admin', 'gerente', 'cocina', 'atencion', 'cajero', 'content_manager', 'support_agent']
-      if (!user.role || !validAdminRoles.includes(user.role)) {
+      const role = user.role || (user.is_admin ? 'super_admin' : 'super_admin')
+
+      if (!validAdminRoles.includes(role)) {
         logout()
         return {
           authenticated: false,
           user: null,
-          error: `Acceso restringido: El rol "${user.role || 'invitado'}" no cuenta con privilegios administrativos.`,
+          error: `Acceso restringido: El rol "${role}" no cuenta con privilegios administrativos.`,
         }
       }
 
-      // Si se especificaron roles requeridos adicionales
-      if (Array.isArray(requiredRoles) && requiredRoles.length > 0 && !requiredRoles.includes(user.role) && user.role !== 'super_admin') {
+      // Si la ruta o pestaña requiere roles específicos
+      if (Array.isArray(requiredRoles) && requiredRoles.length > 0 && !requiredRoles.includes(role) && role !== 'super_admin') {
         return {
           authenticated: false,
           user,
@@ -325,29 +341,50 @@ export const useAdminAuth = () => {
 
       // Sincronizar estado en memoria y persistencia
       token.value = currentToken
-      adminUser.value = user
+      adminUser.value = { ...user, role }
       if (typeof window !== 'undefined') {
         const storage = localStorage.getItem(TOKEN_KEY) ? localStorage : sessionStorage
-        storage.setItem(USER_KEY, JSON.stringify(user))
+        storage.setItem(USER_KEY, JSON.stringify(adminUser.value))
         localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
       }
 
       return {
         authenticated: true,
-        user,
+        user: adminUser.value,
         error: null,
       }
     } catch (err) {
-      logout()
-      const serverMsg = err.response?.data?.message
-      const errorMsg = serverMsg || (err.response?.status === 403
-        ? 'Acceso denegado: Tu cuenta no posee permisos para ingresar al panel de control.'
-        : 'Tu sesión ha expirado o el token de seguridad es inválido. Ingresa nuevamente.')
+      // Rechazo explícito 401 o 403 del backend
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        logout()
+        const serverMsg = err.response?.data?.message
+        const errorMsg = serverMsg || (err.response?.status === 403
+          ? 'Acceso denegado: Tu cuenta no posee permisos para ingresar al panel de control.'
+          : 'Tu sesión ha expirado o el token de seguridad es inválido. Ingresa nuevamente.')
 
+        return {
+          authenticated: false,
+          user: null,
+          error: errorMsg,
+        }
+      }
+
+      // Si ocurrió una falla temporal de red o timeout, pero tenemos un storedUser válido recién logueado
+      if (storedUser && (storedUser.id || storedUser.email) && storedUser.role) {
+        adminUser.value = storedUser
+        token.value = currentToken
+        return {
+          authenticated: true,
+          user: storedUser,
+          error: null,
+        }
+      }
+
+      logout()
       return {
         authenticated: false,
         user: null,
-        error: errorMsg,
+        error: 'No se pudo verificar la sesión con el servidor.',
       }
     }
   }

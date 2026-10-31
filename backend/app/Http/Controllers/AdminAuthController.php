@@ -182,17 +182,22 @@ class AdminAuthController extends Controller
         $user->api_token = hash('sha256', $plainToken);
         $user->save();
 
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'two_factor_enabled' => (bool) $user->two_factor_enabled,
+            'permissions' => AdminPermissionMiddleware::permissionsForRole($user->role),
+        ];
+
         return response()->json([
             'message' => 'Inicio de sesión exitoso.',
             'token' => $plainToken,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'two_factor_enabled' => (bool) $user->two_factor_enabled,
-                'permissions' => AdminPermissionMiddleware::permissionsForRole($user->role),
-            ],
+            'user' => $userData,
+            'data' => $userData,
+            'id' => $user->id,
+            'role' => $user->role,
         ]);
     }
 
@@ -213,15 +218,20 @@ class AdminAuthController extends Controller
             ], 403);
         }
 
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'two_factor_enabled' => (bool) $user->two_factor_enabled,
+            'permissions' => AdminPermissionMiddleware::permissionsForRole($user->role),
+        ];
+
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'two_factor_enabled' => (bool) $user->two_factor_enabled,
-                'permissions' => AdminPermissionMiddleware::permissionsForRole($user->role),
-            ],
+            'user' => $userData,
+            'data' => $userData,
+            'id' => $user->id,
+            'role' => $user->role,
         ]);
     }
 

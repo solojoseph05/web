@@ -1292,17 +1292,22 @@ const handleAdminLogin = async (req: Request, res: Response) => {
     changes: { role: user.role },
   });
 
+  const userData = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    two_factor_enabled: user.two_factor_enabled,
+    permissions: ALL_PERMISSIONS,
+  };
+
   res.json({
     message: 'Inicio de sesión exitoso.',
     token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      two_factor_enabled: user.two_factor_enabled,
-      permissions: ALL_PERMISSIONS,
-    },
+    user: userData,
+    data: userData,
+    id: user.id,
+    role: user.role,
   });
 };
 
@@ -1329,15 +1334,20 @@ app.get('/api/admin/security/audit-logs', authenticateAdmin, async (_req, res) =
 
 app.get('/api/admin/auth/me', authenticateAdmin, (req, res) => {
   const user = (req as any).adminUser as User;
+  const userData = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    two_factor_enabled: user.two_factor_enabled,
+    permissions: ALL_PERMISSIONS,
+  };
+
   res.json({
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      two_factor_enabled: user.two_factor_enabled,
-      permissions: ALL_PERMISSIONS,
-    },
+    user: userData,
+    data: userData,
+    id: user.id,
+    role: user.role,
   });
 });
 

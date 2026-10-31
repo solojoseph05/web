@@ -562,12 +562,11 @@ const handleLogoutCurrent = () => {
 
 const navigateToAdmin = async () => {
   try {
-    await router.push('/admin')
+    await router.replace('/admin')
   } catch (e) {
-    // router push handled
-  }
-  if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
-    window.location.href = '/admin'
+    if (typeof window !== 'undefined') {
+      window.location.assign('/admin')
+    }
   }
 }
 
@@ -618,13 +617,14 @@ const handleLogin = async () => {
     resetFailedLogins()
 
     addToast(`¡Bienvenido, ${res.user?.name || 'Administrador'}!`, 'success')
+
+    // Transición directa y limpia al panel de administración vía SPA
     try {
-      await router.push('/admin')
-    } catch (e) {
-      // Ignorar cancelaciones de navegación estándar
-    }
-    if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
-      window.location.href = '/admin'
+      await router.replace('/admin')
+    } catch (navErr) {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
+        window.location.assign('/admin')
+      }
     }
   } catch (err) {
     failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
