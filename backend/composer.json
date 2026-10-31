@@ -48,8 +48,11 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "pre-install-cmd": [
+            "@php -r \"foreach(['/var/www/workspace/backend/.laravel/cache', '.laravel/cache', 'bootstrap/cache', 'storage/framework/cache/data', 'storage/framework/sessions', 'storage/framework/views'] as \\$d) { is_dir(\\$d) || @mkdir(\\$d, 0777, true); @chmod(\\$d, 0777); }\""
+        ],
         "pre-autoload-dump": [
-            "@php -r \"is_dir('bootstrap/cache') || @mkdir('bootstrap/cache', 0777, true); is_dir('storage/framework/cache') || @mkdir('storage/framework/cache', 0777, true); is_dir('storage/framework/sessions') || @mkdir('storage/framework/sessions', 0777, true); is_dir('storage/framework/views') || @mkdir('storage/framework/views', 0777, true);\""
+            "@php -r \"foreach(['/var/www/workspace/backend/.laravel/cache', '.laravel/cache', 'bootstrap/cache', 'storage/framework/cache/data', 'storage/framework/sessions', 'storage/framework/views'] as \\$d) { is_dir(\\$d) || @mkdir(\\$d, 0777, true); @chmod(\\$d, 0777); }\""
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

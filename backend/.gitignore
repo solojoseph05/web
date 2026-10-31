@@ -25,4 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
-/.laravel
+/.laravel/*
+!/.laravel/cache/
+/.laravel/cache/*
+!/.laravel/cache/.gitkeep

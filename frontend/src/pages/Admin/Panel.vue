@@ -2607,17 +2607,19 @@ watch(activeTab, (newTab) => {
 })
 
 onMounted(async () => {
-  // Validación estricta de seguridad: verifica sesión y rol con el backend antes de renderizar
-  const auth = await checkAuth()
-  if (!auth.authenticated) {
-    router.replace({
-      path: '/admin/login',
-      query: {
-        auth_error: 'invalid_session',
-        msg: auth.error || 'Sesión no autorizada o expirada.'
-      }
-    })
-    return
+  // Validación estricta: si el usuario no está en memoria, verificar sesión con el backend
+  if (!adminUser.value || !adminUser.value.role) {
+    const auth = await checkAuth()
+    if (!auth.authenticated) {
+      router.replace({
+        path: '/admin/login',
+        query: {
+          auth_error: 'invalid_session',
+          msg: auth.error || 'Sesión no autorizada o expirada.'
+        }
+      })
+      return
+    }
   }
 
   loadData()

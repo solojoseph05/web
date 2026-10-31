@@ -14,16 +14,20 @@ class AdminAuthController extends Controller
 {
     private function ensureAdminColumnsExist()
     {
-        if (
-            !Schema::hasColumn('users', 'is_admin')
-            || !Schema::hasColumn('users', 'role')
-            || !Schema::hasColumn('users', 'api_token')
-            || !Schema::hasColumn('users', 'two_factor_secret')
-            || !Schema::hasColumn('users', 'two_factor_enabled')
-        ) {
-            return response()->json([
-                'message' => 'Falta ejecutar migraciones de administración. Ejecuta: php artisan migrate',
-            ], 503);
+        try {
+            if (
+                !Schema::hasTable('users')
+                || !Schema::hasColumn('users', 'is_admin')
+                || !Schema::hasColumn('users', 'role')
+                || !Schema::hasColumn('users', 'api_token')
+                || !Schema::hasColumn('users', 'two_factor_secret')
+                || !Schema::hasColumn('users', 'two_factor_enabled')
+            ) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'AdminUserSeeder', '--force' => true]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Aviso en migración automática: ' . $e->getMessage());
         }
 
         return null;

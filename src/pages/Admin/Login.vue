@@ -446,15 +446,18 @@ const hasToken = computed(() => hasAdminToken())
 const sessionErrorDismissed = ref(false)
 const sessionErrorMessage = computed(() => {
   if (sessionErrorDismissed.value) return ''
-  if (route.query?.msg) return String(route.query.msg)
+  // Si el usuario simplemente no tiene token (primer ingreso), NO mostrar alerta roja de error
+  if (route.query?.auth_error === 'no_token') {
+    return ''
+  }
   if (route.query?.auth_error === 'invalid_session') {
-    return 'Tu sesión es inválida o ha expirado. Por favor, ingresa tus credenciales de nuevo.'
+    return route.query?.msg ? String(route.query.msg) : 'Tu sesión es inválida o ha expirado. Por favor, ingresa tus credenciales de nuevo.'
   }
   if (route.query?.auth_error === 'unauthorized_role') {
-    return 'Tu cuenta no posee un rol administrativo autorizado para acceder al panel.'
+    return route.query?.msg ? String(route.query.msg) : 'Tu cuenta no posee un rol administrativo autorizado para acceder al panel.'
   }
-  if (route.query?.auth_error === 'no_token') {
-    return 'Debes iniciar sesión con una cuenta autorizada para acceder al panel.'
+  if (route.query?.msg && route.query?.auth_error) {
+    return String(route.query.msg)
   }
   return ''
 })

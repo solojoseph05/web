@@ -106,13 +106,17 @@ router.beforeEach(async (to) => {
                 path: '/admin/login',
                 query: {
                     auth_error: 'no_token',
-                    msg: 'Debes iniciar sesión con una cuenta autorizada para acceder al panel.',
                     redirect: to.fullPath
                 }
             }
         }
 
-        const { checkAuth } = useAdminAuth()
+        const { checkAuth, adminUser } = useAdminAuth()
+        // Si el usuario ya se encuentra validado en memoria (recién logueado), permitir acceso directo
+        if (adminUser.value && adminUser.value.role) {
+            return true
+        }
+
         const auth = await checkAuth()
 
         if (!auth.authenticated) {

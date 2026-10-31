@@ -6,16 +6,26 @@ use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
 
-// Forzar ubicación de manifiestos y caché en bootstrap/cache
-$cacheDir = __DIR__.'/bootstrap/cache';
-if (!is_dir($cacheDir)) {
-    @mkdir($cacheDir, 0775, true);
+// Garantizar directorios de caché para PackageManifest y Artisan
+foreach ([
+    '/var/www/workspace/backend/.laravel/cache',
+    __DIR__.'/.laravel/cache',
+    __DIR__.'/bootstrap/cache',
+    __DIR__.'/storage/framework/cache/data',
+    __DIR__.'/storage/framework/sessions',
+    __DIR__.'/storage/framework/views',
+] as $cacheDir) {
+    if (!is_dir($cacheDir)) {
+        @mkdir($cacheDir, 0777, true);
+    }
+    @chmod($cacheDir, 0777);
 }
+
 if (!getenv('APP_PACKAGES_CACHE')) {
-    putenv('APP_PACKAGES_CACHE='.$cacheDir.'/packages.php');
-    putenv('APP_SERVICES_CACHE='.$cacheDir.'/services.php');
-    $_ENV['APP_PACKAGES_CACHE'] = $cacheDir.'/packages.php';
-    $_SERVER['APP_PACKAGES_CACHE'] = $cacheDir.'/packages.php';
+    putenv('APP_PACKAGES_CACHE='.__DIR__.'/bootstrap/cache/packages.php');
+    putenv('APP_SERVICES_CACHE='.__DIR__.'/bootstrap/cache/services.php');
+    $_ENV['APP_PACKAGES_CACHE'] = __DIR__.'/bootstrap/cache/packages.php';
+    $_SERVER['APP_PACKAGES_CACHE'] = __DIR__.'/bootstrap/cache/packages.php';
 }
 
 // Register the Composer autoloader...

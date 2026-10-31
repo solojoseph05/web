@@ -1,7 +1,15 @@
 # Laravel Cloud Deployment Configuration
 version: 1
 
+build:
+  - mkdir -p /var/www/workspace/backend/.laravel/cache /var/www/workspace/backend/bootstrap/cache /var/www/workspace/backend/storage/framework/{cache,sessions,views}
+  - chmod -R 777 /var/www/workspace/backend/.laravel /var/www/workspace/backend/bootstrap/cache /var/www/workspace/backend/storage 2>/dev/null || true
+  - mkdir -p .laravel/cache bootstrap/cache storage/framework/{cache,sessions,views}
+  - chmod -R 777 .laravel bootstrap/cache storage 2>/dev/null || true
+
 deploy:
+  - mkdir -p /var/www/workspace/backend/.laravel/cache /var/www/workspace/backend/bootstrap/cache /var/www/workspace/backend/storage/framework/{cache,sessions,views}
+  - chmod -R 777 /var/www/workspace/backend/.laravel /var/www/workspace/backend/bootstrap/cache /var/www/workspace/backend/storage 2>/dev/null || true
   - php artisan migrate --force
   - php artisan db:seed --class=AdminUserSeeder --force
   - php artisan config:cache

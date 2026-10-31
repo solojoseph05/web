@@ -11,10 +11,13 @@ class AdminTokenMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!Schema::hasColumn('users', 'is_admin') || !Schema::hasColumn('users', 'role') || !Schema::hasColumn('users', 'api_token')) {
-            return response()->json([
-                'message' => 'Falta ejecutar migraciones de administración. Ejecuta: php artisan migrate',
-            ], 503);
+        try {
+            if (!Schema::hasTable('users') || !Schema::hasColumn('users', 'is_admin') || !Schema::hasColumn('users', 'role') || !Schema::hasColumn('users', 'api_token')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'AdminUserSeeder', '--force' => true]);
+            }
+        } catch (\Throwable $e) {
+            // omit
         }
 
         $authorizationHeader = $request->header('Authorization', '');

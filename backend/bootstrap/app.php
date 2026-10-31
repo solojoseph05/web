@@ -5,12 +5,23 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
-// Garantizar que la caché de manifiestos de Composer/Laravel siempre use bootstrap/cache
+// Garantizar existencia y permisos de .laravel/cache y bootstrap/cache
+foreach ([
+    '/var/www/workspace/backend/.laravel/cache',
+    dirname(__DIR__) . '/.laravel/cache',
+    __DIR__ . '/cache',
+    dirname(__DIR__) . '/storage/framework/cache/data',
+    dirname(__DIR__) . '/storage/framework/sessions',
+    dirname(__DIR__) . '/storage/framework/views',
+] as $cachePath) {
+    if (!is_dir($cachePath)) {
+        @mkdir($cachePath, 0777, true);
+    }
+    @chmod($cachePath, 0777);
+}
+
 if (!getenv('APP_PACKAGES_CACHE')) {
     $bootstrapCache = __DIR__ . '/cache';
-    if (!is_dir($bootstrapCache)) {
-        @mkdir($bootstrapCache, 0775, true);
-    }
     putenv('APP_PACKAGES_CACHE=' . $bootstrapCache . '/packages.php');
     putenv('APP_SERVICES_CACHE=' . $bootstrapCache . '/services.php');
     putenv('APP_CONFIG_CACHE=' . $bootstrapCache . '/config.php');
