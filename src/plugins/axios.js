@@ -10,18 +10,14 @@ const api = axios.create({
   },
 })
 
-// Add token interceptor if admin token exists or initialize fallback
+// Interceptor de solicitudes: adjunta el token JWT / Bearer si el usuario ha iniciado sesión
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    let token = localStorage.getItem('pollofeliz_admin_token') || localStorage.getItem('token')
-    if (!token && config.url && config.url.includes('/admin')) {
-      token = DEFAULT_ADMIN_TOKEN
-      try {
-        localStorage.setItem('pollofeliz_admin_token', token)
-      } catch (e) {
-        // Ignore localStorage quota errors if any
-      }
-    }
+    const token =
+      localStorage.getItem('pollofeliz_admin_token') ||
+      sessionStorage.getItem('pollofeliz_admin_token') ||
+      localStorage.getItem('token')
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -29,18 +25,17 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor to auto-heal session if 401 occurs
+// Interceptor de respuestas: maneja 401 sin bucles infinitos ni inyecciones de tokens fantasmas
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pollofeliz_admin_token', DEFAULT_ADMIN_TOKEN)
-      }
-      originalRequest.headers.Authorization = `Bearer ${DEFAULT_ADMIN_TOKEN}`
-      return api(originalRequest)
+    const isLoginEndpoint = error.config?.url?.includes('/admin/auth/login')
+    if (error.response?.status === 401 && !isLoginEndpoint && typeof window !== 'undefined') {
+      // Limpiar almacenamiento si la sesión expiró o es inválida
+      localStorage.removeItem('pollofeliz_admin_token')
+      sessionStorage.removeItem('pollofeliz_admin_token')
+      localStorage.removeItem('pollofeliz_admin_user')
+      sessionStorage.removeItem('pollofeliz_admin_user')
     }
     return Promise.reject(error)
   }

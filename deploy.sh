@@ -29,6 +29,9 @@ if [ -d "backend" ] && [ -f "backend/artisan" ]; then
     php artisan migrate --force || {
         echo "⚠️ Advertencia: php artisan migrate terminó con aviso o la base de datos se configurará en tiempo de ejecución."
     }
+
+    echo "-> Sembrando usuarios administradores iniciales..."
+    php artisan db:seed --class=AdminUserSeeder --force || true
     cd ..
 elif [ -f "artisan" ]; then
     echo "-> Directorio raíz de Laravel detectado. Ejecutando migraciones..."
@@ -42,6 +45,9 @@ elif [ -f "artisan" ]; then
     php artisan migrate --force || {
         echo "⚠️ Advertencia: php artisan migrate terminó con aviso o la base de datos se configurará en tiempo de ejecución."
     }
+
+    echo "-> Sembrando usuarios administradores iniciales..."
+    php artisan db:seed --class=AdminUserSeeder --force || true
 else
     echo "ℹ️ No se detectó archivo artisan en este directorio. Continuando con la compilación..."
 fi

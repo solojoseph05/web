@@ -22,6 +22,31 @@ class AdminPermissionMiddleware
             'history.revert',
             'approval.manage',
         ],
+        'gerente' => [
+            'landing.manage',
+            'landing.settings.manage',
+            'landing.jobs.manage',
+            'landing.menu.manage',
+            'landing.promotions.manage',
+            'landing.branches.manage',
+            'messages.manage',
+            'history.view',
+            'approval.manage',
+        ],
+        'cocina' => [
+            'landing.menu.manage',
+            'history.view',
+        ],
+        'atencion' => [
+            'messages.manage',
+            'landing.promotions.manage',
+            'history.view',
+        ],
+        'cajero' => [
+            'landing.menu.manage',
+            'landing.promotions.manage',
+            'history.view',
+        ],
         'content_manager' => [
             'landing.manage',
             'landing.settings.manage',

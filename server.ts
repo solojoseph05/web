@@ -69,6 +69,18 @@ const users: User[] = [
     created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
   },
   {
+    id: 99,
+    name: 'Joseph Admin',
+    email: 'josep_lityo@hotmail.com',
+    password: 'admin123456',
+    is_admin: true,
+    role: 'super_admin',
+    api_token: 'token-joseph-12345',
+    two_factor_enabled: false,
+    two_factor_secret: null,
+    created_at: new Date().toISOString(),
+  },
+  {
     id: 2,
     name: 'Lic. Roberto Garza',
     email: 'gerente@pollofeliz.com',

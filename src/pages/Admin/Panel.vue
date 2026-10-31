@@ -1629,7 +1629,7 @@ import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
-const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta, fetchDatabaseStatus } = useAdminAuth()
+const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta, fetchDatabaseStatus, fetchProfile } = useAdminAuth()
 const { addToast } = useToasts()
 const { theme, toggleTheme } = useTheme()
 
@@ -2607,11 +2607,26 @@ watch(activeTab, (newTab) => {
 })
 
 onMounted(async () => {
-  // Validación estricta de seguridad: si no hay token válido, redirigir de inmediato al login
-  if (!hasAdminToken() || !adminUser.value) {
+  // Validación de seguridad: si no hay token disponible, redirigir al login
+  if (!hasAdminToken()) {
     router.replace('/admin/login')
     return
   }
+
+  // Si hay token pero adminUser aún no se ha cargado en memoria, recuperar el perfil
+  if (!adminUser.value) {
+    try {
+      const profile = await fetchProfile()
+      if (!profile) {
+        router.replace('/admin/login')
+        return
+      }
+    } catch (e) {
+      router.replace('/admin/login')
+      return
+    }
+  }
+
   loadData()
   try {
     const status = await fetchDatabaseStatus()

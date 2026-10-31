@@ -74,12 +74,13 @@
           </span>
         </div>
         <div class="flex items-center gap-2 pt-1">
-          <router-link
-            to="/admin"
-            class="flex-1 inline-flex justify-center items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition shadow-2xs"
+          <button
+            type="button"
+            @click="navigateToAdmin"
+            class="flex-1 inline-flex justify-center items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition shadow-2xs cursor-pointer"
           >
             Ir al Panel de Control →
-          </router-link>
+          </button>
           <button
             type="button"
             @click="handleLogoutCurrent"
@@ -513,6 +514,17 @@ const handleLogoutCurrent = () => {
   addToast('Sesión finalizada correctamente.', 'info')
 }
 
+const navigateToAdmin = async () => {
+  try {
+    await router.push('/admin')
+  } catch (e) {
+    // router push handled
+  }
+  if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
+    window.location.href = '/admin'
+  }
+}
+
 const openForgotModal = () => {
   forgotEmail.value = email.value.trim()
   forgotResultFolio.value = ''
@@ -560,7 +572,14 @@ const handleLogin = async () => {
     resetFailedLogins()
 
     addToast(`¡Bienvenido, ${res.user?.name || 'Administrador'}!`, 'success')
-    router.push('/admin')
+    try {
+      await router.push('/admin')
+    } catch (e) {
+      // Ignorar cancelaciones de navegación estándar
+    }
+    if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
+      window.location.href = '/admin'
+    }
   } catch (err) {
     failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
 

@@ -8,7 +8,6 @@ Route::get('/', function () {
 });
 
 // Endpoint simple para exponer un catálogo del menú en formato JSON.
-// Sirve como base para futuras integraciones con el frontend o aplicaciones móviles.
 Route::get('/api/menu', function () {
     return response()->json([
         'message' => 'Menú disponible',
@@ -20,4 +19,12 @@ Route::get('/api/menu', function () {
         ],
     ]);
 });
+
+// Enrutador de respaldo para Single Page Application (SPA /admin, /menu, etc.)
+Route::get('/{any}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return view('welcome');
+})->where('any', '^(?!api/).*');
 
