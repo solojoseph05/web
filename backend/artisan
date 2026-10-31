@@ -6,6 +6,18 @@ use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
 
+// Forzar ubicación de manifiestos y caché en bootstrap/cache
+$cacheDir = __DIR__.'/bootstrap/cache';
+if (!is_dir($cacheDir)) {
+    @mkdir($cacheDir, 0775, true);
+}
+if (!getenv('APP_PACKAGES_CACHE')) {
+    putenv('APP_PACKAGES_CACHE='.$cacheDir.'/packages.php');
+    putenv('APP_SERVICES_CACHE='.$cacheDir.'/services.php');
+    $_ENV['APP_PACKAGES_CACHE'] = $cacheDir.'/packages.php';
+    $_SERVER['APP_PACKAGES_CACHE'] = $cacheDir.'/packages.php';
+}
+
 // Register the Composer autoloader...
 require __DIR__.'/vendor/autoload.php';
 

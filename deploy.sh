@@ -26,8 +26,8 @@ if [ -d "backend" ] && [ -f "backend/artisan" ]; then
     fi
 
     # Asegurar directorios de caché y almacenamiento con permisos
-    mkdir -p .laravel/cache bootstrap/cache storage/framework/{cache,sessions,views}
-    chmod -R 777 .laravel bootstrap/cache storage 2>/dev/null || true
+    mkdir -p bootstrap/cache storage/framework/{cache,sessions,views}
+    chmod -R 777 bootstrap/cache storage 2>/dev/null || true
 
     echo "-> Ejecutando: php artisan migrate --force"
     php artisan migrate --force || {

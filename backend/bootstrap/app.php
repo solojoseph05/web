@@ -5,6 +5,21 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
+// Garantizar que la caché de manifiestos de Composer/Laravel siempre use bootstrap/cache
+if (!getenv('APP_PACKAGES_CACHE')) {
+    $bootstrapCache = __DIR__ . '/cache';
+    if (!is_dir($bootstrapCache)) {
+        @mkdir($bootstrapCache, 0775, true);
+    }
+    putenv('APP_PACKAGES_CACHE=' . $bootstrapCache . '/packages.php');
+    putenv('APP_SERVICES_CACHE=' . $bootstrapCache . '/services.php');
+    putenv('APP_CONFIG_CACHE=' . $bootstrapCache . '/config.php');
+    putenv('APP_ROUTES_CACHE=' . $bootstrapCache . '/routes-v7.php');
+    putenv('APP_EVENTS_CACHE=' . $bootstrapCache . '/events.php');
+    $_ENV['APP_PACKAGES_CACHE'] = $bootstrapCache . '/packages.php';
+    $_SERVER['APP_PACKAGES_CACHE'] = $bootstrapCache . '/packages.php';
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
