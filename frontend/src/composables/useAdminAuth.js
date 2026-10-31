@@ -275,6 +275,83 @@ export const useAdminAuth = () => {
     }
   }
 
+  /**
+   * Middleware de verificación de autenticación y rol en backend
+   * Valida explícitamente el token y el rol del usuario con el servidor antes de conceder acceso al dashboard.
+   */
+  const checkAuth = async (requiredRoles = null) => {
+    const currentToken = getStoredToken()
+    if (!currentToken) {
+      logout()
+      return {
+        authenticated: false,
+        user: null,
+        error: 'No se detectó un token de sesión activo. Por favor inicia sesión.',
+      }
+    }
+
+    try {
+      const response = await api.get('/admin/auth/me')
+      const user = response.data?.user
+
+      if (!user || !user.id) {
+        logout()
+        return {
+          authenticated: false,
+          user: null,
+          error: 'Respuesta inválida del servidor. La sesión ha sido finalizada por seguridad.',
+        }
+      }
+
+      // Roles permitidos en el portal de administración
+      const validAdminRoles = ['super_admin', 'gerente', 'cocina', 'atencion', 'cajero', 'content_manager', 'support_agent']
+      if (!user.role || !validAdminRoles.includes(user.role)) {
+        logout()
+        return {
+          authenticated: false,
+          user: null,
+          error: `Acceso restringido: El rol "${user.role || 'invitado'}" no cuenta con privilegios administrativos.`,
+        }
+      }
+
+      // Si se especificaron roles requeridos adicionales
+      if (Array.isArray(requiredRoles) && requiredRoles.length > 0 && !requiredRoles.includes(user.role) && user.role !== 'super_admin') {
+        return {
+          authenticated: false,
+          user,
+          error: `Acceso denegado: Se requiere rol de nivel ${requiredRoles.join(' o ')} para esta vista.`,
+        }
+      }
+
+      // Sincronizar estado en memoria y persistencia
+      token.value = currentToken
+      adminUser.value = user
+      if (typeof window !== 'undefined') {
+        const storage = localStorage.getItem(TOKEN_KEY) ? localStorage : sessionStorage
+        storage.setItem(USER_KEY, JSON.stringify(user))
+        localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+      }
+
+      return {
+        authenticated: true,
+        user,
+        error: null,
+      }
+    } catch (err) {
+      logout()
+      const serverMsg = err.response?.data?.message
+      const errorMsg = serverMsg || (err.response?.status === 403
+        ? 'Acceso denegado: Tu cuenta no posee permisos para ingresar al panel de control.'
+        : 'Tu sesión ha expirado o el token de seguridad es inválido. Ingresa nuevamente.')
+
+      return {
+        authenticated: false,
+        user: null,
+        error: errorMsg,
+      }
+    }
+  }
+
   const fetchDatabaseStatus = async () => {
     if (!token.value) return null
     try {
@@ -301,6 +378,7 @@ export const useAdminAuth = () => {
     login,
     logout,
     fetchProfile,
+    checkAuth,
     fetchDatabaseStatus,
     databaseStatus,
     hasAdminToken,

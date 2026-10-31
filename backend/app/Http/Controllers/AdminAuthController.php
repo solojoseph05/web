@@ -196,6 +196,19 @@ class AdminAuthController extends Controller
     {
         $user = $request->attributes->get('adminUser');
 
+        if (!$user || !$user->is_admin) {
+            return response()->json([
+                'message' => 'Acceso restringido: no posees privilegios de administrador.',
+            ], 403);
+        }
+
+        $validRoles = ['super_admin', 'gerente', 'cocina', 'atencion', 'cajero', 'content_manager', 'support_agent'];
+        if (!in_array($user->role, $validRoles, true)) {
+            return response()->json([
+                'message' => "Acceso denegado: tu rol '{$user->role}' no cuenta con autorización administrativa.",
+            ], 403);
+        }
+
         return response()->json([
             'user' => [
                 'id' => $user->id,

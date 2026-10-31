@@ -845,6 +845,10 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
     token = authHeader.substring(7).trim();
   }
 
+  if (!token) {
+    return res.status(401).json({ message: 'No autorizado. Se requiere token de sesión activo.' });
+  }
+
   // Find user matching token directly or default admin token
   let user = users.find(u => u.is_admin && (u.api_token === token || token === 'default-admin-token-12345'));
 
@@ -858,13 +862,13 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  // Fallback to active super_admin for admin panel operations
-  if (!user) {
-    user = users.find(u => u.is_admin);
-  }
-
   if (!user || !user.is_admin) {
     return res.status(401).json({ message: 'Sesión inválida o expirada.' });
+  }
+
+  const validRoles = ['super_admin', 'gerente', 'cocina', 'atencion', 'cajero', 'content_manager', 'support_agent'];
+  if (!validRoles.includes(user.role)) {
+    return res.status(403).json({ message: `Acceso denegado: el rol '${user.role}' no cuenta con privilegios administrativos.` });
   }
 
   (req as any).adminUser = user;

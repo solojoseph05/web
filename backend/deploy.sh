@@ -15,8 +15,14 @@ if [ -f "artisan" ]; then
         php artisan key:generate --force || true
     fi
 
+    mkdir -p .laravel/cache bootstrap/cache storage/framework/{cache,sessions,views}
+    chmod -R 777 .laravel bootstrap/cache storage 2>/dev/null || true
+
     echo "-> Ejecutando php artisan migrate --force"
     php artisan migrate --force || echo "Aviso: Migraciones listas."
+
+    echo "-> Sembrando administradores iniciales..."
+    php artisan db:seed --class=AdminUserSeeder --force || true
 fi
 
 # Compilar frontend si existe package.json en directorio superior o local

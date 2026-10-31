@@ -1629,7 +1629,7 @@ import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
-const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta, fetchDatabaseStatus, fetchProfile } = useAdminAuth()
+const { logout, adminUser, canAccessTab, ROLES_CONFIG, getRoleMeta, fetchDatabaseStatus, fetchProfile, checkAuth } = useAdminAuth()
 const { addToast } = useToasts()
 const { theme, toggleTheme } = useTheme()
 
@@ -2607,24 +2607,17 @@ watch(activeTab, (newTab) => {
 })
 
 onMounted(async () => {
-  // Validación de seguridad: si no hay token disponible, redirigir al login
-  if (!hasAdminToken()) {
-    router.replace('/admin/login')
-    return
-  }
-
-  // Si hay token pero adminUser aún no se ha cargado en memoria, recuperar el perfil
-  if (!adminUser.value) {
-    try {
-      const profile = await fetchProfile()
-      if (!profile) {
-        router.replace('/admin/login')
-        return
+  // Validación estricta de seguridad: verifica sesión y rol con el backend antes de renderizar
+  const auth = await checkAuth()
+  if (!auth.authenticated) {
+    router.replace({
+      path: '/admin/login',
+      query: {
+        auth_error: 'invalid_session',
+        msg: auth.error || 'Sesión no autorizada o expirada.'
       }
-    } catch (e) {
-      router.replace('/admin/login')
-      return
-    }
+    })
+    return
   }
 
   loadData()

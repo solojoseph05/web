@@ -21,7 +21,7 @@ import OrderHistory from '@/pages/Landing/OrderHistory.vue'
 import AdminLogin from '@/pages/Admin/Login.vue'
 import AdminPanel from '@/pages/Admin/Panel.vue'
 import NotFound from '@/pages/NotFound.vue'
-import { hasAdminToken } from '@/composables/useAdminAuth'
+import { hasAdminToken, useAdminAuth } from '@/composables/useAdminAuth'
 
 const routes = [
     {
@@ -76,7 +76,8 @@ const routes = [
     {
         path: '/admin',
         name: 'admin-panel',
-        component: AdminPanel
+        component: AdminPanel,
+        meta: { requiresAdmin: true }
     },
     {
         path: '/admin/contact-messages',
@@ -89,21 +90,41 @@ const routes = [
     }
 ]
 
-const router=createRouter({
-
-    history:createWebHistory(),
-
+const router = createRouter({
+    history: createWebHistory(),
     routes
-
 })
 
-router.beforeEach((to) => {
+// Navigation Guard 'check-auth': valida explícitamente el token y el rol del usuario en backend
+router.beforeEach(async (to) => {
     const isAdminArea = to.path.startsWith('/admin')
     const isLoginPage = to.path === '/admin/login'
-    const tokenAvailable = hasAdminToken()
 
-    if (isAdminArea && !isLoginPage && !tokenAvailable) {
-        return { path: '/admin/login' }
+    if (isAdminArea && !isLoginPage) {
+        if (!hasAdminToken()) {
+            return {
+                path: '/admin/login',
+                query: {
+                    auth_error: 'no_token',
+                    msg: 'Debes iniciar sesión con una cuenta autorizada para acceder al panel.',
+                    redirect: to.fullPath
+                }
+            }
+        }
+
+        const { checkAuth } = useAdminAuth()
+        const auth = await checkAuth()
+
+        if (!auth.authenticated) {
+            return {
+                path: '/admin/login',
+                query: {
+                    auth_error: 'invalid_session',
+                    msg: auth.error || 'Sesión no autorizada o expirada.',
+                    redirect: to.fullPath
+                }
+            }
+        }
     }
 
     return true

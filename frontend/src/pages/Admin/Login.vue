@@ -92,6 +92,28 @@
         </div>
       </div>
 
+      <!-- Alerta de Sesión Inválida o Expulsión por Rol / Middleware check-auth -->
+      <div
+        v-if="sessionErrorMessage && !isLockedOut"
+        class="mb-4 p-3.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-900 dark:text-rose-200 shadow-2xs flex items-start gap-2.5"
+      >
+        <svg class="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-rose-800 dark:text-rose-300">Acceso Denegado por Seguridad</p>
+          <p class="mt-0.5 text-[11px] text-rose-700 dark:text-rose-400 leading-relaxed">{{ sessionErrorMessage }}</p>
+        </div>
+        <button
+          type="button"
+          @click="dismissSessionError"
+          class="text-rose-400 hover:text-rose-600 dark:hover:text-rose-200 text-sm cursor-pointer ml-1"
+          title="Descartar aviso"
+        >
+          ✕
+        </button>
+      </div>
+
       <!-- Alerta de Bloqueo por Fuerza Bruta / Exceso de Intentos Fallidos -->
       <div
         v-if="isLockedOut"
@@ -419,6 +441,27 @@ const forgotResultFolio = ref('')
 
 // Token disponible
 const hasToken = computed(() => hasAdminToken())
+
+// Control de errores de sesión transmitidos por el middleware check-auth
+const sessionErrorDismissed = ref(false)
+const sessionErrorMessage = computed(() => {
+  if (sessionErrorDismissed.value) return ''
+  if (route.query?.msg) return String(route.query.msg)
+  if (route.query?.auth_error === 'invalid_session') {
+    return 'Tu sesión es inválida o ha expirado. Por favor, ingresa tus credenciales de nuevo.'
+  }
+  if (route.query?.auth_error === 'unauthorized_role') {
+    return 'Tu cuenta no posee un rol administrativo autorizado para acceder al panel.'
+  }
+  if (route.query?.auth_error === 'no_token') {
+    return 'Debes iniciar sesión con una cuenta autorizada para acceder al panel.'
+  }
+  return ''
+})
+
+const dismissSessionError = () => {
+  sessionErrorDismissed.value = true
+}
 
 // Control de intentos fallidos y bloqueo por fuerza bruta
 const MAX_ATTEMPTS = 5

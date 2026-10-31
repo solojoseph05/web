@@ -25,6 +25,10 @@ if [ -d "backend" ] && [ -f "backend/artisan" ]; then
         php artisan key:generate --force || true
     fi
 
+    # Asegurar directorios de caché y almacenamiento con permisos
+    mkdir -p .laravel/cache bootstrap/cache storage/framework/{cache,sessions,views}
+    chmod -R 777 .laravel bootstrap/cache storage 2>/dev/null || true
+
     echo "-> Ejecutando: php artisan migrate --force"
     php artisan migrate --force || {
         echo "⚠️ Advertencia: php artisan migrate terminó con aviso o la base de datos se configurará en tiempo de ejecución."
