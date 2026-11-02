@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->boolean('is_admin')->default(false)->after('password');
-            $table->string('api_token', 64)->nullable()->unique()->after('is_admin');
+            $table->string('api_token', 255)->nullable()->after('is_admin');
         });
     }
 

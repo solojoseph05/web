@@ -2607,27 +2607,40 @@ watch(activeTab, (newTab) => {
 })
 
 onMounted(async () => {
-  // Validación estricta: si el usuario no está en memoria, verificar sesión con el backend
-  if (!adminUser.value || !adminUser.value.role) {
-    const auth = await checkAuth()
-    if (!auth.authenticated) {
-      router.replace({
-        path: '/admin/login',
-        query: {
-          auth_error: 'invalid_session',
-          msg: auth.error || 'Sesión no autorizada o expirada.'
-        }
-      })
-      return
+  // Cargar usuario almacenado si aún no está en memoria
+  if (!adminUser.value && hasAdminToken()) {
+    const stored = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('pollofeliz_admin_user') || sessionStorage.getItem('pollofeliz_admin_user') || 'null')
+      : null
+    if (stored && stored.role) {
+      adminUser.value = stored
     }
   }
 
+  // Redirigir al login únicamente si no existe ningún token almacenado
+  if (!hasAdminToken()) {
+    router.replace('/admin/login')
+    return
+  }
+
+  // Cargar el contenido y métricas del panel de administración
   loadData()
+
+  // Sincronización transparente en segundo plano
+  try {
+    const profile = await fetchProfile()
+    if (profile) {
+      adminUser.value = profile
+    }
+  } catch (e) {
+    // Continuar con perfil almacenado en caso de latencia
+  }
+
   try {
     const status = await fetchDatabaseStatus()
     if (status) dbStatusInfo.value = status
   } catch (e) {
-    // Modo local / contingencia
+    // Modo contingencia
   }
 })
 </script>

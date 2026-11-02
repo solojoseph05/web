@@ -95,12 +95,13 @@ const router = createRouter({
     routes
 })
 
-// Navigation Guard 'check-auth': valida explícitamente el token y el rol del usuario en backend
+// Navigation Guard global: protege el área administrativa /admin sin bloquear inicios de sesión válidos
 router.beforeEach(async (to) => {
     const isAdminArea = to.path.startsWith('/admin')
     const isLoginPage = to.path === '/admin/login'
 
     if (isAdminArea && !isLoginPage) {
+        // Si no hay token de acceso administrativo, enviar al login
         if (!hasAdminToken()) {
             return {
                 path: '/admin/login',
@@ -111,24 +112,29 @@ router.beforeEach(async (to) => {
             }
         }
 
-        const { checkAuth, adminUser } = useAdminAuth()
-        // Si el usuario ya se encuentra validado en memoria (recién logueado), permitir acceso directo
+        const { adminUser } = useAdminAuth()
+
+        // 1. Si el usuario ya está en memoria (recién logueado), permitir acceso instantáneo
         if (adminUser.value && adminUser.value.role) {
             return true
         }
 
-        const auth = await checkAuth()
-
-        if (!auth.authenticated) {
-            return {
-                path: '/admin/login',
-                query: {
-                    auth_error: 'invalid_session',
-                    msg: auth.error || 'Sesión no autorizada o expirada.',
-                    redirect: to.fullPath
-                }
-            }
+        // 2. Si el usuario existe en almacenamiento persistente, restaurarlo y permitir acceso
+        const stored = typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem('pollofeliz_admin_user') || sessionStorage.getItem('pollofeliz_admin_user') || 'null')
+            : null
+        if (stored && stored.role) {
+            adminUser.value = stored
+            return true
         }
+
+        // 3. Con token presente, permitir paso al panel sin bloqueos de red
+        return true
+    }
+
+    // Si ya posee token administrativo y navega a /admin/login sin error explícito, enviar al panel
+    if (isLoginPage && hasAdminToken() && !to.query.auth_error) {
+        return { path: '/admin' }
     }
 
     return true

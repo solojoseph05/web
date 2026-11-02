@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "deploy": "bash deploy.sh || php artisan migrate --force"
+        "deploy": "bash deploy.sh || php artisan migrate --force",
+        "postinstall": "node scripts/prepare-cache-dirs.cjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

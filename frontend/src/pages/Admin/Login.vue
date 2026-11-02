@@ -609,6 +609,7 @@ const handleLogin = async () => {
   }
 
   errorMessage.value = ''
+  sessionErrorDismissed.value = true
   idleTimeoutNotice.value = false
 
   try {
@@ -618,14 +619,24 @@ const handleLogin = async () => {
 
     addToast(`¡Bienvenido, ${res.user?.name || 'Administrador'}!`, 'success')
 
+    // Sincronizar usuario activo
+    if (res?.user) {
+      adminUser.value = res.user
+    }
+
     // Transición directa y limpia al panel de administración vía SPA
     try {
-      await router.replace('/admin')
+      await router.push('/admin')
     } catch (navErr) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
-        window.location.assign('/admin')
-      }
+      await router.replace('/admin').catch(() => {})
     }
+
+    // Redirección complementaria para entornos con problemas de enrutamiento SPA
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname === '/admin/login') {
+        window.location.href = '/admin'
+      }
+    }, 150)
   } catch (err) {
     failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
 

@@ -7,7 +7,8 @@
     "dev": "tsx server.ts",
     "build": "vite build",
     "start": "tsx server.ts",
-    "deploy": "bash deploy.sh"
+    "deploy": "bash deploy.sh",
+    "postinstall": "node scripts/prepare-cache-dirs.cjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
