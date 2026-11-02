@@ -843,6 +843,10 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
   let token = '';
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7).trim();
+  } else if (req.headers['x-admin-token']) {
+    token = String(req.headers['x-admin-token']).trim();
+  } else if (req.headers['x-api-token']) {
+    token = String(req.headers['x-api-token']).trim();
   }
 
   if (!token) {

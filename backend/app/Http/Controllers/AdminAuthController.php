@@ -25,6 +25,8 @@ class AdminAuthController extends Controller
             ) {
                 \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
                 \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'AdminUserSeeder', '--force' => true]);
+            } elseif (User::query()->where('is_admin', true)->count() === 0) {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'AdminUserSeeder', '--force' => true]);
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Aviso en migración automática: ' . $e->getMessage());

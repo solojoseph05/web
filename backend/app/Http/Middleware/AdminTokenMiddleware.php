@@ -32,7 +32,8 @@ class AdminTokenMiddleware
             }
         }
         if (!$token) {
-            $token = $request->input('api_token') ?: $request->query('token');
+            $token = $request->header('X-Admin-Token')
+                ?: ($request->header('X-API-TOKEN') ?: ($request->input('api_token') ?: $request->query('token')));
         }
 
         if (empty($token)) {

@@ -2,8 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Ruta inicial de la aplicación Laravel.
+// Ruta inicial de la aplicación: si existe la SPA compilada, servirla; si no, vista de bienvenida
 Route::get('/', function () {
+    if (file_exists(public_path('index.html'))) {
+        return response(file_get_contents(public_path('index.html')))
+            ->header('Content-Type', 'text/html; charset=UTF-8');
+    }
     return view('welcome');
 });
 
@@ -23,7 +27,8 @@ Route::get('/api/menu', function () {
 // Enrutador de respaldo para Single Page Application (SPA /admin, /menu, etc.)
 Route::get('/{any}', function () {
     if (file_exists(public_path('index.html'))) {
-        return file_get_contents(public_path('index.html'));
+        return response(file_get_contents(public_path('index.html')))
+            ->header('Content-Type', 'text/html; charset=UTF-8');
     }
     return view('welcome');
 })->where('any', '^(?!api/).*');

@@ -94,7 +94,7 @@
 
       <!-- Alerta de Sesión Inválida o Expulsión por Rol / Middleware check-auth -->
       <div
-        v-if="sessionErrorMessage && !isLockedOut"
+        v-if="sessionErrorMessage && !isLockedOut && !hasToken"
         class="mb-4 p-3.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-900 dark:text-rose-200 shadow-2xs flex items-start gap-2.5"
       >
         <svg class="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,19 +624,17 @@ const handleLogin = async () => {
       adminUser.value = res.user
     }
 
-    // Transición directa y limpia al panel de administración vía SPA
+    // Transición directa y limpia al panel de administración vía SPA y fallback de ventana
     try {
-      await router.push('/admin')
+      await router.replace('/admin')
     } catch (navErr) {
-      await router.replace('/admin').catch(() => {})
+      // Ignorar errores de navegación idéntica
     }
 
-    // Redirección complementaria para entornos con problemas de enrutamiento SPA
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location.pathname === '/admin/login') {
-        window.location.href = '/admin'
-      }
-    }, 150)
+    // Redirección inmediata garantizada si el enrutador no completó el desmontaje
+    if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
+      window.location.replace('/admin')
+    }
   } catch (err) {
     failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
 

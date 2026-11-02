@@ -62,14 +62,20 @@ echo "🔨 [2/3] Compilando Frontend (npm run build)..."
 if [ -f "package.json" ]; then
     echo "-> Ejecutando 'npm run build' en directorio principal..."
     npm run build
+    if [ -d "dist" ] && [ -d "backend/public" ]; then
+        echo "-> Sincronizando artefactos compilados hacia backend/public/..."
+        cp -r dist/* backend/public/ || true
+    fi
 fi
 
 if [ -d "frontend" ] && [ -f "frontend/package.json" ] && [ -f "frontend/vite.config.js" ]; then
     echo "-> Verificando build en directorio /frontend..."
     cd frontend
-    # Si frontend tiene dependencias propias o dist separado
     if [ -d "node_modules" ]; then
         npm run build || true
+        if [ -d "dist" ] && [ -d "../backend/public" ]; then
+            cp -r dist/* ../backend/public/ || true
+        fi
     fi
     cd ..
 fi

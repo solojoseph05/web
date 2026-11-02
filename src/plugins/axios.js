@@ -10,7 +10,7 @@ const api = axios.create({
   },
 })
 
-// Interceptor de solicitudes: adjunta el token JWT / Bearer si el usuario ha iniciado sesión
+// Interceptor de solicitudes: adjunta el token JWT / Bearer y cabecera personalizada para sortear restricciones de proxies
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token =
@@ -20,23 +20,16 @@ api.interceptors.request.use((config) => {
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      config.headers['X-Admin-Token'] = token
     }
   }
   return config
 })
 
-// Interceptor de respuestas: maneja 401 sin bucles infinitos ni inyecciones de tokens fantasmas
+// Interceptor de respuestas: delega el control de sesión a useAdminAuth para evitar deslogueos falsos
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const isLoginEndpoint = error.config?.url?.includes('/admin/auth/login')
-    if (error.response?.status === 401 && !isLoginEndpoint && typeof window !== 'undefined') {
-      // Limpiar almacenamiento si la sesión expiró o es inválida
-      localStorage.removeItem('pollofeliz_admin_token')
-      sessionStorage.removeItem('pollofeliz_admin_token')
-      localStorage.removeItem('pollofeliz_admin_user')
-      sessionStorage.removeItem('pollofeliz_admin_user')
-    }
     return Promise.reject(error)
   }
 )

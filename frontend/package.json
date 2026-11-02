@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "serve -s dist -l $PORT",
-    "deploy": "bash ../deploy.sh || npm run build"
+    "deploy": "bash ../deploy.sh || npm run build",
+    "postinstall": "node scripts/prepare-cache-dirs.cjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",
