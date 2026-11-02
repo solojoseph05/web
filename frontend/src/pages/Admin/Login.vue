@@ -443,6 +443,7 @@ const forgotResultFolio = ref('')
 const hasToken = computed(() => hasAdminToken())
 
 // Control de errores de sesión transmitidos por el middleware check-auth
+const sessionErrorDismissed = ref(false)
 const sessionErrorMessage = computed(() => {
   if (sessionErrorDismissed.value || hasToken.value) return ''
   // Si el usuario simplemente no tiene token (primer ingreso), NO mostrar alerta roja de error
