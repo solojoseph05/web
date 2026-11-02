@@ -443,9 +443,8 @@ const forgotResultFolio = ref('')
 const hasToken = computed(() => hasAdminToken())
 
 // Control de errores de sesión transmitidos por el middleware check-auth
-const sessionErrorDismissed = ref(false)
 const sessionErrorMessage = computed(() => {
-  if (sessionErrorDismissed.value) return ''
+  if (sessionErrorDismissed.value || hasToken.value) return ''
   // Si el usuario simplemente no tiene token (primer ingreso), NO mostrar alerta roja de error
   if (route.query?.auth_error === 'no_token') {
     return ''
@@ -540,6 +539,12 @@ const startLockoutCountdown = (seconds) => {
 }
 
 onMounted(() => {
+  // Si el usuario ya cuenta con un token de acceso válido, navegar directamente al panel
+  if (hasAdminToken()) {
+    router.replace('/admin')
+    return
+  }
+
   if (route.query.reason === 'idle_timeout') {
     idleTimeoutNotice.value = true
   }
@@ -624,16 +629,11 @@ const handleLogin = async () => {
       adminUser.value = res.user
     }
 
-    // Transición directa y limpia al panel de administración vía SPA y fallback de ventana
+    // Transición directa y limpia al panel de administración vía SPA
     try {
       await router.replace('/admin')
     } catch (navErr) {
-      // Ignorar errores de navegación idéntica
-    }
-
-    // Redirección inmediata garantizada si el enrutador no completó el desmontaje
-    if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
-      window.location.replace('/admin')
+      await router.push('/admin').catch(() => {})
     }
   } catch (err) {
     failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)

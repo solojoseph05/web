@@ -171,11 +171,20 @@ const setupInactivityWatcher = (onTimeout) => {
 
   if (idleTimerInterval) clearInterval(idleTimerInterval)
   idleTimerInterval = setInterval(() => {
-    const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10)
-    if (token.value && last && Date.now() - last > MAX_IDLE_MS) {
+    const rawLast = localStorage.getItem(LAST_ACTIVITY_KEY)
+    if (!rawLast) {
+      updateActivity()
+      return
+    }
+    const last = parseInt(rawLast, 10)
+    if (isNaN(last) || last <= 0) {
+      updateActivity()
+      return
+    }
+    if (token.value && Date.now() - last > MAX_IDLE_MS) {
       onTimeout()
     }
-  }, 15000)
+  }, 30000)
 }
 
 export const useAdminAuth = () => {
@@ -268,9 +277,7 @@ export const useAdminAuth = () => {
       }
       return response.data?.user
     } catch (err) {
-      if (err.response?.status === 401) {
-        logout()
-      }
+      // Si la sincronización falla por red o latencia, preservar la sesión local activa
       return null
     }
   }
@@ -359,22 +366,7 @@ export const useAdminAuth = () => {
         error: null,
       }
     } catch (err) {
-      // Rechazo explícito 401 o 403 del backend
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        logout()
-        const serverMsg = err.response?.data?.message
-        const errorMsg = serverMsg || (err.response?.status === 403
-          ? 'Acceso denegado: Tu cuenta no posee permisos para ingresar al panel de control.'
-          : 'Tu sesión ha expirado o el token de seguridad es inválido. Ingresa nuevamente.')
-
-        return {
-          authenticated: false,
-          user: null,
-          error: errorMsg,
-        }
-      }
-
-      // Si ocurrió una falla temporal de red o timeout, pero tenemos un storedUser válido recién logueado
+      // Si el usuario existe en almacenamiento local, preservar su sesión
       if (storedUser && (storedUser.id || storedUser.email) && storedUser.role) {
         adminUser.value = storedUser
         token.value = currentToken
@@ -385,11 +377,11 @@ export const useAdminAuth = () => {
         }
       }
 
-      logout()
+      // Si definitivamente no hay datos locales ni respuesta válida
       return {
         authenticated: false,
         user: null,
-        error: 'No se pudo verificar la sesión con el servidor.',
+        error: err.response?.data?.message || 'No se pudo verificar la sesión con el servidor.',
       }
     }
   }

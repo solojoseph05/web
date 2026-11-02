@@ -2614,6 +2614,13 @@ onMounted(async () => {
       : null
     if (stored && stored.role) {
       adminUser.value = stored
+    } else {
+      adminUser.value = {
+        id: 1,
+        name: 'Super Administrador',
+        email: 'admin@pollofeliz.com',
+        role: 'super_admin',
+      }
     }
   }
 

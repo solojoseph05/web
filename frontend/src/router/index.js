@@ -132,8 +132,8 @@ router.beforeEach(async (to) => {
         return true
     }
 
-    // Si ya posee token administrativo y navega a /admin/login sin error explícito, enviar al panel
-    if (isLoginPage && hasAdminToken() && !to.query.auth_error) {
+    // Si ya posee token administrativo y navega a /admin/login, enviar directamente al panel de control
+    if (isLoginPage && hasAdminToken()) {
         return { path: '/admin' }
     }
 

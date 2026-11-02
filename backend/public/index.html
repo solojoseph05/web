@@ -13,23 +13,55 @@
     <meta property="og:description" content="Sitio web y panel administrativo de Pollo Feliz" />
 
     <script>
-      // Gracefully prevent unhandled WebSocket / Vite HMR connection errors in preview environments
-      window.addEventListener('error', function (e) {
-        if (e.message && (e.message.includes('WebSocket') || e.message.includes('createWebSocketModuleRunnerTransport'))) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-        }
-      }, true);
-      window.addEventListener('unhandledrejection', function (e) {
-        var reason = e.reason && (e.reason.message || String(e.reason));
-        if (reason && (reason.includes('WebSocket') || reason.includes('createWebSocketModuleRunnerTransport'))) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-        }
-      }, true);
+      // Gracefully prevent and silence Vite HMR WebSocket connection errors in preview environments
+      (function () {
+        var origError = console.error;
+        console.error = function () {
+          var msg = arguments[0] ? String(arguments[0]) : '';
+          if (
+            msg.includes('WebSocket') ||
+            msg.includes('websocket') ||
+            msg.includes('failed to connect to websocket') ||
+            msg.includes('[vite]') ||
+            msg.includes('createWebSocketModuleRunnerTransport')
+          ) {
+            return;
+          }
+          origError.apply(console, arguments);
+        };
+
+        var origWarn = console.warn;
+        console.warn = function () {
+          var msg = arguments[0] ? String(arguments[0]) : '';
+          if (
+            msg.includes('WebSocket') ||
+            msg.includes('websocket') ||
+            msg.includes('failed to connect to websocket') ||
+            msg.includes('[vite]')
+          ) {
+            return;
+          }
+          origWarn.apply(console, arguments);
+        };
+
+        window.addEventListener('error', function (e) {
+          if (e.message && (e.message.includes('WebSocket') || e.message.includes('createWebSocketModuleRunnerTransport'))) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (e) {
+          var reason = e.reason && (e.reason.message || String(e.reason));
+          if (reason && (reason.includes('WebSocket') || reason.includes('createWebSocketModuleRunnerTransport'))) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
     </script>
-    <script type="module" crossorigin src="/assets/index-VG2zQZzM.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-vqgqWbE1.css">
+    <script type="module" crossorigin src="/assets/index-CqnKG5Po.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DXnol-XJ.css">
   </head>
   <body>
     <div id="app"></div>

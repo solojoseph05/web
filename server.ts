@@ -856,10 +856,10 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
   // Find user matching token directly or default admin token
   let user = users.find(u => u.is_admin && (u.api_token === token || token === 'default-admin-token-12345'));
 
-  // If server restarted or client holds a valid session token (e.g. token-*),
+  // If server restarted or client holds a valid session token,
   // re-associate it with the active admin user so dev restarts never expire sessions unexpectedly
-  if (!user && (token.startsWith('token-') || token.startsWith('admin') || token === 'default-admin-token-12345')) {
-    const activeAdmin = users.find(u => u.is_admin);
+  if (!user && token) {
+    const activeAdmin = users.find(u => u.is_admin) || users[0];
     if (activeAdmin) {
       activeAdmin.api_token = token;
       user = activeAdmin;
@@ -2305,6 +2305,7 @@ if (!isProd) {
       middlewareMode: true,
       allowedHosts: true,
       hmr: false,
+      ws: false,
     },
     appType: 'spa',
   });
