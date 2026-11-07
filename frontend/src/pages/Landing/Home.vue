@@ -4,6 +4,9 @@
     <!-- Hero Component -->
     <Hero />
 
+    <!-- Why Us / El Secreto de Nuestro Sabor Component -->
+    <WhyUs />
+
     <!-- Featured Menu Component -->
     <FeaturedMenu />
 
@@ -24,6 +27,7 @@
 <script setup>
 import { useHead } from '@vueuse/head'
 import Hero from '@/components/landing/Hero.vue'
+import WhyUs from '@/components/landing/WhyUs.vue'
 import FeaturedMenu from '@/components/landing/FeaturedMenu.vue'
 import Promotions from '@/components/landing/Promotions.vue'
 import Branches from '@/components/landing/Branches.vue'

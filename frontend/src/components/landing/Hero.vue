@@ -170,7 +170,7 @@ import {
   ArrowRightIcon,
 } from '@heroicons/vue/24/solid'
 import company from '@/config/company'
-const defaultHeroImage = 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=1200&q=80'
+import defaultHeroImage from '@/assets/images/hero_pollo_asado_1794076709512.jpg'
 import { useLandingContent } from '@/composables/useLandingContent'
 import { useCart } from '@/composables/useCart'
 import { useToasts } from '@/composables/useToasts'
