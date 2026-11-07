@@ -27,6 +27,9 @@ const db = getDatabase();
 
 const app = express();
 
+// Habilitar 'trust proxy' para que Express y express-rate-limit identifiquen correctamente la IP detrás de proxies inversos (Cloud Run / AI Studio / Load Balancers)
+app.set('trust proxy', 1);
+
 // =================== RECOMENDACIONES DE SEGURIDAD & HELMET ===================
 // Implementación de Helmet para mitigar vulnerabilidades web (XSS, Clickjacking, Sniffing)
 app.use(
@@ -66,6 +69,7 @@ const apiGlobalLimiter = rateLimit({
   max: 600, // 600 peticiones por ventana
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
 });
 app.use('/api/', apiGlobalLimiter);
 
@@ -75,6 +79,7 @@ const adminLoginLimiter = rateLimit({
   max: 15, // Máximo 15 intentos por IP en 15 minutos
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   message: {
     message: 'Demasiados intentos fallidos de inicio de sesión. Por seguridad corporativa, el acceso ha sido suspendido temporalmente por 15 minutos.',
     status: 429,
