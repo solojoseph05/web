@@ -13,7 +13,7 @@ Route::post('/feedback', [FeedbackController::class, 'store']);
 Route::get('/landing/content', [AdminLandingContentController::class, 'publicContent']);
 
 Route::post('/admin/auth/bootstrap', [AdminAuthController::class, 'bootstrap']);
-Route::post('/admin/auth/login', [AdminAuthController::class, 'login']);
+Route::post('/admin/auth/login', [AdminAuthController::class, 'login'])->middleware('throttle:10,1');
 
 Route::middleware('admin.auth')->group(function () {
     Route::get('/admin/auth/me', [AdminAuthController::class, 'me']);

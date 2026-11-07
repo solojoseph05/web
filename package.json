@@ -21,6 +21,8 @@
     "chart.js": "^4.4.7",
     "dayjs": "^1.11.13",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
     "lodash": "^4.17.21",
     "pinia": "^2.3.1",
     "primeicons": "^7.0.0",

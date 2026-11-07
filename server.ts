@@ -13,6 +13,8 @@
  * 3. Endpoints públicos para clientes y endpoints administrativos para el panel.
  */
 import express, { Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -24,6 +26,61 @@ const __dirname = path.dirname(__filename);
 const db = getDatabase();
 
 const app = express();
+
+// =================== RECOMENDACIONES DE SEGURIDAD & HELMET ===================
+// Implementación de Helmet para mitigar vulnerabilidades web (XSS, Clickjacking, Sniffing)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+        connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
+        frameAncestors: ["'self'", "*"], // Permite rendering en el visor iframe de AI Studio y Cloud Run
+      },
+    },
+    frameguard: false, // Desactiva frameguard rígido para permitir el preview en iframe
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    hidePoweredBy: true,
+    noSniff: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    xssFilter: true,
+  })
+);
+
+// Encabezados HTTP de seguridad adicionales
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  next();
+});
+
+// Limitador de tasa global para APIs (protección contra DDoS y scraping abusivo)
+const apiGlobalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 600, // 600 peticiones por ventana
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiGlobalLimiter);
+
+// Limitador estricto para acceso administrativo contra ataques de fuerza bruta
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 15, // Máximo 15 intentos por IP en 15 minutos
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'Demasiados intentos fallidos de inicio de sesión. Por seguridad corporativa, el acceso ha sido suspendido temporalmente por 15 minutos.',
+    status: 429,
+  },
+});
+
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
@@ -1315,8 +1372,8 @@ const handleAdminLogin = async (req: Request, res: Response) => {
   });
 };
 
-app.post('/api/admin/auth/login', handleAdminLogin);
-app.post('/api/admin/login', handleAdminLogin);
+app.post('/api/admin/auth/login', adminLoginLimiter, handleAdminLogin);
+app.post('/api/admin/login', adminLoginLimiter, handleAdminLogin);
 
 // Endpoint de Estado y Diagnóstico de la Base de Datos
 app.get('/api/admin/database/status', authenticateAdmin, async (_req, res) => {
