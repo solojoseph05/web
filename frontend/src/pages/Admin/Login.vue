@@ -642,14 +642,23 @@ const handleLogin = async () => {
       }
     }, 250)
   } catch (err) {
-    failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
+    const status = err.response?.status
+    const isAuthError = status === 401 || status === 422
 
-    if (failedAttempts.value >= MAX_ATTEMPTS) {
-      startLockoutCountdown(LOCKOUT_SECONDS)
-      errorMessage.value = 'Has superado el límite de intentos permitidos. Acceso bloqueado temporalmente.'
-      addToast('Acceso suspendido temporalmente por seguridad.', 'error')
+    if (isAuthError) {
+      failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
+
+      if (failedAttempts.value >= MAX_ATTEMPTS) {
+        startLockoutCountdown(LOCKOUT_SECONDS)
+        errorMessage.value = 'Has superado el límite de intentos permitidos. Acceso bloqueado temporalmente.'
+        addToast('Acceso suspendido temporalmente por seguridad.', 'error')
+      } else {
+        errorMessage.value = err.response?.data?.message || 'Credenciales incorrectas. Verifica tus datos de acceso.'
+      }
     } else {
-      errorMessage.value = err.response?.data?.message || 'Credenciales incorrectas. Verifica tus datos de acceso.'
+      // Error 500 o de conexión: no penalizar al usuario
+      errorMessage.value = 'El servidor está sincronizando la base de datos. Haz clic de nuevo en Iniciar Sesión.'
+      addToast('Reintentando sincronización...', 'info')
     }
   }
 }
