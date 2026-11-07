@@ -31,6 +31,27 @@
           </p>
         </div>
 
+        <!-- Google Reviews Option Banner -->
+        <div class="mb-5 p-3 rounded-2xl bg-blue-50/80 border border-blue-100 dark:bg-blue-950/30 dark:border-blue-900/40 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.14C3.31 21.45 7.37 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.59H1.27C.46 8.21 0 10.05 0 12s.46 3.79 1.27 5.41l4.01-3.14z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.31 2.55 1.27 6.59l4.01 3.14c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            <span class="text-gray-700 dark:text-gray-300 font-medium">¿Prefieres calificar en Google Maps?</span>
+          </div>
+          <a
+            :href="googleReviewsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shrink-0 transition"
+          >
+            Abrir Google ↗
+          </a>
+        </div>
+
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Interactive Stars Rating Picker -->
           <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60 dark:bg-amber-950/20 dark:border-amber-900/40 text-center space-y-2">
@@ -163,7 +184,10 @@
 <script setup>
 import { ref, reactive, watch } from 'vue'
 import api from '@/plugins/axios'
+import company from '@/config/company'
 import { useToasts } from '@/composables/useToasts'
+
+const googleReviewsUrl = ref(company.googleReviewsUrl || 'https://share.google/ETUIpZEvqbGtcyBGa')
 
 const props = defineProps({
   isOpen: {

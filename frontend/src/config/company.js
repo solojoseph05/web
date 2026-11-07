@@ -6,6 +6,7 @@ export default {
   whatsapp: '521551234567',
   email: 'soporte@pollofelizdgo.com',
   address: 'Av. 5 de Mayo #123, Zona Centro, Durango, Dgo.',
+  googleReviewsUrl: 'https://share.google/ETUIpZEvqbGtcyBGa',
   workingHours: {
     monday: '10:00 AM - 10:00 PM',
     tuesday: '10:00 AM - 10:00 PM',

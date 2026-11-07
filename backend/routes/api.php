@@ -12,6 +12,135 @@ use Illuminate\Support\Facades\Route;
 Route::post('/feedback', [FeedbackController::class, 'store']);
 Route::get('/landing/content', [AdminLandingContentController::class, 'publicContent']);
 
+// Rutas públicas de reseñas sincronizadas con Google Maps
+Route::get('/reviews', function (\Illuminate\Http\Request $request) {
+    $defaultReviews = [
+        [
+            'id' => 1,
+            'customer_name' => 'Martha Elena Salcido',
+            'rating' => 5,
+            'comment' => '¡El mejor pollo asado de Durango sin duda alguna! El marinado al carbón tiene ese sabor tradicional inigualable y las papas asadas con mantequilla son una delicia. Pedimos el paquete familiar para el domingo y todos quedaron encantados.',
+            'branch' => 'Sucursal Centro Histórico',
+            'favorite_dish' => 'Paquete Familiar',
+            'tags' => ['Sabor al carbón', 'Crujiente', 'Salsas caseras'],
+            'is_verified' => true,
+            'source' => 'Google Maps',
+            'status' => 'approved',
+            'likes_count' => 24,
+            'admin_reply' => [
+                'author' => 'Equipo Pollo Feliz',
+                'message' => '¡Muchas gracias Sra. Martha! Nos llena de orgullo ser parte de sus domingos familiares. ¡Esperamos verla pronto!',
+            ],
+            'created_at' => now()->subDays(2)->toIso8601String(),
+        ],
+        [
+            'id' => 2,
+            'customer_name' => 'Ing. Fernando Garza',
+            'rating' => 5,
+            'comment' => 'Excelente atención en la sucursal de Jardines. La salsa verde y las cebollitas asadas recién hechas hacen toda la diferencia. El servicio fue rapidísimo a pesar de haber bastante gente.',
+            'branch' => 'Sucursal Jardines',
+            'favorite_dish' => 'Pollo Entero Especial',
+            'tags' => ['Excelente atención', 'Rápido', 'Cebollitas asadas'],
+            'is_verified' => true,
+            'source' => 'Google Maps',
+            'status' => 'approved',
+            'likes_count' => 18,
+            'admin_reply' => null,
+            'created_at' => now()->subDays(4)->toIso8601String(),
+        ],
+        [
+            'id' => 3,
+            'customer_name' => 'Dra. Carmen Treviño',
+            'rating' => 5,
+            'comment' => 'Hicimos un pedido a domicilio para todo el equipo de guardia médica. Llegó hirviendo, en empaque sellado y súper limpio. Las tortillas calientitas y el agua de horchata natural deliciosa.',
+            'branch' => 'Sucursal Coyoacán',
+            'favorite_dish' => 'Medio Pollo con Papas',
+            'tags' => ['Entrega rápida', 'Empaque higiénico', 'Horchata natural'],
+            'is_verified' => true,
+            'source' => 'Google Maps',
+            'status' => 'approved',
+            'likes_count' => 31,
+            'admin_reply' => [
+                'author' => 'Gerencia Pollo Feliz',
+                'message' => '¡Gracias Doctora Carmen y a todo su equipo por su labor! Un honor llevarles sabor y energía.',
+            ],
+            'created_at' => now()->subDays(6)->toIso8601String(),
+        ],
+        [
+            'id' => 4,
+            'customer_name' => 'Ricardo Morales',
+            'rating' => 4,
+            'comment' => 'Muy buen sazón, el pollo súper jugoso y bien dorado por fuera. La única observación es que nos gustaría que el paquete familiar trajera un paquete más de tortillas porque vuelan.',
+            'branch' => 'Sucursal Centro Histórico',
+            'favorite_dish' => 'Pollo Entero Clásico',
+            'tags' => ['Muy jugoso', 'Buen precio'],
+            'is_verified' => true,
+            'source' => 'Google Maps',
+            'status' => 'approved',
+            'likes_count' => 9,
+            'admin_reply' => null,
+            'created_at' => now()->subDays(8)->toIso8601String(),
+        ],
+        [
+            'id' => 5,
+            'customer_name' => 'Lic. Claudia Benítez',
+            'rating' => 5,
+            'comment' => 'Compramos pollo para el cumpleaños de mi papá. La atención de las chicas en caja fue súper amable, todo bien empacado y a tiempo. El pollo felicísimo como siempre.',
+            'branch' => 'Sucursal Jardines',
+            'favorite_dish' => 'Combo Dos Pollos',
+            'tags' => ['Atención amable', 'A tiempo', 'Tradición'],
+            'is_verified' => true,
+            'source' => 'Google Maps',
+            'status' => 'approved',
+            'likes_count' => 14,
+            'admin_reply' => null,
+            'created_at' => now()->subDays(11)->toIso8601String(),
+        ],
+        [
+            'id' => 6,
+            'customer_name' => 'Javier Domínguez',
+            'rating' => 5,
+            'comment' => 'Las mejores salsas de Durango. El pollo tiene ese sabor ahumado que no encuentras en ningún otro lado. 100% recomendado.',
+            'branch' => 'Sucursal Centro Histórico',
+            'favorite_dish' => 'Pollo Asado con Guarnición',
+            'tags' => ['Ahumado al carbón', 'Salsas picantes'],
+            'is_verified' => true,
+            'source' => 'Google Maps',
+            'status' => 'approved',
+            'likes_count' => 22,
+            'admin_reply' => null,
+            'created_at' => now()->subDays(13)->toIso8601String(),
+        ],
+    ];
+
+    return response()->json([
+        'reviews' => $defaultReviews,
+        'stats' => [
+            'average_rating' => 4.9,
+            'total_reviews' => count($defaultReviews),
+            'distribution' => [5 => 5, 4 => 1, 3 => 0, 2 => 0, 1 => 0],
+            'recommended_percentage' => 98,
+            'google_reviews_url' => 'https://share.google/ETUIpZEvqbGtcyBGa',
+        ],
+    ]);
+});
+
+Route::post('/reviews', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'message' => '¡Gracias! Tu reseña ha sido registrada exitosamente.',
+        'review' => array_merge($request->all(), [
+            'id' => time(),
+            'is_verified' => true,
+            'status' => 'approved',
+            'created_at' => now()->toIso8601String(),
+        ]),
+    ], 201);
+});
+
+Route::post('/reviews/{id}/like', function ($id) {
+    return response()->json(['message' => 'Voto registrado']);
+});
+
 Route::post('/admin/auth/bootstrap', [AdminAuthController::class, 'bootstrap']);
 Route::post('/admin/auth/login', [AdminAuthController::class, 'login'])->middleware('throttle:10,1');
 

@@ -1226,6 +1226,7 @@ app.get('/api/reviews', (req, res) => {
       total_reviews: totalApproved,
       distribution,
       recommended_percentage: recommendedPct,
+      google_reviews_url: 'https://share.google/ETUIpZEvqbGtcyBGa',
     },
   });
 });
