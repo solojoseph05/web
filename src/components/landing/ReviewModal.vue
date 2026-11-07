@@ -157,6 +157,31 @@
             ></textarea>
           </div>
 
+          <!-- Publicar también en Google Opiniones -->
+          <div class="p-3.5 rounded-2xl bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-100 dark:from-blue-950/40 dark:to-indigo-950/40 dark:border-blue-900/50">
+            <label class="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                v-model="postToGoogle"
+                type="checkbox"
+                class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <div class="text-xs">
+                <span class="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.14C3.31 21.45 7.37 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.59H1.27C.46 8.21 0 10.05 0 12s.46 3.79 1.27 5.41l4.01-3.14z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.31 2.55 1.27 6.59l4.01 3.14c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                  </svg>
+                  Publicar también en Google Opiniones (Recomendado)
+                </span>
+                <span class="text-gray-600 dark:text-gray-300 block mt-0.5">
+                  Al enviar, copiaremos tu opinión y abriremos Google Maps para que la publiques en tu cuenta de Google con 1 clic.
+                </span>
+              </div>
+            </label>
+          </div>
+
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
             <button
@@ -201,6 +226,7 @@ const { addToast } = useToasts()
 
 const hoverRating = ref(0)
 const submitting = ref(false)
+const postToGoogle = ref(true)
 
 const availableTags = [
   'Sabor al carbón',
@@ -262,17 +288,33 @@ const handleSubmit = async () => {
   }
 
   submitting.value = true
+  const reviewComment = formData.comment.trim()
+
   try {
     const res = await api.post('/reviews', {
-      customer_name: formData.customer_name,
+      customer_name: formData.customer_name.trim(),
       rating: formData.rating,
-      comment: formData.comment,
+      comment: reviewComment,
       branch: formData.branch,
       favorite_dish: formData.favorite_dish,
       tags: formData.tags,
+      post_to_google: postToGoogle.value,
     })
 
-    addToast(res.data?.message || '¡Gracias! Tu reseña ha sido publicada exitosamente.', 'success')
+    if (postToGoogle.value) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(reviewComment)
+        }
+      } catch (clipErr) {
+        console.warn('Clipboard write permission denied', clipErr)
+      }
+      window.open(googleReviewsUrl.value, '_blank', 'noopener,noreferrer')
+      addToast('¡Reseña guardada! Copiamos tu texto al portapapeles y abrimos Google Maps para que la publiques en tu cuenta Google ⭐', 'success')
+    } else {
+      addToast(res.data?.message || '¡Gracias! Tu reseña ha sido publicada exitosamente.', 'success')
+    }
+
     emit('saved', res.data?.review)
     emit('close')
 

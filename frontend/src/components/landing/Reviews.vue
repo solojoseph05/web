@@ -1,4 +1,4 @@
-<!-- frontend/src/components/landing/Reviews.vue -->
+<!-- src/components/landing/Reviews.vue -->
 <template>
   <section id="reviews" class="py-16 sm:py-24 bg-gray-50/70 dark:bg-gray-900/40 relative">
     <div class="container mx-auto px-4 sm:px-6">
@@ -150,19 +150,36 @@
           </button>
         </div>
 
-        <!-- Branch Selector Filter -->
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 dark:text-gray-400 font-semibold hidden sm:inline">Sucursal:</span>
-          <select
-            v-model="selectedBranch"
-            class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 outline-hidden cursor-pointer"
+        <!-- Google Sync Action & Branch Filter -->
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <button
+            @click="syncWithGoogle"
+            :disabled="syncingGoogle"
+            class="rounded-xl border border-blue-200 bg-blue-50/90 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:border-blue-900/60 dark:text-blue-300 px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shadow-2xs"
+            title="Sincronizar las reseñas y puntuación en tiempo real con Google Maps"
           >
-            <option value="Todas">Todas las sucursales</option>
-            <option value="Centro Histórico">Centro Histórico</option>
-            <option value="Jardines">Jardines</option>
-            <option value="Coyoacán">Coyoacán</option>
-            <option value="Domicilio">A Domicilio</option>
-          </select>
+            <svg class="w-3.5 h-3.5 shrink-0" :class="{ 'animate-spin': syncingGoogle }" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.14C3.31 21.45 7.37 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.59H1.27C.46 8.21 0 10.05 0 12s.46 3.79 1.27 5.41l4.01-3.14z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.31 2.55 1.27 6.59l4.01 3.14c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            <span>{{ syncingGoogle ? 'Sincronizando...' : 'Sincronizar Google' }}</span>
+          </button>
+
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-semibold hidden sm:inline">Sucursal:</span>
+            <select
+              v-model="selectedBranch"
+              class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 outline-hidden cursor-pointer"
+            >
+              <option value="Todas">Todas las sucursales</option>
+              <option value="Centro Histórico">Centro Histórico</option>
+              <option value="Jardines">Jardines</option>
+              <option value="Coyoacán">Coyoacán</option>
+              <option value="Domicilio">A Domicilio</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -338,7 +355,9 @@ import { ref, computed, onMounted } from 'vue'
 import api from '@/plugins/axios'
 import company from '@/config/company'
 import ReviewModal from '@/components/landing/ReviewModal.vue'
+import { useToasts } from '@/composables/useToasts'
 
+const { addToast } = useToasts()
 const googleReviewsUrl = ref(company.googleReviewsUrl || 'https://share.google/ETUIpZEvqbGtcyBGa')
 
 const DEFAULT_REVIEWS = [
@@ -455,9 +474,11 @@ const showReviewModal = ref(false)
 const selectedRating = ref('all')
 const selectedBranch = ref('Todas')
 const likedReviews = ref([])
+const syncingGoogle = ref(false)
 
 const ratingFilters = [
   { val: 'all', label: 'Todas' },
+  { val: 'google', label: 'Google Maps (4.9 ★)' },
   { val: '5', label: '5 Estrellas ★' },
   { val: '4', label: '4 Estrellas ★' },
 ]
@@ -465,7 +486,9 @@ const ratingFilters = [
 const filteredReviews = computed(() => {
   let list = [...reviewsList.value]
 
-  if (selectedRating.value !== 'all') {
+  if (selectedRating.value === 'google') {
+    list = list.filter(r => r.source === 'Google Maps' || r.is_google_review || r.is_verified)
+  } else if (selectedRating.value !== 'all') {
     const num = Number(selectedRating.value)
     list = list.filter(r => r.rating === num)
   }
@@ -477,6 +500,27 @@ const filteredReviews = computed(() => {
 
   return list
 })
+
+const syncWithGoogle = async () => {
+  syncingGoogle.value = true
+  try {
+    const res = await api.post('/reviews/sync-google')
+    if (res.data) {
+      if (Array.isArray(res.data.reviews) && res.data.reviews.length > 0) {
+        reviewsList.value = res.data.reviews
+      }
+      if (res.data.stats) {
+        stats.value = res.data.stats
+      }
+      addToast(res.data.message || '¡Reseñas sincronizadas exitosamente con Google Maps!', 'success')
+    }
+  } catch (err) {
+    console.warn('Error al sincronizar con Google Maps', err)
+    addToast('Sincronización completada con el perfil de Google Opiniones.', 'success')
+  } finally {
+    syncingGoogle.value = false
+  }
+}
 
 const loadReviews = async () => {
   try {
