@@ -636,6 +636,11 @@ const handleLogin = async () => {
     } catch (navErr) {
       await router.push('/admin').catch(() => {})
     }
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname.includes('/admin/login')) {
+        window.location.assign('/admin')
+      }
+    }, 250)
   } catch (err) {
     failedAttempts.value = registerFailedLogin(MAX_ATTEMPTS, LOCKOUT_SECONDS)
 

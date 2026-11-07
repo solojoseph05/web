@@ -27,12 +27,21 @@ const MAX_IDLE_MS = 30 * 60 * 1000
 // Helper para leer token de localStorage o sessionStorage
 const getStoredToken = () => {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY)
+  return (
+    localStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem('token') ||
+    sessionStorage.getItem('token')
+  )
 }
 
 const getStoredUser = () => {
   if (typeof window === 'undefined') return null
-  const raw = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY)
+  const raw =
+    localStorage.getItem(USER_KEY) ||
+    sessionStorage.getItem(USER_KEY) ||
+    localStorage.getItem('user') ||
+    sessionStorage.getItem('user')
   if (!raw) return null
   try {
     return JSON.parse(raw)
@@ -52,7 +61,12 @@ const databaseStatus = ref(null)
  */
 export const hasAdminToken = () => {
   if (typeof window === 'undefined') return false
-  return !!(localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY))
+  return !!(
+    localStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem('token') ||
+    sessionStorage.getItem('token')
+  )
 }
 
 /**
@@ -205,9 +219,13 @@ export const useAdminAuth = () => {
     adminUser.value = null
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem('token')
       localStorage.removeItem(USER_KEY)
+      localStorage.removeItem('user')
       sessionStorage.removeItem(TOKEN_KEY)
+      sessionStorage.removeItem('token')
       sessionStorage.removeItem(USER_KEY)
+      sessionStorage.removeItem('user')
       localStorage.removeItem(LAST_ACTIVITY_KEY)
     }
   }
@@ -239,14 +257,22 @@ export const useAdminAuth = () => {
       if (typeof window !== 'undefined') {
         if (remember) {
           localStorage.setItem(TOKEN_KEY, data.token)
+          localStorage.setItem('token', data.token)
           localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+          localStorage.setItem('user', JSON.stringify(data.user))
           sessionStorage.removeItem(TOKEN_KEY)
+          sessionStorage.removeItem('token')
           sessionStorage.removeItem(USER_KEY)
+          sessionStorage.removeItem('user')
         } else {
           sessionStorage.setItem(TOKEN_KEY, data.token)
+          sessionStorage.setItem('token', data.token)
           sessionStorage.setItem(USER_KEY, JSON.stringify(data.user))
+          sessionStorage.setItem('user', JSON.stringify(data.user))
           localStorage.removeItem(TOKEN_KEY)
+          localStorage.removeItem('token')
           localStorage.removeItem(USER_KEY)
+          localStorage.removeItem('user')
         }
         localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
       }

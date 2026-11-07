@@ -59,8 +59,9 @@
             <!-- Enlace al Panel Administrativo -->
             <li class="pt-2 border-t border-gray-800">
               <router-link 
-                to="/admin/login" 
-                class="text-gray-400 hover:text-red-400 transition-colors text-sm flex items-center gap-1.5 group font-medium"
+                to="/admin" 
+                @click="navigateToAdmin"
+                class="text-gray-400 hover:text-red-400 transition-colors text-sm flex items-center gap-1.5 group font-medium cursor-pointer"
               >
                 <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -150,8 +151,9 @@
           <router-link to="/sucursales" class="hover:text-red-500 transition-colors">Sucursales</router-link>
           <span>·</span>
           <router-link 
-            to="/admin/login" 
-            class="text-gray-400 hover:text-red-400 transition-colors inline-flex items-center gap-1 font-medium group"
+            to="/admin" 
+            @click="navigateToAdmin"
+            class="text-gray-400 hover:text-red-400 transition-colors inline-flex items-center gap-1 font-medium group cursor-pointer"
             title="Acceso al Panel Administrativo"
           >
             <svg class="w-3.5 h-3.5 text-red-500/80 group-hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,5 +217,13 @@ const scrollToSection = (href) => {
   if (target) {
     target.scrollIntoView({ behavior: 'smooth' })
   }
+}
+
+const navigateToAdmin = () => {
+  router.push('/admin').catch(() => {
+    if (typeof window !== 'undefined') {
+      window.location.assign('/admin')
+    }
+  })
 }
 </script>

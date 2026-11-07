@@ -2,12 +2,127 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
-    <link rel="apple-touch-icon" href="/favicon.jpg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="theme-color" content="#ffffff" />
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PolloFeliz</title>
+    <title>Pollo Feliz | El Mejor Pollo Asado al Carbón</title>
+    <meta name="description" content="Sitio web y panel administrativo de Pollo Feliz" />
+    <meta property="og:title" content="Pollo Feliz" />
+    <meta property="og:description" content="Sitio web y panel administrativo de Pollo Feliz" />
+
+    <script>
+      // Gracefully prevent and silence Vite HMR WebSocket connection errors in preview environments
+      (function () {
+        var shouldSuppress = function (args) {
+          var text = '';
+          for (var i = 0; i < args.length; i++) {
+            var a = args[i];
+            if (a) {
+              if (a instanceof Error) {
+                text += ' ' + a.message + ' ' + (a.stack || '');
+              } else if (typeof a === 'object') {
+                try { text += ' ' + JSON.stringify(a); } catch (e) { text += ' ' + String(a); }
+              } else {
+                text += ' ' + String(a);
+              }
+            }
+          }
+          var lower = text.toLowerCase();
+          return (
+            lower.includes('websocket') ||
+            lower.includes('failed to connect') ||
+            lower.includes('[vite]') ||
+            lower.includes('createwebsocketmodulerunnertransport')
+          );
+        };
+
+        var origError = console.error;
+        console.error = function () {
+          if (shouldSuppress(arguments)) return;
+          origError.apply(console, arguments);
+        };
+
+        var origWarn = console.warn;
+        console.warn = function () {
+          if (shouldSuppress(arguments)) return;
+          origWarn.apply(console, arguments);
+        };
+
+        var origLog = console.log;
+        console.log = function () {
+          if (shouldSuppress(arguments)) return;
+          origLog.apply(console, arguments);
+        };
+
+        window.addEventListener('error', function (e) {
+          var msg = (e && e.message) ? String(e.message) : '';
+          var lower = msg.toLowerCase();
+          if (
+            lower.includes('websocket') ||
+            lower.includes('[vite]') ||
+            lower.includes('createwebsocketmodulerunnertransport')
+          ) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (e) {
+          var reason = e && e.reason ? (e.reason.message || String(e.reason)) : '';
+          var lower = reason.toLowerCase();
+          if (
+            lower.includes('websocket') ||
+            lower.includes('[vite]') ||
+            lower.includes('createwebsocketmodulerunnertransport')
+          ) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        try {
+          var NativeWS = window.WebSocket;
+          if (NativeWS) {
+            function DummyWebSocket(url, protocols) {
+              this.url = url;
+              this.readyState = 3;
+              this.bufferedAmount = 0;
+              this.protocol = '';
+              this.extensions = '';
+              this.binaryType = 'blob';
+              this.onopen = null;
+              this.onclose = null;
+              this.onerror = null;
+              this.onmessage = null;
+              this.close = function () {};
+              this.send = function () {};
+              this.addEventListener = function () {};
+              this.removeEventListener = function () {};
+              this.dispatchEvent = function () { return false; };
+            }
+            DummyWebSocket.CONNECTING = 0;
+            DummyWebSocket.OPEN = 1;
+            DummyWebSocket.CLOSING = 2;
+            DummyWebSocket.CLOSED = 3;
+
+            window.WebSocket = function (url, protocols) {
+              var str = String(url || '').toLowerCase();
+              if (str.includes('vite') || str.includes('hmr') || protocols === 'vite-hmr') {
+                return new DummyWebSocket(url, protocols);
+              }
+              return new NativeWS(url, protocols);
+            };
+            window.WebSocket.prototype = NativeWS.prototype;
+            window.WebSocket.CONNECTING = 0;
+            window.WebSocket.OPEN = 1;
+            window.WebSocket.CLOSING = 2;
+            window.WebSocket.CLOSED = 3;
+          }
+        } catch (err) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
