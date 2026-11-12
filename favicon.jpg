@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <radialGradient id="pfYellowBg" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFF566" />
+      <stop offset="70%" stop-color="#FFD600" />
+      <stop offset="100%" stop-color="#FBC02D" />
+    </radialGradient>
+    <linearGradient id="pfRedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#B91C1C" />
+    </linearGradient>
+    <linearGradient id="beakGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFA726" />
+      <stop offset="100%" stop-color="#E65100" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="80" cy="80" r="77" fill="url(#pfYellowBg)" stroke="#B91C1C" stroke-width="6" />
+  <circle cx="80" cy="80" r="73" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6" />
+
+  <g>
+    <path d="M62 46 C52 30, 68 18, 76 34 C82 16, 98 20, 96 36 C104 25, 114 32, 108 48 Z" 
+          fill="url(#pfRedGrad)" stroke="#7F1D1D" stroke-width="2.5" stroke-linejoin="round" />
+    <circle cx="74" cy="30" r="10" fill="#EF4444" />
+    <circle cx="88" cy="27" r="11" fill="#DC2626" />
+    <circle cx="102" cy="36" r="9" fill="#B91C1C" />
+  </g>
+
+  <path d="M48 116 C48 100, 56 90, 80 90 C104 90, 112 100, 112 116 C105 125, 95 128, 80 128 C65 128, 55 125, 48 116 Z" 
+        fill="#FFD600" stroke="#8D6E63" stroke-width="2" />
+  
+  <path d="M52 114 C62 120, 98 120, 108 114 C112 124, 104 132, 80 132 C56 132, 48 124, 52 114 Z" 
+        fill="url(#pfRedGrad)" stroke="#7F1D1D" stroke-width="2" />
+  <polygon points="76,128 84,128 80,144" fill="#DC2626" stroke="#7F1D1D" stroke-width="1.5" />
+
+  <path d="M46 78 C46 56, 60 44, 80 44 C100 44, 114 56, 114 78 C114 96, 102 108, 80 108 C58 108, 46 96, 46 78 Z" 
+        fill="#FFEB3B" stroke="#8D6E63" stroke-width="2.5" />
+
+  <ellipse cx="56" cy="84" rx="7" ry="5" fill="#FF8A80" opacity="0.6" />
+  <ellipse cx="104" cy="84" rx="7" ry="5" fill="#FF8A80" opacity="0.6" />
+
+  <g>
+    <ellipse cx="68" cy="65" rx="9" ry="13" fill="#FFFFFF" stroke="#3E2723" stroke-width="2" />
+    <ellipse cx="70" cy="65" rx="5" ry="8" fill="#1A1A1A" />
+    <circle cx="68" cy="62" r="2.5" fill="#FFFFFF" />
+    <circle cx="72" cy="68" r="1.2" fill="#FFFFFF" />
+    <path d="M60 52 Q68 47 75 51" fill="none" stroke="#4E342E" stroke-width="2.2" stroke-linecap="round" />
+  </g>
+
+  <g>
+    <ellipse cx="92" cy="65" rx="9" ry="13" fill="#FFFFFF" stroke="#3E2723" stroke-width="2" />
+    <ellipse cx="90" cy="65" rx="5" ry="8" fill="#1A1A1A" />
+    <circle cx="88" cy="62" r="2.5" fill="#FFFFFF" />
+    <circle cx="92" cy="68" r="1.2" fill="#FFFFFF" />
+    <path d="M85 51 Q92 47 100 52" fill="none" stroke="#4E342E" stroke-width="2.2" stroke-linecap="round" />
+  </g>
+
+  <path d="M78 92 C74 96, 72 106, 78 110 C84 106, 84 96, 80 92 Z" 
+        fill="url(#pfRedGrad)" stroke="#7F1D1D" stroke-width="2" />
+
+  <g>
+    <path d="M67 82 Q80 102 93 82 Q80 92 67 82 Z" fill="#7F1D1D" stroke="#D84315" stroke-width="1.5" />
+    <path d="M74 88 Q80 94 86 88 Q80 84 74 88 Z" fill="#FF8A80" />
+    <path d="M62 78 Q80 72 98 78 Q80 92 62 78 Z" fill="url(#beakGrad)" stroke="#BF360C" stroke-width="2.2" stroke-linejoin="round" />
+    <ellipse cx="80" cy="77" rx="1.5" ry="0.8" fill="#8D6E63" />
+  </g>
+
+  <path d="M46 76 C42 74, 40 78, 44 82" fill="none" stroke="#F57F17" stroke-width="2" stroke-linecap="round" />
+  <path d="M114 76 C118 74, 120 78, 116 82" fill="none" stroke="#F57F17" stroke-width="2" stroke-linecap="round" />
+</svg>

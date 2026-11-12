@@ -1,0 +1,7 @@
+{
+  "name": "Pollo Feliz",
+  "description": "Sitio web y panel administrativo de Pollo Feliz",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

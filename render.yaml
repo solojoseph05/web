@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: pollo-feliz-durango
+    env: node
+    plan: free
+    buildCommand: bash deploy.sh
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: DB_CONNECTION
+        value: memory
