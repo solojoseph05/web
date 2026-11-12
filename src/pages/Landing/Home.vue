@@ -28,6 +28,7 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useHead } from '@vueuse/head'
 import Hero from '@/components/landing/Hero.vue'
 import WhyUs from '@/components/landing/WhyUs.vue'
@@ -37,6 +38,17 @@ import Branches from '@/components/landing/Branches.vue'
 import Vacancies from '@/components/landing/Vacancies.vue'
 import Reviews from '@/components/landing/Reviews.vue'
 import Contact from '@/components/landing/Contact.vue'
+import { useLandingContent } from '@/composables/useLandingContent'
+
+const { loadLandingContent } = useLandingContent()
+
+onMounted(async () => {
+  try {
+    await loadLandingContent(true)
+  } catch (err) {
+    console.warn('Error al cargar contenido de inicio:', err)
+  }
+})
 
 useHead({
   title: 'Pollo Feliz | El Mejor Pollo Asado al Carbón',

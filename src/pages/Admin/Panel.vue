@@ -2567,12 +2567,14 @@ import SystemLogsTab from '@/components/admin/SystemLogsTab.vue'
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard.vue'
 import LandingEditor from '@/components/admin/LandingEditor.vue'
 import { useTheme } from '@/composables/useTheme'
+import { useLandingContent } from '@/composables/useLandingContent'
 
 const router = useRouter()
 const route = useRoute()
 const { logout, adminUser, isSuperAdmin, canAccessTab, ROLES_CONFIG, getRoleMeta, fetchDatabaseStatus, fetchProfile, checkAuth } = useAdminAuth()
 const { addToast } = useToasts()
 const { theme, toggleTheme } = useTheme()
+const { loadLandingContent } = useLandingContent()
 
 const dbStatusInfo = ref(null)
 const activeTab = ref(route.query?.tab || 'summary')
@@ -3138,6 +3140,9 @@ const handleConfirmDelete = async () => {
     try {
       await api.delete(`/admin/branches/${id}`)
       branches.value = branches.value.filter(b => b.id !== id)
+      try {
+        await loadLandingContent(true)
+      } catch (_) {}
       addToast(`Sucursal "${name}" eliminada correctamente.`, 'info')
       showDeleteModal.value = false
       itemToDelete.value = null
@@ -3308,8 +3313,15 @@ const handleOpenEditBranch = (b) => {
 
 const handleSaveBranch = async (formData) => {
   try {
+    const payload = {
+      ...formData,
+      branch_name: (formData.name || formData.branch_name || '').trim(),
+      name: (formData.name || formData.branch_name || '').trim(),
+      is_active: formData.is_active !== undefined ? formData.is_active : true,
+      is_open: formData.is_open !== undefined ? formData.is_open : true,
+    }
     if (formData.id) {
-      const res = await api.patch(`/admin/branches/${formData.id}`, formData)
+      const res = await api.patch(`/admin/branches/${formData.id}`, payload)
       const updated = res.data?.branch
       const idx = branches.value.findIndex(b => b.id === formData.id)
       if (idx >= 0 && updated) {
@@ -3319,7 +3331,7 @@ const handleSaveBranch = async (formData) => {
       }
       addToast(`Sucursal "${formData.name}" actualizada correctamente.`, 'success')
     } else {
-      const res = await api.post('/admin/branches', formData)
+      const res = await api.post('/admin/branches', payload)
       const created = res.data?.branch
       if (created) {
         branches.value.push(created)
@@ -3328,6 +3340,9 @@ const handleSaveBranch = async (formData) => {
       }
       addToast(`¡Sucursal "${formData.name}" agregada con éxito!`, 'success')
     }
+    try {
+      await loadLandingContent(true)
+    } catch (_) {}
     showBranchModal.value = false
   } catch (err) {
     console.error('Error al guardar sucursal', err)

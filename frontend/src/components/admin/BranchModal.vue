@@ -570,6 +570,7 @@ watch(
           latitude: props.branchToEdit.latitude ? Number(props.branchToEdit.latitude) : 24.0277,
           longitude: props.branchToEdit.longitude ? Number(props.branchToEdit.longitude) : -104.6532,
           map_zoom: props.branchToEdit.map_zoom ? Number(props.branchToEdit.map_zoom) : 16,
+          is_active: props.branchToEdit.is_active ?? true,
           is_open: props.branchToEdit.is_open ?? true,
           is_coming_soon: !!props.branchToEdit.is_coming_soon,
           is_new: !!props.branchToEdit.is_new,
@@ -586,6 +587,7 @@ watch(
           latitude: 24.0277,
           longitude: -104.6532,
           map_zoom: 16,
+          is_active: true,
           is_open: true,
           is_coming_soon: false,
           is_new: true,
@@ -624,6 +626,9 @@ const handleSubmit = async () => {
   try {
     emit('save', {
       ...form.value,
+      name: form.value.name.trim(),
+      branch_name: form.value.name.trim(),
+      is_active: form.value.is_active !== false,
       id: props.branchToEdit?.id,
     })
   } finally {

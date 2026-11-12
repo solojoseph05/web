@@ -10,9 +10,11 @@ use App\Models\LandingJob;
 use App\Models\LandingMenuItem;
 use App\Models\LandingPromotion;
 use App\Models\LandingSetting;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -384,28 +386,69 @@ class AdminLandingContentController extends Controller
     public function storeBranch(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:160'],
-            'address' => ['nullable', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:160'],
+            'branch_name' => ['nullable', 'string', 'max:160'],
+            'address' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:80'],
             'schedule' => ['nullable', 'string', 'max:120'],
             'image_url' => ['nullable', 'string', 'max:600'],
             'map_link' => ['nullable', 'string', 'max:600'],
+            'google_maps_url' => ['nullable', 'string', 'max:600'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'map_zoom' => ['nullable', 'integer', 'between:1,22'],
+            'is_active' => ['sometimes', 'boolean'],
             'is_open' => ['sometimes', 'boolean'],
+            'is_coming_soon' => ['sometimes', 'boolean'],
+            'is_new' => ['sometimes', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $branch = LandingBranch::create([
-            ...$data,
-            'is_open' => $data['is_open'] ?? true,
-            'sort_order' => $data['sort_order'] ?? 0,
-        ]);
+        $name = trim($data['name'] ?? $data['branch_name'] ?? 'Sucursal Pollo Feliz');
+        $mapUrl = $data['map_link'] ?? $data['google_maps_url'] ?? null;
+        if (!$mapUrl && !empty($data['latitude']) && !empty($data['longitude'])) {
+            $mapUrl = "https://maps.google.com/?q={$data['latitude']},{$data['longitude']}";
+        }
+
+        $payload = [
+            'name' => $name,
+            'branch_name' => $name,
+            'address' => trim($data['address'] ?? ''),
+            'phone' => trim($data['phone'] ?? '618-123-4567'),
+            'schedule' => trim($data['schedule'] ?? 'Lun - Dom: 10:00 AM - 10:00 PM'),
+            'image_url' => $data['image_url'] ?? null,
+            'map_link' => $mapUrl,
+            'google_maps_url' => $mapUrl,
+            'latitude' => isset($data['latitude']) ? (float)$data['latitude'] : 24.0277,
+            'longitude' => isset($data['longitude']) ? (float)$data['longitude'] : -104.6532,
+            'map_zoom' => isset($data['map_zoom']) ? (int)$data['map_zoom'] : 16,
+            'is_active' => $request->boolean('is_active', true),
+            'is_open' => $request->boolean('is_open', true),
+            'is_coming_soon' => $request->boolean('is_coming_soon', false),
+            'is_new' => $request->boolean('is_new', true),
+            'sort_order' => isset($data['sort_order']) ? (int)$data['sort_order'] : 0,
+        ];
+
+        $branch = LandingBranch::create($payload);
+
+        // Sincronizar también con tabla locations si existe
+        try {
+            Location::create($payload);
+        } catch (\Throwable $e) {
+            // Ignorar si la tabla locations aún no existe
+        }
+
+        // Invalidar caché automáticamente
+        Cache::forget('landing_page_data');
+        Cache::forget('landing_page_locations');
+        Cache::forget('locations_active');
 
         $this->logAdminChange(
             $request,
             'landing.branch.create',
             'LandingBranch',
             (string) $branch->id,
-            'Se creó una nueva sucursal.',
+            'Se creó una nueva sucursal: ' . $branch->name,
             $branch->toArray()
         );
 
@@ -418,25 +461,61 @@ class AdminLandingContentController extends Controller
     public function updateBranch(Request $request, LandingBranch $landingBranch)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:160'],
+            'name' => ['nullable', 'string', 'max:160'],
+            'branch_name' => ['nullable', 'string', 'max:160'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:80'],
             'schedule' => ['nullable', 'string', 'max:120'],
             'image_url' => ['nullable', 'string', 'max:600'],
             'map_link' => ['nullable', 'string', 'max:600'],
-            'is_open' => ['required', 'boolean'],
+            'google_maps_url' => ['nullable', 'string', 'max:600'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'map_zoom' => ['nullable', 'integer', 'between:1,22'],
+            'is_active' => ['sometimes', 'boolean'],
+            'is_open' => ['sometimes', 'boolean'],
+            'is_coming_soon' => ['sometimes', 'boolean'],
+            'is_new' => ['sometimes', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        if (isset($data['name']) || isset($data['branch_name'])) {
+            $name = trim($data['name'] ?? $data['branch_name']);
+            $data['name'] = $name;
+            $data['branch_name'] = $name;
+        }
+
+        if ($request->has('is_active')) {
+            $data['is_active'] = $request->boolean('is_active');
+        }
+        if ($request->has('is_open')) {
+            $data['is_open'] = $request->boolean('is_open');
+        }
+        if ($request->has('is_coming_soon')) {
+            $data['is_coming_soon'] = $request->boolean('is_coming_soon');
+        }
+        if ($request->has('is_new')) {
+            $data['is_new'] = $request->boolean('is_new');
+        }
+
         $landingBranch->fill($data);
         $landingBranch->save();
+
+        // Sincronizar actualización con Location
+        try {
+            Location::where('id', $landingBranch->id)->update($data);
+        } catch (\Throwable $e) {}
+
+        Cache::forget('landing_page_data');
+        Cache::forget('landing_page_locations');
+        Cache::forget('locations_active');
 
         $this->logAdminChange(
             $request,
             'landing.branch.update',
             'LandingBranch',
             (string) $landingBranch->id,
-            'Se actualizó una sucursal.',
+            'Se actualizó la sucursal: ' . $landingBranch->name,
             $landingBranch->toArray()
         );
 
@@ -451,12 +530,20 @@ class AdminLandingContentController extends Controller
         $snapshot = $landingBranch->toArray();
         $landingBranch->delete();
 
+        try {
+            Location::where('id', $snapshot['id'] ?? 0)->delete();
+        } catch (\Throwable $e) {}
+
+        Cache::forget('landing_page_data');
+        Cache::forget('landing_page_locations');
+        Cache::forget('locations_active');
+
         $this->logAdminChange(
             $request,
             'landing.branch.delete',
             'LandingBranch',
             (string) ($snapshot['id'] ?? ''),
-            'Se eliminó una sucursal.',
+            'Se eliminó la sucursal: ' . ($snapshot['name'] ?? ''),
             $snapshot
         );
 
@@ -676,6 +763,9 @@ class AdminLandingContentController extends Controller
             $jobsQuery->where('is_active', true);
             $menuQuery->where('is_active', true);
             $promotionsQuery->where('is_active', true);
+            $branchesQuery->where(function ($q) {
+                $q->where('is_active', true)->orWhereNull('is_active');
+            })->where('is_open', true);
         }
 
         $jobsTrend = $this->calculateWeeklyTrend(LandingJob::query()->whereNull('deleted_at'));

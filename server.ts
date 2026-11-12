@@ -609,6 +609,7 @@ let promotions: Promotion[] = [
 interface Branch {
   id: number;
   name: string;
+  branch_name?: string;
   address: string;
   phone: string;
   schedule: string;
@@ -617,6 +618,8 @@ interface Branch {
   map_zoom?: number;
   image_url: string;
   map_link: string;
+  google_maps_url?: string;
+  is_active?: boolean;
   is_open: boolean;
   is_coming_soon?: boolean;
   is_new?: boolean;
@@ -1368,7 +1371,15 @@ const composePayload = (onlyActive: boolean) => {
       if (p.valid_until && new Date(p.valid_until) < now) return false;
       return true;
     });
+    filteredBranches = filteredBranches.filter(b => b.is_open !== false && b.is_active !== false);
   }
+
+  filteredBranches = filteredBranches.map(b => ({
+    ...b,
+    branch_name: b.branch_name || b.name,
+    google_maps_url: b.google_maps_url || b.map_link,
+    is_active: b.is_active !== false,
+  }));
 
   return {
     settings,
@@ -2786,19 +2797,23 @@ app.post('/api/admin/branches', authenticateAdmin, (req, res) => {
   const lat = req.body.latitude ? Number(req.body.latitude) : 24.0277;
   const lng = req.body.longitude ? Number(req.body.longitude) : -104.6532;
   const mapLink = req.body.map_link || req.body.google_maps_url || `https://maps.google.com/?q=${lat},${lng}`;
+  const branchName = (req.body.name || req.body.branch_name || '').trim() || 'Sucursal Pollo Feliz';
 
   const newBranch: Branch = {
     id: nextId,
-    name: (req.body.name || '').trim(),
+    name: branchName,
+    branch_name: branchName,
     address: (req.body.address || '').trim(),
     phone: (req.body.phone || '618-123-4567').trim(),
     schedule: (req.body.schedule || 'Lun - Dom: 10:00 AM - 10:00 PM').trim(),
     image_url: req.body.image_url || '',
     map_link: mapLink,
+    google_maps_url: mapLink,
     latitude: lat,
     longitude: lng,
     map_zoom: req.body.map_zoom ? Number(req.body.map_zoom) : 16,
-    is_open: req.body.is_open ?? true,
+    is_active: req.body.is_active !== undefined ? Boolean(req.body.is_active) : true,
+    is_open: req.body.is_open !== undefined ? Boolean(req.body.is_open) : true,
     is_coming_soon: req.body.is_coming_soon ?? false,
     is_new: req.body.is_new ?? false,
     sort_order: req.body.sort_order ?? 0,
@@ -2815,17 +2830,25 @@ app.patch('/api/admin/branches/:id', authenticateAdmin, (req, res) => {
   const branch = branches.find(b => String(b.id) === req.params.id);
   if (!branch) return res.status(404).json({ message: 'Sucursal no encontrada.' });
 
-  const { name, address, phone, schedule, image_url, map_link, google_maps_url, latitude, longitude, map_zoom, is_open, is_coming_soon, is_new, sort_order } = req.body;
-  if (name !== undefined) branch.name = name.trim();
+  const { name, branch_name, address, phone, schedule, image_url, map_link, google_maps_url, latitude, longitude, map_zoom, is_active, is_open, is_coming_soon, is_new, sort_order } = req.body;
+  if (name !== undefined || branch_name !== undefined) {
+    const val = (name || branch_name || '').trim();
+    branch.name = val;
+    branch.branch_name = val;
+  }
   if (address !== undefined) branch.address = address.trim();
   if (phone !== undefined) branch.phone = phone.trim();
   if (schedule !== undefined) branch.schedule = schedule.trim();
   if (image_url !== undefined) branch.image_url = image_url;
   if (map_link !== undefined) branch.map_link = map_link;
-  if (google_maps_url !== undefined) branch.map_link = google_maps_url;
+  if (google_maps_url !== undefined) {
+    branch.google_maps_url = google_maps_url;
+    branch.map_link = google_maps_url;
+  }
   if (latitude !== undefined) branch.latitude = Number(latitude);
   if (longitude !== undefined) branch.longitude = Number(longitude);
   if (map_zoom !== undefined) branch.map_zoom = Number(map_zoom);
+  if (typeof is_active === 'boolean') branch.is_active = is_active;
   if (typeof is_open === 'boolean') branch.is_open = is_open;
   if (typeof is_coming_soon === 'boolean') branch.is_coming_soon = is_coming_soon;
   if (typeof is_new === 'boolean') branch.is_new = is_new;

@@ -283,7 +283,7 @@ import InteractiveMap from '@/components/landing/InteractiveMap.vue'
 import branchesConfig from '@/config/branches'
 import { useLandingContent } from '@/composables/useLandingContent'
 
-const { landingBranches, landingSettings } = useLandingContent()
+const { landingBranches, landingSettings, loadLandingContent } = useLandingContent()
 
 const branchesTitle = computed(() => landingSettings.value.branches_section_title || 'Nuestras Sucursales')
 const branchesSubtitle = computed(() => landingSettings.value.branches_section_subtitle || 'Visítanos o llámanos directamente para disfrutar del mejor sabor al carbón recién salido de la parrilla.')
@@ -373,7 +373,12 @@ const suggestLocationWhatsApp = computed(() => {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 })
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    await loadLandingContent(true)
+  } catch (err) {
+    console.warn('Error al refrescar sucursales en landing:', err)
+  }
   setTimeout(() => {
     handleScroll()
   }, 200)

@@ -2,14 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Ruta inicial de la aplicación: si existe la SPA compilada, servirla; si no, vista de bienvenida
-Route::get('/', function () {
-    if (file_exists(public_path('index.html'))) {
-        return response(file_get_contents(public_path('index.html')))
-            ->header('Content-Type', 'text/html; charset=UTF-8');
-    }
-    return view('welcome');
-});
+use App\Http\Controllers\LandingController;
+
+// Ruta principal dinámica con carga de sucursales, menú, promociones y vacantes
+Route::get('/', [LandingController::class, 'index']);
+Route::get('/landing', [LandingController::class, 'index']);
 
 // Endpoint simple para exponer un catálogo del menú en formato JSON.
 Route::get('/api/menu', function () {
