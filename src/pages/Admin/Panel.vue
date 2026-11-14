@@ -1,6 +1,6 @@
 <!-- src/pages/Admin/Panel.vue -->
 <template>
-  <div class="min-h-screen bg-gray-100 dark:bg-gray-950 flex flex-col">
+  <div class="admin-panel min-h-screen bg-gray-100 dark:bg-gray-950 flex flex-col">
     <!-- Top Navigation Bar -->
     <header class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800 sticky top-0 z-30">
       <div class="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -163,7 +163,7 @@
                 <div class="flex items-center gap-1.5 min-w-0">
                   <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                   <span class="font-medium text-gray-700 dark:text-gray-300 truncate">
-                    {{ dbStatusInfo?.engine || 'Memoria (Activa)' }}
+                    {{ dbStatusInfo?.engine || 'SQLite · Conectado' }}
                   </span>
                 </div>
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-bold shrink-0">
@@ -235,7 +235,7 @@
                 v-model="orderSearch"
                 type="text"
                 placeholder="Buscar por cliente, teléfono, # orden..."
-                class="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3.5 py-2 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3.5 py-2 text-xs font-medium text-gray-900 placeholder:text-gray-400 dark:placeholder:text-slate-400 focus:border-red-500 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100"
               />
               <button
                 v-if="orderSearch"
@@ -529,6 +529,34 @@
             </div>
           </div>
 
+          <!-- Mini KPIs de estado del Menú -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3.5 shadow-xs">
+              <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase block">Activos</span>
+              <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {{ menuItems.filter(i => i.is_active).length }}
+              </span>
+            </div>
+            <div class="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3.5 shadow-xs">
+              <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase block">Destacados</span>
+              <span class="text-xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
+                {{ menuItems.filter(i => i.is_featured).length }}
+              </span>
+            </div>
+            <div class="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3.5 shadow-xs">
+              <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase block">Agotados</span>
+              <span class="text-xl font-black text-rose-600 dark:text-rose-400 tabular-nums">
+                {{ menuItems.filter(i => i.is_sold_out).length }}
+              </span>
+            </div>
+            <div class="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3.5 shadow-xs">
+              <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase block">Pausados</span>
+              <span class="text-xl font-black text-slate-600 dark:text-slate-300 tabular-nums">
+                {{ menuItems.filter(i => !i.is_active).length }}
+              </span>
+            </div>
+          </div>
+
           <!-- Category Quick Summary Bar (Combos, Drinks, Extras, etc.) -->
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <button
@@ -565,7 +593,7 @@
                   v-model="menuSearch"
                   type="text"
                   placeholder="Buscar por nombre, categoría o etiqueta..."
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 pl-9 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 pl-9 text-xs sm:text-sm text-gray-800 placeholder-gray-400 dark:placeholder-slate-400 focus:border-red-500 focus:bg-white dark:focus:bg-[#161e2e] focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:text-slate-100"
                 />
                 <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
@@ -575,9 +603,9 @@
                 <span class="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:inline">Filtrar categoría:</span>
                 <select
                   v-model="selectedMenuCategory"
-                  class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-bold text-gray-800 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                  class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-bold text-gray-800 focus:border-red-500 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 cursor-pointer"
                 >
-                  <option v-for="cat in menuCategoryFilterOptions" :key="cat" :value="cat">
+                  <option v-for="cat in menuCategoryFilterOptions" :key="cat" :value="cat" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">
                     {{ getCategoryIcon(cat) }} {{ cat }} ({{ getCategoryCount(cat) }})
                   </option>
                 </select>
@@ -662,14 +690,14 @@
               <!-- Bulk Action Controls -->
               <div class="flex flex-wrap items-center gap-2">
                 <!-- Quick Bulk Category Mover -->
-                <div class="flex items-center gap-1.5 bg-gray-800 rounded-xl px-2.5 py-1.5 border border-gray-700">
-                  <span class="text-xs text-gray-400 font-semibold hidden md:inline">Mover a:</span>
+                <div class="flex items-center gap-1.5 bg-[#161e2e] rounded-xl px-2.5 py-1.5 border border-slate-700">
+                  <span class="text-xs text-slate-400 font-semibold hidden md:inline">Mover a:</span>
                   <select
                     v-model="bulkTargetCategory"
-                    class="bg-transparent text-xs font-bold text-white focus:outline-hidden cursor-pointer"
+                    class="bg-[#161e2e] text-xs font-bold text-slate-100 focus:outline-hidden cursor-pointer"
                   >
-                    <option value="" disabled class="text-gray-900 bg-white">Elige categoría...</option>
-                    <option v-for="cat in allUniqueCategories" :key="cat" :value="cat" class="text-gray-900 bg-white">
+                    <option value="" disabled class="bg-[#161e2e] text-slate-400">Elige categoría...</option>
+                    <option v-for="cat in allUniqueCategories" :key="cat" :value="cat" class="bg-[#161e2e] text-slate-100">
                       {{ getCategoryIcon(cat) }} {{ cat }}
                     </option>
                   </select>
@@ -833,10 +861,10 @@
                       <select
                         :value="item.category"
                         @change="(e) => handleQuickCategoryChange(item, e.target.value)"
-                        class="text-[11px] font-semibold rounded-lg border border-gray-200 bg-white py-1 px-1.5 text-gray-600 hover:border-red-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer transition"
+                        class="text-[11px] font-semibold rounded-lg border border-gray-200 bg-white py-1 px-1.5 text-gray-600 hover:border-red-400 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 cursor-pointer transition"
                         title="Cambiar categoría con 1 clic"
                       >
-                        <option v-for="cat in allUniqueCategories" :key="cat" :value="cat">
+                        <option v-for="cat in allUniqueCategories" :key="cat" :value="cat" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">
                           {{ cat }}
                         </option>
                       </select>
@@ -850,19 +878,39 @@
                     </span>
                   </td>
 
-                  <!-- Availability Toggle -->
+                  <!-- Availability & Status Pills -->
                   <td class="px-5 py-3.5">
-                    <button
-                      @click="toggleItemActive(item)"
-                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition cursor-pointer"
-                      :class="item.is_active
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-950/60 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'"
-                      :title="item.is_active ? 'Clic para pausar venta' : 'Clic para activar venta'"
-                    >
-                      <span class="h-2 w-2 rounded-full" :class="item.is_active ? 'bg-green-500' : 'bg-gray-400'"></span>
-                      <span>{{ item.is_active ? 'Disponible' : 'Pausado' }}</span>
-                    </button>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <button
+                        @click="toggleItemActive(item)"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition cursor-pointer"
+                        :class="item.is_active
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-950/60 dark:text-green-300'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'"
+                        :title="item.is_active ? 'Clic para pausar venta' : 'Clic para activar venta'"
+                      >
+                        <span class="h-2 w-2 rounded-full" :class="item.is_active ? 'bg-green-500' : 'bg-gray-400'"></span>
+                        <span>{{ item.is_active ? 'Disponible' : 'Pausado' }}</span>
+                      </button>
+
+                      <button
+                        @click="toggleItemSoldOut(item)"
+                        class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition cursor-pointer border"
+                        :class="item.is_sold_out
+                          ? 'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+                          : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-amber-400 hover:text-amber-700 dark:bg-gray-800/70 dark:text-gray-400 dark:border-gray-700'"
+                        :title="item.is_sold_out ? 'Quitar etiqueta Agotado' : 'Marcar como Agotado temporalmente'"
+                      >
+                        <span>{{ item.is_sold_out ? '⛔ Agotado' : 'En stock' }}</span>
+                      </button>
+
+                      <span
+                        v-if="item.is_featured"
+                        class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 text-[10px] font-black"
+                      >
+                        🔥 Destacado
+                      </span>
+                    </div>
                   </td>
 
                   <!-- Edit / Remove Actions -->
@@ -946,16 +994,22 @@
                 <span class="absolute top-3 left-3 rounded-full bg-red-600/90 backdrop-blur-xs px-2.5 py-1 text-[11px] font-black text-white shadow-md">
                   {{ promo.badge || 'Oferta' }}
                 </span>
+                <span
+                  class="absolute top-3 right-3 rounded-full px-2.5 py-1 text-[10px] font-black shadow-md"
+                  :class="getPromoValidityMeta(promo).badge"
+                >
+                  {{ getPromoValidityMeta(promo).label }}
+                </span>
               </div>
               <div v-else class="flex items-center justify-between mb-3">
                 <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
                   {{ promo.badge || 'Oferta' }}
                 </span>
                 <span
-                  class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                  :class="promo.is_active !== false ? 'bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'"
+                  class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black"
+                  :class="getPromoValidityMeta(promo).badge"
                 >
-                  {{ promo.is_active !== false ? '● Activa' : '○ Pausada' }}
+                  {{ getPromoValidityMeta(promo).label }}
                 </span>
               </div>
 
@@ -971,15 +1025,18 @@
                 <!-- Coupon Box -->
                 <div class="flex items-center justify-between p-2.5 rounded-2xl bg-red-50/70 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 mt-3">
                   <div>
-                    <span class="text-[10px] font-bold text-gray-400 block uppercase">Código de Cupón</span>
+                    <span class="text-[10px] font-bold text-gray-400 block uppercase">Código / Precio</span>
                     <span class="font-mono font-black text-sm text-red-600 dark:text-red-400 tracking-wider">
-                      {{ promo.code }}
+                      {{ promo.code || 'DIRECTO' }}
+                    </span>
+                    <span v-if="promo.promo_price" class="ml-1.5 text-xs font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      ${{ Number(promo.promo_price).toFixed(0) }}
                     </span>
                   </div>
                   <div class="text-right">
                     <span class="text-[10px] text-gray-400 block">Vigencia</span>
                     <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      {{ promo.valid_until || 'Indefinida' }}
+                      {{ promo.valid_from ? `${promo.valid_from} → ` : '' }}{{ promo.valid_until || 'Indefinida' }}
                     </span>
                   </div>
                 </div>
@@ -1217,14 +1274,30 @@
               </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5 flex-wrap">
                 <span>📨 Consultas recibidas desde la página web.</span>
-                <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
-                  ✓ Despachadas a: soporte@pollofelizdgo.com
+                <span
+                  v-if="mailStatus && mailStatus.configured"
+                  class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md"
+                >
+                  ✓ SMTP/Correo activo ({{ mailStatus.provider }}) → {{ mailStatus.support_address || 'soporte@pollofelizdgo.com' }}
+                </span>
+                <span
+                  v-else-if="mailStatus && !mailStatus.configured"
+                  class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60"
+                >
+                  ⚠ Correo saliente no configurado en .env (define MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD o RESEND_API_KEY)
                 </span>
               </p>
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button
+                @click="handleTestMail"
+                :disabled="testingMail"
+                class="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/50 transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                <span>{{ testingMail ? '⏳ Probando...' : '✉️ Probar correo' }}</span>
+              </button>
               <button
                 @click="loadContactMessages"
                 class="rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
@@ -1334,8 +1407,18 @@
                   <span class="text-[11px] text-gray-400 block">
                     {{ formatDate(msg.created_at) }}
                   </span>
-                  <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full mt-1">
-                    ✓ Enviado a soporte@pollofelizdgo.com
+                  <span
+                    v-if="msg.email_sent"
+                    class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full mt-1"
+                  >
+                    ✓ Enviado a {{ msg.destination_email || 'soporte@pollofelizdgo.com' }}
+                  </span>
+                  <span
+                    v-else
+                    :title="msg.email_error || 'Falta configurar SMTP/Resend en el servidor'"
+                    class="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full mt-1 border border-amber-200 dark:border-amber-800/60"
+                  >
+                    ⚠ Correo pendiente (guardado en panel)
                   </span>
                 </div>
               </div>
@@ -1475,7 +1558,7 @@
                 v-model="adminReviewSearch"
                 type="text"
                 placeholder="Buscar por cliente, sucursal o texto..."
-                class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-xs outline-hidden focus:border-red-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-xs placeholder-gray-400 dark:placeholder-slate-400 outline-hidden focus:border-red-500 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100"
               />
             </div>
           </div>
@@ -1584,7 +1667,7 @@
                   v-model="replyTextInput"
                   rows="2"
                   placeholder="¡Muchas gracias por visitarnos! Nos da gusto que hayas disfrutado..."
-                  class="w-full rounded-xl border border-gray-200 p-2.5 text-xs outline-hidden focus:border-red-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white resize-none"
+                  class="w-full rounded-xl border border-gray-200 p-2.5 text-xs placeholder-gray-400 dark:placeholder-slate-400 outline-hidden focus:border-red-500 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 resize-none"
                 ></textarea>
                 <div class="flex items-center justify-end gap-2">
                   <button
@@ -1980,13 +2063,13 @@
                     <select
                       :value="app.status"
                       @change="handleChangeAppStatus(app.id, $event.target.value)"
-                      class="rounded-xl border border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-xs font-bold px-2.5 py-1.5 text-gray-800 dark:text-white cursor-pointer focus:ring-1 focus:ring-red-500"
+                      class="rounded-xl border border-gray-200 bg-gray-50 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:border-slate-700 text-xs font-bold px-2.5 py-1.5 text-gray-800 dark:text-slate-100 cursor-pointer focus:ring-1 focus:ring-red-500"
                     >
-                      <option value="nuevo">🆕 Nuevo</option>
-                      <option value="en_revision">🔍 En Revisión</option>
-                      <option value="entrevista">📅 Entrevista</option>
-                      <option value="contratado">✅ Contratado</option>
-                      <option value="descartado">❌ Descartado</option>
+                      <option value="nuevo" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🆕 Nuevo</option>
+                      <option value="en_revision" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🔍 En Revisión</option>
+                      <option value="entrevista" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">📅 Entrevista</option>
+                      <option value="contratado" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">✅ Contratado</option>
+                      <option value="descartado" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">❌ Descartado</option>
                     </select>
                   </div>
 
@@ -2225,18 +2308,18 @@
 
               <select
                 v-model="userPermissionFilter"
-                class="rounded-xl border border-gray-200 bg-gray-50 py-1.5 px-2.5 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer focus:border-red-500 focus:outline-hidden"
+                class="rounded-xl border border-gray-200 bg-gray-50 py-1.5 px-2.5 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 cursor-pointer focus:border-red-500 focus:outline-hidden"
               >
-                <option value="all">🔍 Todos los permisos</option>
-                <option value="menu.manage">🍗 Menú & Platillos</option>
-                <option value="orders.manage">🛒 Pedidos en Vivo</option>
-                <option value="promotions.manage">🏷️ Promociones & Ofertas</option>
-                <option value="branches.manage">📍 Sucursales & Horarios</option>
-                <option value="messages.manage">💬 Bandeja de Dudas</option>
-                <option value="reviews.manage">⭐ Moderación Reseñas</option>
-                <option value="landing.manage">🎨 Editor Web</option>
-                <option value="users.manage">👥 Gestión de Usuarios</option>
-                <option value="security.manage">🛡️ Auditoría & Sesiones</option>
+                <option value="all" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🔍 Todos los permisos</option>
+                <option value="menu.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🍗 Menú & Platillos</option>
+                <option value="orders.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🛒 Pedidos en Vivo</option>
+                <option value="promotions.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🏷️ Promociones & Ofertas</option>
+                <option value="branches.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">📍 Sucursales & Horarios</option>
+                <option value="messages.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">💬 Bandeja de Dudas</option>
+                <option value="reviews.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">⭐ Moderación Reseñas</option>
+                <option value="landing.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🎨 Editor Web</option>
+                <option value="users.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">👥 Gestión de Usuarios</option>
+                <option value="security.manage" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🛡️ Auditoría & Sesiones</option>
               </select>
             </div>
 
@@ -2245,7 +2328,7 @@
                 v-model="userSearchQuery"
                 type="text"
                 placeholder="Buscar por nombre o correo..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 focus:border-red-500 focus:bg-white dark:focus:bg-[#161e2e] focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:text-slate-100"
               />
             </div>
           </div>
@@ -2622,6 +2705,8 @@ const promotions = ref([])
 const branches = ref([])
 const contactMessages = ref([])
 const messageFilter = ref('all') // 'all' | 'pending' | 'attended'
+const mailStatus = ref(null)
+const testingMail = ref(false)
 const orders = ref([])
 const adminUsersList = ref([])
 const showUserModal = ref(false)
@@ -2923,12 +3008,37 @@ const handleQuickCategoryChange = async (item, newCategory) => {
   }
 }
 
+const loadMailStatus = async () => {
+  try {
+    const res = await api.get('/admin/mail/status')
+    if (res.data) {
+      mailStatus.value = res.data
+    }
+  } catch (err) {
+    console.warn('Error consultando estado de correo', err)
+  }
+}
+
+const handleTestMail = async () => {
+  testingMail.value = true
+  try {
+    const res = await api.post('/admin/mail/test')
+    addToast(res.data?.message || 'Correo de prueba enviado a soporte@pollofelizdgo.com.', 'success')
+  } catch (err) {
+    addToast(err.response?.data?.message || 'No se pudo enviar el correo de prueba. Revisa las variables SMTP/.env.', 'error')
+  } finally {
+    testingMail.value = false
+    await loadMailStatus()
+  }
+}
+
 const loadContactMessages = async () => {
   try {
     const res = await api.get('/admin/contact-messages')
     if (res.data && Array.isArray(res.data)) {
       contactMessages.value = res.data
     }
+    await loadMailStatus()
   } catch (err) {
     console.warn('Error cargando mensajes de contacto', err)
   }
@@ -3275,6 +3385,42 @@ const handleSavePromo = async (formData) => {
     console.error('Error al guardar promoción', err)
     addToast(err.response?.data?.message || 'Error al guardar la promoción.', 'error')
   }
+}
+
+const getPromoValidityMeta = (promo) => {
+  if (promo.is_active === false) {
+    return { label: '○ Pausada', badge: 'bg-slate-700 text-slate-200' }
+  }
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  if (promo.valid_from) {
+    const startMatch = String(promo.valid_from).trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+    const start = startMatch
+      ? new Date(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]))
+      : new Date(promo.valid_from)
+    if (!Number.isNaN(start.getTime())) {
+      start.setHours(0, 0, 0, 0)
+      if (today < start) {
+        return { label: '📅 Programada', badge: 'bg-blue-600 text-white' }
+      }
+    }
+  }
+
+  if (promo.valid_until) {
+    const endMatch = String(promo.valid_until).trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+    const end = endMatch
+      ? new Date(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]))
+      : new Date(promo.valid_until)
+    if (!Number.isNaN(end.getTime())) {
+      end.setHours(23, 59, 59, 999)
+      if (new Date() > end) {
+        return { label: '⛔ Expirada', badge: 'bg-rose-600 text-white' }
+      }
+    }
+  }
+
+  return { label: '✓ Vigente', badge: 'bg-emerald-600 text-white' }
 }
 
 const togglePromoActive = async (promo) => {
@@ -3628,6 +3774,21 @@ const toggleItemActive = async (item) => {
   } catch (err) {
     item.is_active = !newActive
     addToast('Error al actualizar disponibilidad del platillo.', 'error')
+  }
+}
+
+const toggleItemSoldOut = async (item) => {
+  const newSoldOut = !item.is_sold_out
+  try {
+    await api.patch(`/admin/menu-items/${item.id}`, { is_sold_out: newSoldOut })
+    item.is_sold_out = newSoldOut
+    addToast(
+      `"${item.name}" marcado como ${newSoldOut ? 'Agotado temporalmente' : 'En stock disponible'}.`,
+      newSoldOut ? 'info' : 'success'
+    )
+  } catch (err) {
+    item.is_sold_out = !newSoldOut
+    addToast('Error al actualizar el estado de inventario.', 'error')
   }
 }
 

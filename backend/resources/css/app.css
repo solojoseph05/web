@@ -7,3 +7,45 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Salvaguarda global Dark Mode para el Panel Administrativo en Blade */
+@layer base {
+    .admin-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    .admin-panel textarea,
+    .admin-panel select {
+        background-color: #161e2e;
+        color: #f1f5f9;
+        border-color: #334155;
+        color-scheme: dark;
+    }
+
+    .admin-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"])::placeholder,
+    .admin-panel textarea::placeholder {
+        color: #94a3b8;
+    }
+
+    .admin-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+    .admin-panel textarea:focus,
+    .admin-panel select:focus {
+        background-color: #161e2e;
+        color: #f8fafc;
+        border-color: #ef4444;
+    }
+
+    .admin-panel select option,
+    .admin-panel select optgroup {
+        background-color: #161e2e;
+        color: #f1f5f9;
+    }
+
+    .admin-panel input[type="file"]::file-selector-button {
+        background-color: #dc2626;
+        color: #ffffff;
+        border: 0;
+        border-radius: 0.5rem;
+        padding: 0.45rem 0.9rem;
+        margin-right: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+}

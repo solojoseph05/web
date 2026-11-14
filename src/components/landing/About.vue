@@ -11,6 +11,7 @@
                 alt="Pollo Asado al Carbón Tradición"
                 class="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
                 loading="lazy"
+                decoding="async"
               />
               <div class="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent"></div>
               <div class="absolute bottom-4 left-4 right-4 text-white">

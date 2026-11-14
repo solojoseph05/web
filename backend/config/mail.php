@@ -116,4 +116,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Correo Corporativo de Soporte Pollo Feliz Durango
+    |--------------------------------------------------------------------------
+    |
+    | Destinatario principal donde se despachan consultas, cotizaciones y
+    | mensajes de contacto enviados desde la Landing Page.
+    |
+    */
+
+    'support_address' => env('MAIL_SUPPORT_ADDRESS', 'soporte@pollofelizdgo.com'),
+
 ];

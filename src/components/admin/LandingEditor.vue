@@ -1,6 +1,6 @@
 <!-- src/components/admin/LandingEditor.vue -->
 <template>
-  <div class="space-y-6">
+  <div class="admin-panel space-y-6">
     <!-- Top Action Banner -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xs">
       <div>
@@ -78,7 +78,7 @@
                 v-model="form.hero_title"
                 type="text"
                 placeholder="El mejor Pollo Asado de Durango"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-semibold"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
               />
               <span class="text-[11px] text-gray-400 mt-0.5 block">Tip: Puedes incluir 'de Durango' para que aparezca con el estilo destacado rojo.</span>
             </div>
@@ -91,7 +91,7 @@
                 v-model="form.hero_subtitle"
                 type="text"
                 placeholder="¡Bienvenidos a la Familia Pollo Feliz! · Tradición al Carbón"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -103,7 +103,7 @@
                 v-model="form.hero_description"
                 rows="3"
                 placeholder="Descubre el auténtico sabor que reúne a las familias..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white leading-relaxed resize-none"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 leading-relaxed resize-none transition"
               ></textarea>
             </div>
 
@@ -116,7 +116,7 @@
                   v-model="form.hero_cta_primary"
                   type="text"
                   placeholder="Ver Menú Completo"
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -127,7 +127,7 @@
                   v-model="form.hero_cta_secondary"
                   type="text"
                   placeholder="Ordenar en Línea"
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -142,7 +142,7 @@
                   v-model="form.hero_image_url"
                   type="url"
                   placeholder="https://..."
-                  class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-mono"
+                  class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-mono transition"
                 />
                 <button
                   type="button"
@@ -192,7 +192,7 @@
                   v-model="form.stat_1_value"
                   type="text"
                   placeholder="100%"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -201,7 +201,7 @@
                   v-model="form.stat_1_label"
                   type="text"
                   placeholder="Asado al Carbón"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -215,7 +215,7 @@
                   v-model="form.stat_2_value"
                   type="text"
                   placeholder="4.9 ★"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-red-400"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-red-600 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-red-400 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -224,7 +224,7 @@
                   v-model="form.stat_2_label"
                   type="text"
                   placeholder="+2,500 Reseñas"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@
                   v-model="form.stat_3_value"
                   type="text"
                   placeholder="3+"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -247,7 +247,7 @@
                   v-model="form.stat_3_label"
                   type="text"
                   placeholder="Sucursales Activas"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -275,7 +275,7 @@
                   v-model="form.menu_section_title"
                   type="text"
                   placeholder="Platos Destacados"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -284,7 +284,7 @@
                   v-model="form.menu_section_subtitle"
                   type="text"
                   placeholder="Descubre nuestros platillos más populares..."
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -302,7 +302,7 @@
                   v-model="form.promotions_section_title"
                   type="text"
                   placeholder="Promociones Imperdibles"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -311,7 +311,7 @@
                   v-model="form.promotions_section_subtitle"
                   type="text"
                   placeholder="Aprovecha nuestras promociones especiales..."
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -329,7 +329,7 @@
                   v-model="form.branches_section_title"
                   type="text"
                   placeholder="Nuestras Sucursales"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
               <div>
@@ -338,7 +338,7 @@
                   v-model="form.branches_section_subtitle"
                   type="text"
                   placeholder="Visítanos o llámanos directamente..."
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -363,7 +363,7 @@
                 v-model="form.company_name"
                 type="text"
                 placeholder="Pollo Feliz Durango"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-semibold"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
               />
             </div>
 
@@ -375,7 +375,7 @@
                 v-model="form.company_phone"
                 type="text"
                 placeholder="618-123-4567"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -387,7 +387,7 @@
                 v-model="form.company_email"
                 type="email"
                 placeholder="contacto@pollofeliz.com"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -399,7 +399,7 @@
                 v-model="form.company_whatsapp"
                 type="text"
                 placeholder="618-123-4567"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -411,7 +411,7 @@
                 v-model="form.company_address"
                 type="text"
                 placeholder="Av. 5 de Mayo #123, Zona Centro, Durango, Dgo."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -423,7 +423,7 @@
                 v-model="form.schedule_weekday"
                 type="text"
                 placeholder="Lunes a Domingo: 10:00 AM - 10:00 PM"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -435,7 +435,7 @@
                 v-model="form.social_facebook"
                 type="url"
                 placeholder="https://facebook.com/..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -447,7 +447,7 @@
                 v-model="form.social_instagram"
                 type="url"
                 placeholder="https://instagram.com/..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
           </div>

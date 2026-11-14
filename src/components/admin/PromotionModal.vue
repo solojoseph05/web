@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 my-8 transition-all max-h-[92vh] flex flex-col overflow-hidden"
+        class="admin-panel relative w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 my-8 transition-all max-h-[92vh] flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -46,7 +46,7 @@
               type="text"
               required
               placeholder="Ej. Martes de 2x1 en Pollo Entero al Carbón"
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 dark:focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-semibold transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
             />
           </div>
 
@@ -58,7 +58,7 @@
               v-model="form.subtitle"
               type="text"
               placeholder="Ej. Válido en sucursales Centro y Polanco, incluye salsas y tortillas"
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
             />
           </div>
 
@@ -73,7 +73,7 @@
                 type="text"
                 required
                 placeholder="Ej. MARTES2X1"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-red-600 font-mono font-black tracking-wider uppercase focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 dark:focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-red-400 transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-red-600 placeholder-gray-400 font-mono font-black tracking-wider uppercase focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-red-400 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -85,7 +85,7 @@
                 v-model="form.badge"
                 type="text"
                 placeholder="Ej. 2x1 Martes, Nuevo, Exclusivo"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 dark:focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
           </div>
@@ -103,9 +103,9 @@
                   min="0"
                   max="100"
                   placeholder="Ej. 20"
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
-                <span class="absolute right-3.5 top-2 text-xs font-bold text-gray-400">%</span>
+                <span class="absolute right-3.5 top-3 text-xs font-bold text-gray-400">%</span>
               </div>
             </div>
 
@@ -114,13 +114,13 @@
                 Precio Especial / Combo (MXN $)
               </label>
               <div class="relative">
-                <span class="absolute left-3.5 top-2 text-xs font-bold text-gray-400">$</span>
+                <span class="absolute left-3.5 top-3 text-xs font-bold text-gray-400">$</span>
                 <input
                   v-model.number="form.promo_price"
                   type="number"
                   min="0"
                   placeholder="Ej. 199"
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 pl-7 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pl-7 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 />
               </div>
             </div>
@@ -139,7 +139,7 @@
                 <input
                   v-model="form.valid_from"
                   type="date"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
                 />
               </div>
 
@@ -151,7 +151,7 @@
                   v-model="form.valid_until"
                   type="date"
                   required
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
                 />
               </div>
             </div>
@@ -170,7 +170,7 @@
               rows="2"
               required
               placeholder="Detalla lo que incluye la promoción, paquetes o piezas de pollo..."
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
             ></textarea>
           </div>
 
@@ -183,7 +183,7 @@
               v-model="form.terms_conditions"
               rows="2"
               placeholder="Ej. No acumulable con otros cupones. Aplica solo para consumo en sucursal o para llevar..."
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
             ></textarea>
           </div>
 

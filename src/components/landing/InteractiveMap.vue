@@ -1,6 +1,6 @@
 <!-- src/components/landing/InteractiveMap.vue -->
 <template>
-  <div v-if="validBranches.length > 0" class="mt-12 rounded-3xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl transition-all">
+  <div ref="rootWrapper" v-if="validBranches.length > 0" class="mt-12 rounded-3xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl transition-all">
     <!-- Map Control Header -->
     <div class="p-4 sm:p-6 bg-linear-to-r from-red-50/70 via-white to-amber-50/70 dark:from-red-950/40 dark:via-gray-800 dark:to-amber-950/40 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
@@ -43,7 +43,7 @@
       <div class="flex items-center gap-2 shrink-0">
         <span class="bg-black/20 px-2.5 py-0.5 rounded-full font-mono">{{ selectedBranch.phone }}</span>
         <a
-          :href="selectedBranch.map_link || `https://maps.google.com/?q=${selectedBranch.latitude},${selectedBranch.longitude}`"
+          :href="getDirectionsUrl(selectedBranch)"
           target="_blank"
           rel="noopener noreferrer"
           class="rounded-lg bg-white text-red-700 font-black px-3 py-1 hover:bg-red-50 transition shadow-2xs"
@@ -54,10 +54,19 @@
     </div>
 
     <!-- Leaflet Map Container -->
-    <div
-      ref="mapContainer"
-      class="h-[360px] sm:h-[420px] w-full z-10 relative bg-gray-100 dark:bg-gray-900"
-    ></div>
+    <div class="relative h-[360px] sm:h-[420px] w-full bg-gray-100 dark:bg-gray-900">
+      <div
+        v-if="!mapInitialized"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400"
+      >
+        <span class="text-2xl">🗺️</span>
+        <span>Cargando mapa interactivo...</span>
+      </div>
+      <div
+        ref="mapContainer"
+        class="h-full w-full z-10 relative"
+      ></div>
+    </div>
   </div>
 </template>
 
@@ -73,14 +82,26 @@ const props = defineProps({
   },
 })
 
+const rootWrapper = ref(null)
 const mapContainer = ref(null)
 const selectedBranch = ref(null)
+const mapInitialized = ref(false)
 let mapInstance = null
 let markersGroup = null
+let mapObserver = null
 
 const validBranches = computed(() => {
   return props.branches.filter(b => b && b.is_open !== false && !b.is_coming_soon)
 })
+
+const getDirectionsUrl = (branch) => {
+  const lat = Number(branch?.latitude)
+  const lng = Number(branch?.longitude)
+  if (!Number.isNaN(lat) && !Number.isNaN(lng) && lat !== 0 && lng !== 0) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+  }
+  return branch?.directions_url || branch?.map_link || 'https://www.google.com/maps/dir/?api=1&destination=24.027724,-104.653176'
+}
 
 const initMap = () => {
   if (!mapContainer.value || validBranches.value.length === 0) return
@@ -125,7 +146,7 @@ const initMap = () => {
         <h4 style="margin: 0 0 4px; font-weight: 900; color: #111827; font-size: 14px;">${b.name}</h4>
         <p style="margin: 0 0 6px; font-size: 11px; color: #4b5563; line-height: 1.3;">${b.address}</p>
         <p style="margin: 0 0 8px; font-size: 11px; color: #d97706; font-weight: 700;">🕒 ${b.schedule || '10:00 AM - 10:00 PM'}</p>
-        <a href="${b.map_link || `https://maps.google.com/?q=${lat},${lng}`}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #dc2626; color: white; padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; text-decoration: none;">
+        <a href="${getDirectionsUrl(b)}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #dc2626; color: white; padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; text-decoration: none;">
           Cómo llegar ↗
         </a>
       </div>
@@ -142,9 +163,11 @@ const initMap = () => {
     mapInstance.fitBounds(markersGroup.getBounds().pad(0.2))
   }
 
-  if (validBranches.value.length > 0) {
+  if (validBranches.value.length > 0 && !selectedBranch.value) {
     selectedBranch.value = validBranches.value[0]
   }
+
+  mapInitialized.value = true
 
   setTimeout(() => {
     mapInstance?.invalidateSize()
@@ -152,8 +175,14 @@ const initMap = () => {
 }
 
 const selectBranch = (branch) => {
+  if (!branch) return
   selectedBranch.value = branch
-  if (!mapInstance || !branch) return
+
+  if (!mapInstance) {
+    initMap()
+  }
+
+  if (!mapInstance) return
 
   const lat = Number(branch.latitude) || 24.0277
   const lng = Number(branch.longitude) || -104.6532
@@ -163,7 +192,6 @@ const selectBranch = (branch) => {
     duration: 1.2,
   })
 
-  // Open corresponding popup
   markersGroup?.eachLayer((layer) => {
     const latlng = layer.getLatLng()
     if (Math.abs(latlng.lat - lat) < 0.0001 && Math.abs(latlng.lng - lng) < 0.0001) {
@@ -172,23 +200,45 @@ const selectBranch = (branch) => {
   })
 }
 
+defineExpose({ selectBranch })
+
 watch(
   () => props.branches,
   () => {
-    nextTick(() => {
-      initMap()
-    })
+    if (mapInitialized.value) {
+      nextTick(() => initMap())
+    } else if (validBranches.value.length > 0 && !selectedBranch.value) {
+      selectedBranch.value = validBranches.value[0]
+    }
   },
   { deep: true }
 )
 
 onMounted(() => {
-  nextTick(() => {
-    initMap()
-  })
+  if (validBranches.value.length > 0) {
+    selectedBranch.value = validBranches.value[0]
+  }
+
+  if (typeof IntersectionObserver !== 'undefined' && rootWrapper.value) {
+    mapObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          nextTick(() => initMap())
+          mapObserver?.disconnect()
+          mapObserver = null
+        }
+      },
+      { rootMargin: '250px' }
+    )
+    mapObserver.observe(rootWrapper.value)
+  } else {
+    nextTick(() => initMap())
+  }
 })
 
 onBeforeUnmount(() => {
+  mapObserver?.disconnect()
+  mapObserver = null
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null

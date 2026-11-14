@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 my-8 transition-all"
+        class="admin-panel relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 my-8 transition-all"
         role="dialog"
         aria-modal="true"
       >
@@ -43,7 +43,7 @@
               type="text"
               required
               placeholder="Ej. Combos Familiares, Bebidas Frías, Especialidades..."
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-semibold transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
               @input="handleNameInput"
             />
           </div>
@@ -56,7 +56,7 @@
               v-model="form.slug"
               type="text"
               placeholder="ej. combos-familiares"
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-mono text-gray-700 dark:text-gray-300 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs font-mono text-gray-700 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
             />
           </div>
 
@@ -68,7 +68,7 @@
               v-model.number="form.sort_order"
               type="number"
               min="1"
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs text-gray-900 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
             />
           </div>
 

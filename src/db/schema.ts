@@ -13,6 +13,7 @@ export interface User {
   password_salt?: string;
   is_admin: boolean;
   role: 'super_admin' | 'gerente' | 'reclutador' | 'cocina' | 'atencion' | 'cajero';
+  status?: 'active' | 'suspended';
   api_token: string | null;
   two_factor_enabled: boolean;
   two_factor_secret: string | null;

@@ -135,7 +135,7 @@
             :key="branch.id"
             class="snap-start shrink-0 w-[290px] sm:w-[350px] md:w-[380px]"
           >
-            <BranchCard :branch="branch" class="h-full" />
+            <BranchCard :branch="branch" class="h-full" @focus-map="handleFocusBranchOnMap" />
           </div>
 
           <!-- Teaser Card: Suggest New Location in Durango -->
@@ -234,6 +234,7 @@
             v-for="branch in filteredBranches"
             :key="branch.id"
             :branch="branch"
+            @focus-map="handleFocusBranchOnMap"
           />
 
           <!-- Suggest Location Card in Grid -->
@@ -271,7 +272,9 @@
       </div>
 
       <!-- Live Interactive Map Section with Branch Pins -->
-      <InteractiveMap :branches="allBranches" />
+      <div ref="mapSectionWrapperRef" class="scroll-mt-24">
+        <InteractiveMap ref="interactiveMapRef" :branches="allBranches" />
+      </div>
     </div>
   </section>
 </template>
@@ -294,8 +297,10 @@ const viewMode = ref('slider')
 // Filter state: 'all' | 'open' | 'coming_soon'
 const activeFilter = ref('all')
 
-// Slider DOM & Scroll state
+// Slider & Interactive Map DOM refs
 const sliderRef = ref(null)
+const interactiveMapRef = ref(null)
+const mapSectionWrapperRef = ref(null)
 const canScrollPrev = ref(false)
 const canScrollNext = ref(true)
 const activeSlideIndex = ref(0)
@@ -365,6 +370,13 @@ const scrollToIndex = (idx) => {
   const maxScroll = el.scrollWidth - el.clientWidth
   const target = (idx / (sliderDotsCount.value - 1)) * maxScroll
   el.scrollTo({ left: target, behavior: 'smooth' })
+}
+
+const handleFocusBranchOnMap = (branch) => {
+  mapSectionWrapperRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  setTimeout(() => {
+    interactiveMapRef.value?.selectBranch(branch)
+  }, 220)
 }
 
 const suggestLocationWhatsApp = computed(() => {

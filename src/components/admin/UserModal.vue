@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-xl rounded-3xl bg-white shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 my-6 transition-all max-h-[92vh] flex flex-col overflow-hidden"
+        class="admin-panel relative w-full max-w-xl rounded-3xl bg-white shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 my-6 transition-all max-h-[92vh] flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -55,10 +55,10 @@
                 v-model="form.name"
                 type="text"
                 placeholder="Ej. Roberto Garza"
-                class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-hidden dark:bg-gray-800 dark:text-white font-semibold transition"
+                class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-hidden dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 font-semibold transition"
                 :class="errors.name
                   ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                  : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-gray-700 dark:bg-gray-800 dark:focus:bg-gray-800 dark:focus:border-red-500'"
+                  : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:focus:border-red-500'"
                 @input="errors.name = ''"
               />
               <p v-if="errors.name" class="text-[11px] text-red-600 dark:text-red-400 font-bold mt-1">
@@ -74,10 +74,10 @@
                 v-model="form.email"
                 type="email"
                 placeholder="usuario@pollofeliz.com"
-                class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-hidden dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-hidden dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
                 :class="errors.email
                   ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                  : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-gray-700 dark:bg-gray-800 dark:focus:bg-gray-800 dark:focus:border-red-500'"
+                  : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:focus:border-red-500'"
                 @input="errors.email = ''"
               />
               <p v-if="errors.email" class="text-[11px] text-red-600 dark:text-red-400 font-bold mt-1">
@@ -106,10 +106,10 @@
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="••••••••••••"
-                class="w-full rounded-xl border px-3.5 py-2.5 pr-20 text-xs sm:text-sm text-gray-900 focus:outline-hidden dark:bg-gray-900 dark:text-white font-mono transition"
+                class="w-full rounded-xl border px-3.5 py-2.5 pr-20 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-hidden dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 font-mono transition"
                 :class="errors.password
                   ? 'border-red-500 bg-red-50/50 dark:border-red-500 ring-1 ring-red-500'
-                  : 'border-gray-200 bg-white focus:border-red-500 dark:border-gray-600'"
+                  : 'border-gray-200 bg-white focus:border-red-500 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e]'"
                 @input="errors.password = ''"
               />
               <div class="absolute right-2 flex items-center gap-1">
@@ -307,7 +307,7 @@
         </div>
 
         <!-- Action Buttons (Pinned Sticky Footer) -->
-        <div class="p-4 sm:p-5 border-t border-gray-100 bg-white dark:bg-gray-900 dark:border-gray-800 flex items-center justify-between gap-3 shrink-0">
+        <div class="p-4 sm:p-5 border-t border-gray-100 bg-white dark:bg-[#0f172a] dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
           <div class="text-xs text-gray-500 dark:text-gray-400">
             <span class="text-red-500 font-bold">*</span> Campos requeridos
           </div>

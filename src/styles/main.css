@@ -50,3 +50,32 @@
   opacity: 1 !important;
   transform: none !important;
 }
+
+/* Salvaguarda global Dark Mode para el Panel Administrativo y sus modales */
+.dark .admin-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+.dark .admin-panel textarea,
+.dark .admin-panel select {
+  background-color: #161e2e;
+  color: #f1f5f9;
+  border-color: #334155;
+  color-scheme: dark;
+}
+
+.dark .admin-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"])::placeholder,
+.dark .admin-panel textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dark .admin-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):focus,
+.dark .admin-panel textarea:focus,
+.dark .admin-panel select:focus {
+  background-color: #161e2e;
+  color: #f8fafc;
+  border-color: #ef4444;
+}
+
+.dark .admin-panel select option,
+.dark .admin-panel select optgroup {
+  background-color: #161e2e;
+  color: #f1f5f9;
+}

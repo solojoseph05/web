@@ -16,14 +16,67 @@ import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
 import { getDatabase } from './src/db/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Carga automática de variables de entorno desde .env raíz o backend/.env si existen
+for (const envCandidate of [path.resolve(__dirname, '.env'), path.resolve(__dirname, 'backend', '.env')]) {
+  if (fs.existsSync(envCandidate) && typeof (process as any).loadEnvFile === 'function') {
+    try {
+      (process as any).loadEnvFile(envCandidate);
+    } catch {
+      // Ignorar si ya fueron inyectadas o si el formato es parcial
+    }
+  }
+}
+
 const db = getDatabase();
+
+/**
+ * Bandera de hidratación inicial para evitar sobrescribir SQLite durante el arranque de semillas.
+ */
+let isStoreHydrated = false;
+
+/**
+ * Carga una colección persistida en SQLite usando el adaptador activo o conserva el respaldo semilla.
+ */
+const loadStore = <T>(key: string, defaultValue: T): T => {
+  const adapter = db as unknown as { loadCollection?: <U>(k: string, d: U) => U };
+  if (typeof adapter.loadCollection === 'function') {
+    return adapter.loadCollection<T>(key, defaultValue);
+  }
+  return defaultValue;
+};
+
+/**
+ * Persiste una colección completa en SQLite de forma atómica cada vez que ocurre una mutación.
+ */
+const saveStore = <T>(key: string, data: T): void => {
+  if (!isStoreHydrated) return;
+  try {
+    const adapter = db as unknown as { saveCollection?: <U>(k: string, d: U) => void };
+    if (typeof adapter.saveCollection === 'function') {
+      adapter.saveCollection<T>(key, data);
+    }
+  } catch (err) {
+    console.error(`[SQLITE SAVE ERROR] No se pudo persistir "${key}":`, err);
+  }
+};
+
+/**
+ * Reemplaza in-place el contenido de un arreglo mantenido en memoria sin perder referencias.
+ */
+const hydrateArray = <T>(target: T[], loaded: T[]): void => {
+  if (Array.isArray(loaded)) {
+    target.splice(0, target.length, ...loaded);
+  }
+};
 
 const app = express();
 
@@ -210,6 +263,8 @@ interface User {
   two_factor_enabled: boolean;
   two_factor_secret: string | null;
   two_factor_verified_at?: string | null;
+  last_login_at?: string;
+  last_login_ip?: string;
   permissions?: string[];
   created_at: string;
 }
@@ -346,12 +401,15 @@ let settings = {
 interface MenuItem {
   id: number;
   name: string;
+  slug?: string;
   description: string;
   price: number;
+  discount_price?: number | null;
   image_url: string | null;
   badge: string;
   category: string;
   is_featured: boolean;
+  is_sold_out?: boolean;
   is_active: boolean;
   sort_order: number;
   deleted_at: string | null;
@@ -540,6 +598,7 @@ interface Promotion {
   subtitle?: string;
   description: string;
   image_url: string;
+  banner_image?: string;
   valid_from?: string;
   valid_until: string;
   code: string;
@@ -638,7 +697,7 @@ let branches: Branch[] = [
     longitude: -104.653176,
     map_zoom: 16,
     image_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
-    map_link: 'https://maps.google.com/?q=24.027724,-104.653176',
+    map_link: 'https://www.google.com/maps/dir/?api=1&destination=24.027724,-104.653176',
     is_open: true,
     is_coming_soon: false,
     is_new: false,
@@ -655,7 +714,7 @@ let branches: Branch[] = [
     longitude: -104.649210,
     map_zoom: 16,
     image_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
-    map_link: 'https://maps.google.com/?q=24.038120,-104.649210',
+    map_link: 'https://www.google.com/maps/dir/?api=1&destination=24.038120,-104.649210',
     is_open: true,
     is_coming_soon: false,
     is_new: false,
@@ -672,7 +731,7 @@ let branches: Branch[] = [
     longitude: -104.662190,
     map_zoom: 16,
     image_url: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&auto=format&fit=crop&q=80',
-    map_link: 'https://maps.google.com/?q=24.015240,-104.662190',
+    map_link: 'https://www.google.com/maps/dir/?api=1&destination=24.015240,-104.662190',
     is_open: true,
     is_coming_soon: false,
     is_new: true,
@@ -689,7 +748,7 @@ let branches: Branch[] = [
     longitude: -104.631240,
     map_zoom: 16,
     image_url: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=800&auto=format&fit=crop&q=80',
-    map_link: 'https://maps.google.com/?q=24.045610,-104.631240',
+    map_link: 'https://www.google.com/maps/dir/?api=1&destination=24.045610,-104.631240',
     is_open: false,
     is_coming_soon: true,
     is_new: false,
@@ -979,6 +1038,8 @@ interface ContactMessage {
   destination_email?: string;
   folio?: string;
   email_sent?: boolean;
+  email_error?: string | null;
+  mail_provider?: string | null;
   message: string;
   status: string;
   created_at: string;
@@ -995,6 +1056,8 @@ let contactMessages: ContactMessage[] = [
     destination_email: 'soporte@pollofelizdgo.com',
     folio: 'TKT-0001',
     email_sent: true,
+    email_error: null,
+    mail_provider: 'seed',
     message: 'Hola, me gustaría cotizar 15 paquetes familiares para un cumpleaños este fin de semana.',
     status: 'pending',
     created_at: new Date(Date.now() - 3600000).toISOString(),
@@ -1238,6 +1301,7 @@ export const addSystemLog = (log: Omit<SystemLog, 'id' | 'timestamp'> & { timest
   if (systemLogs.length > MAX_SYSTEM_LOGS) {
     systemLogs.pop();
   }
+  saveStore('systemLogs', systemLogs);
   return entry;
 };
 
@@ -1252,7 +1316,7 @@ addSystemLog({
 addSystemLog({
   level: 'success',
   category: 'DATABASE',
-  message: 'Motor de Base de Datos SQLite / Memoria conectado y sincronizado con catálogos.',
+  message: 'Motor de Base de Datos SQLite persistente conectado y sincronizado con catálogos.',
 });
 
 addSystemLog({
@@ -1276,6 +1340,7 @@ const logAdminChange = (user: any, action: string, target_type: string, target_i
     created_at: new Date().toISOString(),
   };
   changeLogs.unshift(log);
+  saveStore('changeLogs', changeLogs);
 
   // Sincronizar automáticamente en el registro de System Logs
   addSystemLog({
@@ -1323,6 +1388,7 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
     const activeAdmin = users.find(u => u.is_admin) || users[0];
     if (activeAdmin && !revokedTokens.has(token)) {
       activeAdmin.api_token = token;
+      saveStore('users', users);
       user = activeAdmin;
     }
   }
@@ -1374,18 +1440,31 @@ const composePayload = (onlyActive: boolean) => {
     filteredBranches = filteredBranches.filter(b => b.is_open !== false && b.is_active !== false);
   }
 
-  filteredBranches = filteredBranches.map(b => ({
-    ...b,
-    branch_name: b.branch_name || b.name,
-    google_maps_url: b.google_maps_url || b.map_link,
-    is_active: b.is_active !== false,
+  // Normalización de platillos asegurando disponibilidad y etiqueta de agotado
+  const normalizedMenu = filteredMenu.map(m => ({
+    ...m,
+    is_sold_out: Boolean(m.is_sold_out),
   }));
+
+  // Normalización de sucursales con enlace estándar de indicaciones de Google Maps
+  filteredBranches = filteredBranches.map(b => {
+    const lat = b.latitude ?? 24.0277;
+    const lng = b.longitude ?? -104.6532;
+    const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    return {
+      ...b,
+      branch_name: b.branch_name || b.name,
+      google_maps_url: b.google_maps_url || b.map_link || directionsUrl,
+      directions_url: directionsUrl,
+      is_active: b.is_active !== false,
+    };
+  });
 
   return {
     settings,
     categories: filteredCategories,
     jobs: filteredJobs,
-    menu_items: filteredMenu,
+    menu_items: normalizedMenu,
     promotions: filteredPromos,
     branches: filteredBranches,
     contact_messages: contactMessages,
@@ -1432,52 +1511,330 @@ app.get('/api/landing/content', (req, res) => {
   });
 });
 
-app.post('/api/feedback', publicFormLimiter, (req, res) => {
-  const { name, email, phone, subject, branch, message } = req.body;
-  if (!message && !subject) {
-    return res.status(422).json({ message: 'El mensaje es requerido.' });
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const getMailConfig = () => {
+  const rawSupport = (
+    process.env.MAIL_SUPPORT_ADDRESS ||
+    process.env.FEEDBACK_NOTIFICATION_EMAIL ||
+    ''
+  ).trim();
+  const supportAddress = rawSupport && rawSupport !== 'null' && !rawSupport.toLowerCase().includes('example.com')
+    ? rawSupport
+    : 'soporte@pollofelizdgo.com';
+
+  const rawHost = (process.env.SMTP_HOST || process.env.MAIL_HOST || '').trim();
+  const smtpUser = (process.env.SMTP_USER || process.env.MAIL_USERNAME || '').trim();
+  const smtpPass = (process.env.SMTP_PASS || process.env.MAIL_PASSWORD || '').trim();
+  const smtpHost = rawHost && rawHost !== 'null' && (rawHost !== '127.0.0.1' || (smtpUser && smtpUser !== 'null'))
+    ? rawHost
+    : '';
+  const smtpPort = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
+  const smtpEncryption = (process.env.MAIL_ENCRYPTION || '').trim().toLowerCase();
+  const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
+  const rawFrom = (process.env.MAIL_FROM_ADDRESS || '').trim();
+  const fromAddress = rawFrom && rawFrom !== 'null' && !rawFrom.toLowerCase().includes('example.com')
+    ? rawFrom
+    : (smtpUser && smtpUser !== 'null' ? smtpUser : supportAddress);
+  const fromName = (process.env.MAIL_FROM_NAME || 'Pollo Feliz Durango').trim();
+
+  const hasResend = Boolean(resendApiKey);
+  const hasSmtp = Boolean(
+    smtpHost &&
+    smtpUser &&
+    smtpUser !== 'null' &&
+    smtpPass &&
+    smtpPass !== 'null'
+  );
+
+  return {
+    supportAddress,
+    fromAddress,
+    fromName,
+    resendApiKey,
+    smtpHost,
+    smtpPort,
+    smtpUser,
+    smtpPass,
+    smtpEncryption,
+    configured: hasResend || hasSmtp,
+    provider: hasResend ? 'resend' : hasSmtp ? 'smtp' : 'unconfigured',
+  };
+};
+
+interface CorporateEmailPayload {
+  to?: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  text: string;
+  attachments?: Array<{ filename: string; content: Buffer | string; contentType?: string }>;
+}
+
+const sendCorporateEmail = async (payload: CorporateEmailPayload): Promise<{
+  sent: boolean;
+  configured: boolean;
+  provider: string;
+  messageId?: string;
+  error?: string;
+}> => {
+  const cfg = getMailConfig();
+  const recipient = payload.to || cfg.supportAddress;
+
+  if (!cfg.configured) {
+    return {
+      sent: false,
+      configured: false,
+      provider: 'unconfigured',
+      error: 'Correo saliente sin configurar: define MAIL_HOST, MAIL_USERNAME y MAIL_PASSWORD (o RESEND_API_KEY) en .env o variables de entorno.',
+    };
   }
 
-  const destinationEmail = 'soporte@pollofelizdgo.com';
+  if (cfg.resendApiKey) {
+    try {
+      const resendFrom = cfg.fromAddress.endsWith('@pollofelizdgo.com') || !cfg.fromAddress.includes('@')
+        ? `${cfg.fromName} <onboarding@resend.dev>`
+        : `${cfg.fromName} <${cfg.fromAddress}>`;
+      const effectiveFrom = process.env.RESEND_FROM_EMAIL
+        ? `${cfg.fromName} <${process.env.RESEND_FROM_EMAIL}>`
+        : `${cfg.fromName} <${cfg.fromAddress}>`;
+
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${cfg.resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: effectiveFrom || resendFrom,
+          to: [recipient],
+          reply_to: payload.replyTo || undefined,
+          subject: payload.subject,
+          html: payload.html,
+          text: payload.text,
+        }),
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        return {
+          sent: false,
+          configured: true,
+          provider: 'resend',
+          error: data?.message || `Error HTTP ${res.status} en Resend API`,
+        };
+      }
+      return { sent: true, configured: true, provider: 'resend', messageId: data?.id };
+    } catch (err: any) {
+      return {
+        sent: false,
+        configured: true,
+        provider: 'resend',
+        error: err?.message || 'Error conectando con Resend API',
+      };
+    }
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: cfg.smtpHost,
+      port: cfg.smtpPort,
+      secure: cfg.smtpPort === 465 || cfg.smtpEncryption === 'ssl',
+      auth: {
+        user: cfg.smtpUser,
+        pass: cfg.smtpPass,
+      },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000,
+    });
+
+    const attachments: any[] = [...(payload.attachments || [])];
+    const logoCandidates = [
+      path.resolve(__dirname, 'src', 'assets', 'images', 'logo.png'),
+      path.resolve(__dirname, 'public', 'logo.png'),
+      path.resolve(__dirname, 'favicon.jpg'),
+    ];
+    const existingLogo = logoCandidates.find((p) => fs.existsSync(p));
+    if (existingLogo && payload.html.includes('cid:pollofeliz-logo')) {
+      attachments.push({
+        filename: path.basename(existingLogo),
+        path: existingLogo,
+        cid: 'pollofeliz-logo',
+      });
+    }
+
+    const info = await transporter.sendMail({
+      from: `"${cfg.fromName}" <${cfg.fromAddress}>`,
+      to: recipient,
+      replyTo: payload.replyTo || undefined,
+      subject: payload.subject,
+      text: payload.text,
+      html: payload.html,
+      attachments,
+    });
+
+    return {
+      sent: true,
+      configured: true,
+      provider: 'smtp',
+      messageId: info.messageId,
+    };
+  } catch (err: any) {
+    return {
+      sent: false,
+      configured: true,
+      provider: 'smtp',
+      error: err?.message || 'Error en envío SMTP',
+    };
+  }
+};
+
+const buildContactEmailHtml = (msg: ContactMessage): string => {
+  const logoImg = fs.existsSync(path.resolve(__dirname, 'src', 'assets', 'images', 'logo.png')) ||
+    fs.existsSync(path.resolve(__dirname, 'public', 'logo.png')) ||
+    fs.existsSync(path.resolve(__dirname, 'favicon.jpg'))
+    ? `<img src="cid:pollofeliz-logo" alt="Pollo Feliz Durango" style="height:48px;width:auto;border-radius:10px;display:block;margin:0 auto 10px;" />`
+    : `<div style="font-size:32px;margin-bottom:8px;">🍗</div>`;
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<body style="margin:0;padding:24px;background:#0b1120;font-family:Arial,Helvetica,sans-serif;color:#f1f5f9;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;margin:0 auto;background:#111827;border:1px solid #1e293b;border-radius:16px;overflow:hidden;">
+    <tr>
+      <td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:24px;text-align:center;color:#ffffff;">
+        ${logoImg}
+        <h1 style="margin:0;font-size:20px;font-weight:800;letter-spacing:0.4px;">POLLO FELIZ DURANGO</h1>
+        <p style="margin:6px 0 0;font-size:12px;color:#fef3c7;">Nueva consulta desde la Landing Page · Folio ${escapeHtml(msg.folio || '')}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="8" style="background:#161e2e;border:1px solid #334155;border-radius:12px;font-size:13px;color:#e2e8f0;">
+          <tr><td style="color:#94a3b8;width:150px;"><strong>Folio:</strong></td><td><strong>${escapeHtml(msg.folio || '')}</strong></td></tr>
+          <tr><td style="color:#94a3b8;"><strong>Nombre:</strong></td><td>${escapeHtml(msg.name)}</td></tr>
+          <tr><td style="color:#94a3b8;"><strong>Correo:</strong></td><td>${escapeHtml(msg.email || 'No proporcionado')}</td></tr>
+          <tr><td style="color:#94a3b8;"><strong>Teléfono / WhatsApp:</strong></td><td>${escapeHtml(msg.phone || 'No proporcionado')}</td></tr>
+          <tr><td style="color:#94a3b8;"><strong>Sucursal:</strong></td><td>${escapeHtml(msg.branch || 'Cualquier sucursal')}</td></tr>
+          <tr><td style="color:#94a3b8;"><strong>Asunto:</strong></td><td>${escapeHtml(msg.subject || 'Consulta general')}</td></tr>
+          <tr><td style="color:#94a3b8;"><strong>Fecha y hora:</strong></td><td>${escapeHtml(new Date(msg.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }))}</td></tr>
+        </table>
+        <div style="margin-top:18px;padding:16px;background:#161e2e;border-left:4px solid #dc2626;border-radius:8px;color:#f8fafc;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(msg.message)}</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:16px 24px;background:#0f172a;text-align:center;font-size:11px;color:#64748b;border-top:1px solid #1e293b;">
+        Pollo Feliz Durango · Atención a clientes: soporte@pollofelizdgo.com
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
+app.post('/api/feedback', publicFormLimiter, async (req, res) => {
+  const { name, email, phone, subject, branch, message, website, _gotcha } = req.body || {};
+
+  // Protección antispam Honeypot: si un bot llena campos ocultos, responder silenciosamente sin guardar ni despachar correo
+  if ((website && String(website).trim() !== '') || (_gotcha && String(_gotcha).trim() !== '')) {
+    return res.status(201).json({
+      message: '¡Gracias por comunicarte con Pollo Feliz! Tu consulta ha sido procesada.',
+      folio: 'TKT-0000',
+      recipient_email: getMailConfig().supportAddress,
+      mail_sent: false,
+    });
+  }
+
+  const cleanMessage = typeof message === 'string' ? message.trim() : '';
+  const cleanSubject = typeof subject === 'string' ? subject.trim() : '';
+  const cleanName = typeof name === 'string' ? name.trim() : '';
+  const cleanEmail = typeof email === 'string' ? email.trim() : '';
+
+  if (!cleanMessage && !cleanSubject) {
+    return res.status(422).json({ message: 'El mensaje es requerido.' });
+  }
+  if (cleanMessage.length > 2500) {
+    return res.status(422).json({ message: 'El mensaje no debe superar los 2,500 caracteres.' });
+  }
+  if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return res.status(422).json({ message: 'Ingresa un correo electrónico válido.' });
+  }
+
+  const mailConfig = getMailConfig();
+  const destinationEmail = mailConfig.supportAddress;
   const folio = `TKT-${String(contactMessages.length + 1).padStart(4, '0')}`;
 
-  const formattedMessage = subject || branch
-    ? `[${subject || 'Contacto general'}${branch ? ' · ' + branch : ''}] ${message || 'Sin mensaje'}`
-    : message;
+  const formattedMessage = cleanSubject || branch
+    ? `[${cleanSubject || 'Contacto general'}${branch ? ' · ' + branch : ''}] ${cleanMessage || 'Sin mensaje'}`
+    : cleanMessage;
 
   const newMessage: ContactMessage = {
-    id: contactMessages.length + 1,
-    name: name || 'Cliente Pollo Feliz',
-    email: email || '',
-    phone: phone || null,
-    subject: subject || 'Consulta general',
-    branch: branch || 'Cualquier sucursal',
+    id: (contactMessages.reduce((max, m) => Math.max(max, Number(m.id) || 0), 0)) + 1,
+    name: cleanName || 'Cliente Pollo Feliz',
+    email: cleanEmail,
+    phone: phone ? String(phone).trim() : null,
+    subject: cleanSubject || 'Consulta general',
+    branch: branch ? String(branch).trim() : 'Cualquier sucursal',
     destination_email: destinationEmail,
-    folio: folio,
-    email_sent: true,
-    message: message || formattedMessage,
+    folio,
+    email_sent: false,
+    email_error: null,
+    mail_provider: mailConfig.provider,
+    message: cleanMessage || formattedMessage,
     status: 'pending',
     created_at: new Date().toISOString(),
   };
-  contactMessages.unshift(newMessage);
 
-  // Email dispatch simulation and detailed logging
-  console.log('================================================================');
-  console.log(`[DESPACHO DE CORREO ELECTRÓNICO] Enviando a: ${destinationEmail}`);
-  console.log(`Folio: ${folio}`);
-  console.log(`Remitente: ${name || 'Anónimo'} <${email || 'sin-correo@pollofelizdgo.com'}>`);
-  console.log(`Teléfono: ${phone || 'No proporcionado'}`);
-  console.log(`Motivo: ${subject || 'Consulta General'}`);
-  console.log(`Sucursal seleccionada: ${branch || 'Cualquier sucursal'}`);
-  console.log(`Contenido del mensaje: ${message}`);
-  console.log(`Fecha/Hora de despacho: ${new Date().toLocaleString('es-MX')}`);
-  console.log('Estado de entrega: Enviado satisfactoriamente a bandeja de entrada');
-  console.log('================================================================');
+  contactMessages.unshift(newMessage);
+  saveStore('contactMessages', contactMessages);
+
+  const mailResult = await sendCorporateEmail({
+    to: destinationEmail,
+    replyTo: cleanEmail ? `"${newMessage.name}" <${cleanEmail}>` : undefined,
+    subject: `[${folio}] ${newMessage.subject} — ${newMessage.name}`,
+    html: buildContactEmailHtml(newMessage),
+    text: `Pollo Feliz Durango - Nueva consulta ${folio}\nNombre: ${newMessage.name}\nCorreo: ${cleanEmail || 'N/A'}\nTeléfono: ${newMessage.phone || 'N/A'}\nSucursal: ${newMessage.branch}\nAsunto: ${newMessage.subject}\n\nMensaje:\n${newMessage.message}`,
+  });
+
+  newMessage.email_sent = mailResult.sent;
+  newMessage.email_error = mailResult.error || null;
+  newMessage.mail_provider = mailResult.provider;
+  saveStore('contactMessages', contactMessages);
+
+  addSystemLog({
+    level: mailResult.sent ? 'info' : 'warn',
+    category: 'SYSTEM',
+    method: 'POST',
+    path: '/api/feedback',
+    status_code: 201,
+    message: mailResult.sent
+      ? `Consulta ${folio} guardada y enviada por correo (${mailResult.provider}) a ${destinationEmail}`
+      : `Consulta ${folio} guardada en panel, pero NO se envió correo a ${destinationEmail}: ${mailResult.error}`,
+    details: {
+      folio,
+      branch: newMessage.branch,
+      subject: newMessage.subject,
+      mail_sent: mailResult.sent,
+      mail_configured: mailResult.configured,
+      mail_provider: mailResult.provider,
+      mail_error: mailResult.error || null,
+    },
+  });
 
   res.status(201).json({
-    message: `¡Gracias por comunicarte con Pollo Feliz! Tu consulta ha sido enviada exitosamente a ${destinationEmail} con el folio ${folio}. Nuestro equipo te responderá a la brevedad.`,
+    message: mailResult.sent
+      ? `¡Gracias por comunicarte con Pollo Feliz! Tu consulta ha sido enviada exitosamente a ${destinationEmail} con el folio ${folio}. Nuestro equipo te responderá a la brevedad.`
+      : `¡Gracias por comunicarte con Pollo Feliz! Tu consulta quedó guardada con el folio ${folio} en nuestro panel administrativo y te atenderemos a la brevedad.`,
     folio,
     recipient_email: destinationEmail,
+    mail_sent: mailResult.sent,
+    mail_configured: mailResult.configured,
+    mail_error: mailResult.error || null,
     feedback: newMessage,
   });
 });
@@ -1491,6 +1848,27 @@ interface NewsletterSub {
   created_at: string;
 }
 const newsletterSubscribers: NewsletterSub[] = [];
+
+// =================== HIDRATACIÓN INICIAL DESDE SQLITE ===================
+// Carga en caliente todas las colecciones persistidas de los 11 módulos del sistema
+hydrateArray(users, loadStore<User[]>('users', users));
+settings = loadStore('settings', settings);
+hydrateArray(menuItems, loadStore<MenuItem[]>('menuItems', menuItems));
+hydrateArray(categories, loadStore<Category[]>('categories', categories));
+hydrateArray(jobs, loadStore<Job[]>('jobs', jobs));
+hydrateArray(jobApplications, loadStore<JobApplication[]>('jobApplications', jobApplications));
+hydrateArray(promotions, loadStore<Promotion[]>('promotions', promotions));
+hydrateArray(branches, loadStore<Branch[]>('branches', branches));
+hydrateArray(orders, loadStore<Order[]>('orders', orders));
+hydrateArray(contactMessages, loadStore<ContactMessage[]>('contactMessages', contactMessages));
+hydrateArray(reviews, loadStore<Review[]>('reviews', reviews));
+hydrateArray(changeLogs, loadStore<ChangeLog[]>('changeLogs', changeLogs));
+hydrateArray(uploadedImages, loadStore<GalleryImage[]>('uploadedImages', uploadedImages));
+hydrateArray(systemLogs, loadStore<SystemLog[]>('systemLogs', systemLogs));
+hydrateArray(newsletterSubscribers, loadStore<NewsletterSub[]>('newsletterSubscribers', newsletterSubscribers));
+const persistedRevoked = loadStore<string[]>('revokedTokens', []);
+persistedRevoked.forEach((t) => revokedTokens.add(t));
+isStoreHydrated = true;
 
 app.post('/api/newsletter', (req, res) => {
   const { email, phone } = req.body;
@@ -1515,6 +1893,7 @@ app.post('/api/newsletter', (req, res) => {
     created_at: new Date().toISOString(),
   };
   newsletterSubscribers.push(newSub);
+  saveStore('newsletterSubscribers', newsletterSubscribers);
 
   res.status(201).json({
     message: '¡Bienvenido al Club Pollo Feliz! Tu cupón del 10% de descuento ha sido activado.',
@@ -1594,6 +1973,7 @@ app.post('/api/orders', orderSubmissionLimiter, (req, res) => {
   };
 
   orders.unshift(newOrder);
+  saveStore('orders', orders);
 
   res.status(201).json({
     message: '¡Pedido recibido con éxito!',
@@ -1621,6 +2001,7 @@ app.patch('/api/orders/:id/status', (req, res) => {
     order.status = status;
     order.status_label = statusLabels[status];
     order.updated_at = new Date().toISOString();
+    saveStore('orders', orders);
   }
 
   res.json({ message: 'Estado del pedido actualizado.', order });
@@ -1695,6 +2076,7 @@ app.post('/api/reviews', publicFormLimiter, (req, res) => {
   };
 
   reviews.unshift(newReview);
+  saveStore('reviews', reviews);
 
   res.status(201).json({
     message: post_to_google
@@ -1730,6 +2112,7 @@ app.post('/api/reviews/:id/like', (req, res) => {
     return res.status(404).json({ message: 'Reseña no encontrada.' });
   }
   review.likes_count = (review.likes_count || 0) + 1;
+  saveStore('reviews', reviews);
   res.json({ message: '¡Gracias por tu voto!', likes_count: review.likes_count });
 });
 
@@ -1758,6 +2141,7 @@ app.post('/api/admin/auth/bootstrap', (req, res) => {
     created_at: new Date().toISOString(),
   };
   users.push(newUser);
+  saveStore('users', users);
 
   logAdminChange(newUser, 'admin.bootstrap', 'User', String(newUser.id), 'Se creó el administrador inicial.');
 
@@ -1820,6 +2204,7 @@ const handleAdminLogin = async (req: Request, res: Response) => {
   user.api_token = token;
   user.last_login_at = new Date().toISOString();
   user.last_login_ip = String(clientIp);
+  saveStore('users', users);
 
   await db.recordAuditLog({
     user_id: user.id,
@@ -1860,19 +2245,120 @@ app.post('/api/admin/login', adminLoginLimiter, handleAdminLogin);
 // Endpoint de Estado y Diagnóstico de la Base de Datos
 app.get('/api/admin/database/status', authenticateAdmin, async (_req, res) => {
   const health = await db.healthCheck();
+  const activeConnection = db.name.toLowerCase().includes('postgres') ? 'postgres' : 'sqlite';
   res.json({
     engine: db.name,
     is_ready: db.isReady,
-    connection_type: process.env.DB_CONNECTION || 'memory',
+    connection_type: activeConnection,
     health,
     migrations_ready: true,
-    available_drivers: ['memory', 'postgres', 'supabase', 'mysql', 'sqlite'],
+    available_drivers: ['sqlite', 'postgres', 'supabase', 'mysql'],
   });
 });
 
 app.get('/api/admin/security/audit-logs', authenticateAdmin, async (_req, res) => {
   const logs = await db.getAuditLogs(100);
   res.json({ logs });
+});
+
+app.all('/api/admin/mail/test-support', authenticateAdmin, async (req, res) => {
+  const cfg = getMailConfig();
+  const rawRecipient = (req.body?.to || req.query?.to || '').toString().trim();
+  const targetEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawRecipient)
+    ? rawRecipient
+    : cfg.supportAddress;
+  const dryRun = req.body?.dry_run === true || req.query?.dry_run === '1' || req.query?.dry_run === 'true';
+
+  let smtpVerifyOk = false;
+  let smtpVerifyError: string | null = null;
+
+  if (cfg.smtpHost && cfg.smtpUser && cfg.smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: cfg.smtpHost,
+        port: cfg.smtpPort,
+        secure: cfg.smtpPort === 465 || cfg.smtpEncryption === 'ssl',
+        auth: {
+          user: cfg.smtpUser,
+          pass: cfg.smtpPass,
+        },
+        connectionTimeout: 6000,
+        greetingTimeout: 6000,
+        socketTimeout: 8000,
+      });
+      await transporter.verify();
+      smtpVerifyOk = true;
+    } catch (err: any) {
+      smtpVerifyError = err?.message || 'Fallo en verificación SMTP';
+    }
+  } else {
+    smtpVerifyError = 'Credenciales SMTP incompletas en variables de entorno (.env).';
+  }
+
+  let mailResult: { sent: boolean; configured: boolean; provider: string; messageId?: string; error?: string } = {
+    sent: false,
+    configured: cfg.configured,
+    provider: cfg.provider,
+  };
+
+  if (!dryRun) {
+    const testFolio = `TEST-${Date.now().toString().slice(-6)}`;
+    const testMsg: ContactMessage = {
+      id: 0,
+      name: 'Diagnóstico SMTP Pollo Feliz',
+      email: cfg.fromAddress,
+      phone: '618-123-4567',
+      subject: 'Prueba de Conectividad SMTP (.env)',
+      branch: 'Diagnóstico del Servidor',
+      destination_email: targetEmail,
+      folio: testFolio,
+      message: `Verificación automática de conectividad hacia ${targetEmail} (Proveedor: ${cfg.provider}).`,
+      status: 'resolved',
+      created_at: new Date().toISOString(),
+    };
+    mailResult = await sendCorporateEmail({
+      to: targetEmail,
+      subject: `[${testFolio}] Prueba de Conectividad SMTP — Pollo Feliz Durango`,
+      html: buildContactEmailHtml(testMsg),
+      text: `Prueba de conectividad SMTP Pollo Feliz Durango (${testFolio}) hacia ${targetEmail}.`,
+    });
+  }
+
+  const ok = dryRun ? (smtpVerifyOk || Boolean(cfg.resendApiKey)) : mailResult.sent;
+
+  addSystemLog({
+    level: ok ? 'info' : 'warn',
+    category: 'SYSTEM',
+    method: req.method,
+    path: '/api/admin/mail/test-support',
+    status_code: ok ? 200 : (dryRun ? 200 : 502),
+    message: ok
+      ? `Diagnóstico SMTP exitoso hacia ${targetEmail} (${cfg.provider})`
+      : `Diagnóstico SMTP sin entrega hacia ${targetEmail}: ${mailResult.error || smtpVerifyError}`,
+  });
+
+  res.status(ok || dryRun ? 200 : 502).json({
+    ok,
+    target_email: targetEmail,
+    dry_run: dryRun,
+    smtp_config: {
+      provider: cfg.provider,
+      configured: cfg.configured,
+      host: cfg.smtpHost || null,
+      port: cfg.smtpPort,
+      encryption: cfg.smtpEncryption || 'tls',
+      from_address: cfg.fromAddress,
+      support_address: cfg.supportAddress,
+    },
+    connectivity: {
+      verified: smtpVerifyOk,
+      error: smtpVerifyError,
+    },
+    mail_sent: mailResult.sent,
+    message_id: mailResult.messageId || null,
+    mail_error: mailResult.error || null,
+    checked_at: new Date().toISOString(),
+  });
 });
 
 app.get('/api/admin/auth/me', authenticateAdmin, (req, res) => {
@@ -1897,6 +2383,7 @@ app.get('/api/admin/auth/me', authenticateAdmin, (req, res) => {
 app.post('/api/admin/auth/logout', authenticateAdmin, (req, res) => {
   const user = (req as any).adminUser as User;
   user.api_token = null;
+  saveStore('users', users);
   res.json({ message: 'Sesión cerrada con éxito.' });
 });
 
@@ -1998,6 +2485,7 @@ app.post('/api/admin/users', authenticateAdmin, (req, res) => {
       created_at: new Date().toISOString(),
     };
     users.push(newUser);
+    saveStore('users', users);
 
     logAdminChange((req as any).adminUser, 'admin.user.create', 'User', String(newUser.id), `Se creó usuario con rol ${newUser.role}: ${newUser.name}`);
 
@@ -2058,6 +2546,8 @@ app.patch('/api/admin/users/:id', authenticateAdmin, (req, res) => {
       user.password = password.trim();
     }
 
+    saveStore('users', users);
+    saveStore('revokedTokens', Array.from(revokedTokens));
     logAdminChange((req as any).adminUser, 'admin.user.update', 'User', String(user.id), `Se actualizaron datos o permisos de usuario: ${user.name}`);
 
     return res.json({
@@ -2109,6 +2599,8 @@ app.delete('/api/admin/users/:id', authenticateAdmin, (req, res) => {
     if (deleted.api_token) {
       revokedTokens.add(deleted.api_token);
     }
+    saveStore('users', users);
+    saveStore('revokedTokens', Array.from(revokedTokens));
     logAdminChange((req as any).adminUser, 'admin.user.delete', 'User', String(deleted.id), `Se eliminó cuenta de usuario: ${deleted.name}`);
 
     return res.json({ message: `Cuenta de "${deleted.name}" eliminada correctamente.` });
@@ -2136,6 +2628,8 @@ app.post('/api/admin/users/:id/revoke-sessions', authenticateAdmin, (req, res) =
   targetUser.api_token = 'token-revoked-' + Date.now();
   targetUser.last_revoked_at = new Date().toISOString();
   targetUser.active_sessions_count = 0;
+  saveStore('users', users);
+  saveStore('revokedTokens', Array.from(revokedTokens));
 
   logAdminChange(
     (req as any).adminUser,
@@ -2184,6 +2678,8 @@ app.post('/api/admin/users/:id/toggle-status', authenticateAdmin, (req, res) => 
     targetUser.active_sessions_count = 0;
     targetUser.last_revoked_at = new Date().toISOString();
   }
+  saveStore('users', users);
+  saveStore('revokedTokens', Array.from(revokedTokens));
 
   logAdminChange(
     (req as any).adminUser,
@@ -2283,6 +2779,7 @@ app.patch('/api/admin/reviews/:id', authenticateAdmin, (req, res) => {
     }
   }
 
+  saveStore('reviews', reviews);
   logAdminChange((req as any).adminUser, 'review.update', 'Review', String(review.id), `Se actualizó estado o respuesta de la reseña #${review.id}`);
 
   res.json({
@@ -2298,6 +2795,7 @@ app.delete('/api/admin/reviews/:id', authenticateAdmin, (req, res) => {
     return res.status(404).json({ message: 'Reseña no encontrada.' });
   }
   const deleted = reviews.splice(idx, 1)[0];
+  saveStore('reviews', reviews);
   logAdminChange((req as any).adminUser, 'review.delete', 'Review', String(id), `Se eliminó la reseña #${id} de ${deleted.customer_name}`);
   res.json({ message: 'Reseña eliminada correctamente.' });
 });
@@ -2312,6 +2810,8 @@ app.put('/api/admin/settings', authenticateAdmin, (req, res) => {
     ...settings,
     ...req.body,
   };
+  saveStore('settings', settings);
+  invalidateLandingCache();
 
   logAdminChange((req as any).adminUser, 'landing.settings.update', 'LandingSetting', '1', 'Se actualizó el contenido completo del landing.', settings);
 
@@ -2326,6 +2826,8 @@ app.patch('/api/admin/settings', authenticateAdmin, (req, res) => {
     ...settings,
     ...req.body,
   };
+  saveStore('settings', settings);
+  invalidateLandingCache();
 
   logAdminChange((req as any).adminUser, 'landing.settings.update', 'LandingSetting', '1', 'Se actualizó el contenido del landing.', settings);
 
@@ -2370,6 +2872,7 @@ app.post('/api/admin/jobs', authenticateAdmin, (req, res) => {
       created_at: new Date().toISOString(),
     };
     jobs.push(newJob);
+    saveStore('jobs', jobs);
     invalidateLandingCache();
 
     logAdminChange((req as any).adminUser, 'landing.job.create', 'LandingJob', String(newJob.id), `Se creó vacante: ${newJob.title}`);
@@ -2389,6 +2892,7 @@ app.post('/api/admin/jobs/:id/restore', authenticateAdmin, (req, res) => {
   if (!job) return res.status(404).json({ message: 'Vacante no encontrada.' });
 
   job.deleted_at = null;
+  saveStore('jobs', jobs);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.job.restore', 'LandingJob', String(job.id), `Se restauró vacante: ${job.title}`);
 
@@ -2413,6 +2917,7 @@ app.patch('/api/admin/jobs/:id', authenticateAdmin, (req, res) => {
     if (typeof is_active === 'boolean') job.is_active = is_active;
     if (typeof sort_order === 'number') job.sort_order = sort_order;
 
+    saveStore('jobs', jobs);
     invalidateLandingCache();
     logAdminChange((req as any).adminUser, 'landing.job.update', 'LandingJob', String(job.id), `Se actualizó vacante: ${job.title}`);
 
@@ -2428,6 +2933,7 @@ app.delete('/api/admin/jobs/:id', authenticateAdmin, (req, res) => {
     if (!job) return res.status(404).json({ message: 'Vacante no encontrada.' });
 
     job.deleted_at = new Date().toISOString();
+    saveStore('jobs', jobs);
     invalidateLandingCache();
     logAdminChange((req as any).adminUser, 'landing.job.delete', 'LandingJob', String(job.id), `Se eliminó vacante: ${job.title}`);
 
@@ -2438,7 +2944,7 @@ app.delete('/api/admin/jobs/:id', authenticateAdmin, (req, res) => {
 });
 
 // =================== CANDIDATOS / POSTULACIONES DE EMPLEO ===================
-app.post('/api/jobs/apply', publicFormLimiter, (req, res) => {
+app.post('/api/jobs/apply', publicFormLimiter, async (req, res) => {
   try {
     const { vacancy_id, vacancy_title, applicant_name, phone, email, notes, resume_name, resume_data } = req.body;
     if (!applicant_name || !applicant_name.trim() || !phone || !phone.trim() || !email || !email.trim()) {
@@ -2461,10 +2967,55 @@ app.post('/api/jobs/apply', publicFormLimiter, (req, res) => {
     };
 
     jobApplications.unshift(newApp);
+    saveStore('jobApplications', jobApplications);
     invalidateLandingCache();
+
+    // Notificar por correo si el servidor SMTP/Resend está configurado
+    const attachments: Array<{ filename: string; content: Buffer; contentType?: string }> = [];
+    if (typeof newApp.resume_data === 'string' && newApp.resume_data.includes('base64,')) {
+      const [meta, base64Body] = newApp.resume_data.split('base64,');
+      const mimeMatch = meta.match(/^data:([^;]+);/);
+      if (base64Body) {
+        attachments.push({
+          filename: newApp.resume_name || `CV_${newApp.applicant_name.replace(/\s+/g, '_')}.pdf`,
+          content: Buffer.from(base64Body, 'base64'),
+          contentType: mimeMatch ? mimeMatch[1] : 'application/pdf',
+        });
+      }
+    }
+
+    const mailConfig = getMailConfig();
+    const jobMailResult = await sendCorporateEmail({
+      to: process.env.MAIL_JOBS_ADDRESS || mailConfig.supportAddress,
+      replyTo: `"${newApp.applicant_name}" <${newApp.email}>`,
+      subject: `[Bolsa de Trabajo] Nueva postulación: ${newApp.vacancy_title} — ${newApp.applicant_name}`,
+      html: `<div style="font-family:Arial,sans-serif;background:#111827;color:#f1f5f9;padding:24px;border-radius:12px;">
+        <h2 style="color:#ef4444;margin-top:0;">Nueva Postulación — Pollo Feliz Durango</h2>
+        <p><strong>Vacante:</strong> ${escapeHtml(newApp.vacancy_title)}</p>
+        <p><strong>Candidato:</strong> ${escapeHtml(newApp.applicant_name)}</p>
+        <p><strong>Correo:</strong> ${escapeHtml(newApp.email)}</p>
+        <p><strong>Teléfono:</strong> ${escapeHtml(newApp.phone)}</p>
+        <p><strong>Notas:</strong> ${escapeHtml(newApp.notes || 'Sin comentarios adicionales')}</p>
+        <p><strong>CV Adjunto:</strong> ${escapeHtml(newApp.resume_name || 'No adjuntado')}</p>
+      </div>`,
+      text: `Nueva postulación en Pollo Feliz Durango\nVacante: ${newApp.vacancy_title}\nCandidato: ${newApp.applicant_name}\nCorreo: ${newApp.email}\nTeléfono: ${newApp.phone}\nNotas: ${newApp.notes || 'N/A'}`,
+      attachments,
+    });
+
+    if (!jobMailResult.sent) {
+      addSystemLog({
+        level: 'warn',
+        category: 'SYSTEM',
+        method: 'POST',
+        path: '/api/jobs/apply',
+        status_code: 201,
+        message: `Postulación #${newApp.id} guardada en panel, correo pendiente: ${jobMailResult.error}`,
+      });
+    }
 
     res.status(201).json({
       success: true,
+      mail_sent: jobMailResult.sent,
       message: '¡Tu postulación ha sido enviada con éxito! El equipo de Recursos Humanos de Pollo Feliz Durango revisará tu solicitud.',
       application: {
         id: newApp.id,
@@ -2506,6 +3057,7 @@ app.patch('/api/admin/job-applications/:id/status', authenticateAdmin, (req, res
     }
 
     appItem.status = status;
+    saveStore('jobApplications', jobApplications);
     logAdminChange((req as any).adminUser, 'admin.job_application.status', 'JobApplication', String(appItem.id), `Se cambió estado de candidato "${appItem.applicant_name}" a: ${status}`);
 
     res.json({ message: `Estado del candidato actualizado a "${status}".`, application: appItem });
@@ -2520,6 +3072,7 @@ app.delete('/api/admin/job-applications/:id', authenticateAdmin, (req, res) => {
     if (idx === -1) return res.status(404).json({ message: 'Postulación no encontrada.' });
 
     const deleted = jobApplications.splice(idx, 1)[0];
+    saveStore('jobApplications', jobApplications);
     logAdminChange((req as any).adminUser, 'admin.job_application.delete', 'JobApplication', String(deleted.id), `Se eliminó postulación de: ${deleted.applicant_name}`);
 
     res.json({ message: 'Postulación eliminada correctamente.' });
@@ -2530,7 +3083,7 @@ app.delete('/api/admin/job-applications/:id', authenticateAdmin, (req, res) => {
 
 // Menu Items
 app.post('/api/admin/menu-items', authenticateAdmin, (req, res) => {
-  const { name, description, price, discount_price, slug, image_url, badge, category, is_featured, is_active, sort_order } = req.body;
+  const { name, description, price, discount_price, slug, image_url, badge, category, is_featured, is_sold_out, is_active, sort_order } = req.body;
   const nextId = menuItems.length > 0 ? Math.max(...menuItems.map(m => Number(m.id) || 0)) + 1 : 1;
   const cleanName = (name || '').trim();
   const cleanSlug = (slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')).trim();
@@ -2546,12 +3099,14 @@ app.post('/api/admin/menu-items', authenticateAdmin, (req, res) => {
     badge: badge || '',
     category: category || 'Pollo Entero',
     is_featured: is_featured ?? true,
+    is_sold_out: Boolean(is_sold_out),
     is_active: is_active ?? true,
     sort_order: sort_order ?? 0,
     deleted_at: null,
     created_at: new Date().toISOString(),
   };
   menuItems.push(newItem);
+  saveStore('menuItems', menuItems);
   invalidateLandingCache();
 
   logAdminChange((req as any).adminUser, 'landing.menu.create', 'LandingMenuItem', String(newItem.id), `Se creó producto: ${newItem.name}`);
@@ -2568,6 +3123,7 @@ app.post('/api/admin/menu-items/:id/restore', authenticateAdmin, (req, res) => {
   if (!item) return res.status(404).json({ message: 'Producto no encontrado.' });
 
   item.deleted_at = null;
+  saveStore('menuItems', menuItems);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.restore', 'LandingMenuItem', String(item.id), `Se restauró producto: ${item.name}`);
 
@@ -2579,6 +3135,7 @@ app.patch('/api/admin/menu-items/:id', authenticateAdmin, (req, res) => {
   if (!item) return res.status(404).json({ message: 'Producto no encontrado.' });
 
   Object.assign(item, req.body);
+  saveStore('menuItems', menuItems);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.update', 'LandingMenuItem', String(item.id), `Se actualizó producto: ${item.name}`);
 
@@ -2590,6 +3147,7 @@ app.delete('/api/admin/menu-items/:id', authenticateAdmin, (req, res) => {
   if (!item) return res.status(404).json({ message: 'Producto no encontrado.' });
 
   item.deleted_at = new Date().toISOString();
+  saveStore('menuItems', menuItems);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.delete', 'LandingMenuItem', String(item.id), `Se eliminó producto: ${item.name}`);
 
@@ -2613,6 +3171,8 @@ app.post('/api/admin/menu-items/bulk-update-category', authenticateAdmin, (req, 
     }
   });
 
+  saveStore('menuItems', menuItems);
+  invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.bulk-category', 'LandingMenuItem', ids.join(','), `Se cambió categoría a "${category}" para ${updatedItems.length} productos.`);
 
   res.json({
@@ -2640,6 +3200,8 @@ app.post('/api/admin/menu-items/bulk-delete', authenticateAdmin, (req, res) => {
     }
   });
 
+  saveStore('menuItems', menuItems);
+  invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.bulk-delete', 'LandingMenuItem', ids.join(','), `Se eliminaron en lote ${deletedCount} productos.`);
 
   res.json({
@@ -2665,6 +3227,8 @@ app.post('/api/admin/menu-items/bulk-toggle-active', authenticateAdmin, (req, re
     }
   });
 
+  saveStore('menuItems', menuItems);
+  invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.bulk-active', 'LandingMenuItem', ids.join(','), `Se cambió disponibilidad a ${is_active} para ${updatedCount} productos.`);
 
   res.json({
@@ -2675,6 +3239,7 @@ app.post('/api/admin/menu-items/bulk-toggle-active', authenticateAdmin, (req, re
 
 app.post('/api/admin/menu-items/restore-default', authenticateAdmin, (req, res) => {
   menuItems = [...defaultMenuItems];
+  saveStore('menuItems', menuItems);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.menu.restore-default', 'LandingMenuItem', 'all', 'Se restauró el menú por defecto.');
   res.json({ message: 'Menú por defecto restaurado.', items: menuItems });
@@ -2705,6 +3270,7 @@ app.post('/api/admin/categories', authenticateAdmin, (req, res) => {
   };
 
   categories.push(newCategory);
+  saveStore('categories', categories);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.category.create', 'Category', String(newCategory.id), `Se creó categoría: ${newCategory.name}`);
 
@@ -2721,6 +3287,7 @@ app.patch('/api/admin/categories/:id', authenticateAdmin, (req, res) => {
   if (sort_order !== undefined) cat.sort_order = Number(sort_order);
   if (typeof is_active === 'boolean') cat.is_active = is_active;
 
+  saveStore('categories', categories);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.category.update', 'Category', String(cat.id), `Se actualizó categoría: ${cat.name}`);
 
@@ -2733,6 +3300,7 @@ app.delete('/api/admin/categories/:id', authenticateAdmin, (req, res) => {
 
   const cat = categories[index];
   categories.splice(index, 1);
+  saveStore('categories', categories);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.category.delete', 'Category', String(cat.id), `Se eliminó categoría: ${cat.name}`);
 
@@ -2762,6 +3330,7 @@ app.post('/api/admin/promotions', authenticateAdmin, (req, res) => {
   };
 
   promotions.push(newPromo);
+  saveStore('promotions', promotions);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.promotion.create', 'LandingPromotion', String(newPromo.id), `Se creó promoción: ${newPromo.title}`);
   res.status(201).json({ message: 'Promoción creada exitosamente.', promotion: newPromo });
@@ -2775,6 +3344,7 @@ app.patch('/api/admin/promotions/:id', authenticateAdmin, (req, res) => {
   if (req.body.banner_image && !promo.image_url) promo.image_url = req.body.banner_image;
   if (req.body.image_url && !promo.banner_image) promo.banner_image = req.body.image_url;
 
+  saveStore('promotions', promotions);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.promotion.update', 'LandingPromotion', String(promo.id), `Se actualizó promoción: ${promo.title}`);
   res.json({ message: 'Promoción actualizada correctamente.', promotion: promo });
@@ -2786,6 +3356,7 @@ app.delete('/api/admin/promotions/:id', authenticateAdmin, (req, res) => {
 
   const promo = promotions[index];
   promotions.splice(index, 1);
+  saveStore('promotions', promotions);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.promotion.delete', 'LandingPromotion', String(promo.id), `Se eliminó promoción: ${promo.title}`);
   res.json({ message: 'Promoción eliminada correctamente.' });
@@ -2796,7 +3367,7 @@ app.post('/api/admin/branches', authenticateAdmin, (req, res) => {
   const nextId = branches.length > 0 ? Math.max(...branches.map(b => Number(b.id) || 0)) + 1 : 1;
   const lat = req.body.latitude ? Number(req.body.latitude) : 24.0277;
   const lng = req.body.longitude ? Number(req.body.longitude) : -104.6532;
-  const mapLink = req.body.map_link || req.body.google_maps_url || `https://maps.google.com/?q=${lat},${lng}`;
+  const mapLink = req.body.map_link || req.body.google_maps_url || `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   const branchName = (req.body.name || req.body.branch_name || '').trim() || 'Sucursal Pollo Feliz';
 
   const newBranch: Branch = {
@@ -2821,6 +3392,7 @@ app.post('/api/admin/branches', authenticateAdmin, (req, res) => {
   };
 
   branches.push(newBranch);
+  saveStore('branches', branches);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.branch.create', 'LandingBranch', String(newBranch.id), `Se creó sucursal: ${newBranch.name}`);
   res.status(201).json({ message: 'Sucursal creada exitosamente.', branch: newBranch });
@@ -2854,6 +3426,7 @@ app.patch('/api/admin/branches/:id', authenticateAdmin, (req, res) => {
   if (typeof is_new === 'boolean') branch.is_new = is_new;
   if (typeof sort_order === 'number') branch.sort_order = sort_order;
 
+  saveStore('branches', branches);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.branch.update', 'LandingBranch', String(branch.id), `Se actualizó sucursal: ${branch.name}`);
   res.json({ message: 'Sucursal actualizada correctamente.', branch });
@@ -2865,6 +3438,7 @@ app.delete('/api/admin/branches/:id', authenticateAdmin, (req, res) => {
 
   const branch = branches[index];
   branches.splice(index, 1);
+  saveStore('branches', branches);
   invalidateLandingCache();
   logAdminChange((req as any).adminUser, 'landing.branch.delete', 'LandingBranch', String(branch.id), `Se eliminó sucursal: ${branch.name}`);
   res.json({ message: 'Sucursal eliminada correctamente.' });
@@ -2885,6 +3459,7 @@ app.post('/api/admin/uploads/image', authenticateAdmin, (req, res) => {
     created_at: new Date().toISOString(),
   };
   uploadedImages.unshift(image);
+  saveStore('uploadedImages', uploadedImages);
   logAdminChange((req as any).adminUser, 'admin.upload.image', 'MediaImage', image.id, `Se subió imagen a galería: ${image.name} (${image.size_kb} KB)`);
   res.json({ message: 'Imagen optimizada y subida correctamente.', image, url: image.url });
 });
@@ -2894,6 +3469,7 @@ app.delete('/api/admin/uploads/image/:id', authenticateAdmin, (req, res) => {
   const idx = uploadedImages.findIndex(img => img.id === targetId || img.url === targetId);
   if (idx !== -1) {
     const deleted = uploadedImages.splice(idx, 1)[0];
+    saveStore('uploadedImages', uploadedImages);
     logAdminChange((req as any).adminUser, 'admin.upload.delete', 'MediaImage', targetId, `Se eliminó imagen de galería: ${deleted.name}`);
     return res.json({ message: 'Imagen eliminada correctamente de la galería.' });
   }
@@ -2904,7 +3480,10 @@ app.delete('/api/admin/uploads/image', authenticateAdmin, (req, res) => {
   const targetUrl = req.body?.url;
   if (targetUrl) {
     const idx = uploadedImages.findIndex(img => img.url === targetUrl || img.id === targetUrl);
-    if (idx !== -1) uploadedImages.splice(idx, 1);
+    if (idx !== -1) {
+      uploadedImages.splice(idx, 1);
+      saveStore('uploadedImages', uploadedImages);
+    }
   }
   res.json({ message: 'Imagen eliminada correctamente.' });
 });
@@ -2950,6 +3529,8 @@ app.post('/api/admin/security/revoke-all-sessions', authenticateAdmin, (req, res
     }
   });
 
+  saveStore('users', users);
+  saveStore('revokedTokens', Array.from(revokedTokens));
   logAdminChange(currentUser, 'security.revoke_all_sessions', 'Security', 'all', `Se revocaron globalmente ${count} sesiones activas por sospecha de compromiso.`);
 
   res.json({
@@ -2968,6 +3549,7 @@ app.patch('/api/admin/contact-messages/:id', authenticateAdmin, (req, res) => {
   if (!msg) return res.status(404).json({ message: 'Mensaje no encontrado.' });
 
   Object.assign(msg, req.body);
+  saveStore('contactMessages', contactMessages);
   res.json({ message: 'Mensaje actualizado.', contact_message: msg });
 });
 
@@ -2976,23 +3558,87 @@ app.delete('/api/admin/contact-messages/:id', authenticateAdmin, (req, res) => {
   if (index === -1) return res.status(404).json({ message: 'Mensaje no encontrado.' });
 
   contactMessages.splice(index, 1);
+  saveStore('contactMessages', contactMessages);
   res.json({ message: 'Mensaje eliminado correctamente.' });
 });
 
 app.get('/api/admin/email-dispatch-status', authenticateAdmin, (_req, res) => {
+  const cfg = getMailConfig();
   res.json({
-    recipient_email: 'soporte@pollofelizdgo.com',
-    status: 'online',
+    recipient_email: cfg.supportAddress,
+    from_email: cfg.fromAddress,
+    configured: cfg.configured,
+    provider: cfg.provider,
+    smtp_host: cfg.smtpHost || null,
+    smtp_port: cfg.smtpPort,
+    status: cfg.configured ? 'online' : 'unconfigured',
     total_dispatched: contactMessages.filter(m => m.email_sent).length,
+    total_pending_mail: contactMessages.filter(m => !m.email_sent).length,
     recent_dispatches: contactMessages.slice(0, 5).map(m => ({
       id: m.id,
       folio: m.folio || `TKT-${m.id}`,
       name: m.name,
       email: m.email,
-      destination_email: m.destination_email || 'soporte@pollofelizdgo.com',
+      destination_email: m.destination_email || cfg.supportAddress,
+      email_sent: Boolean(m.email_sent),
+      email_error: m.email_error || null,
       subject: m.subject || 'Consulta General',
       created_at: m.created_at,
     })),
+  });
+});
+
+app.get('/api/admin/mail/status', authenticateAdmin, (_req, res) => {
+  const cfg = getMailConfig();
+  res.json({
+    configured: cfg.configured,
+    provider: cfg.provider,
+    support_address: cfg.supportAddress,
+    from_address: cfg.fromAddress,
+    smtp_host: cfg.smtpHost || null,
+    smtp_port: cfg.smtpPort,
+  });
+});
+
+app.post('/api/admin/mail/test', authenticateAdmin, async (_req, res) => {
+  const cfg = getMailConfig();
+  const now = new Date().toISOString();
+  const result = await sendCorporateEmail({
+    to: cfg.supportAddress,
+    subject: `[Prueba SMTP] Pollo Feliz Durango — ${new Date().toLocaleString('es-MX')}`,
+    html: `<div style="font-family:Arial,sans-serif;background:#111827;color:#f1f5f9;padding:24px;border-radius:12px;">
+      <h2 style="color:#dc2626;margin-top:0;">Prueba de Correo Corporativo Exitosa</h2>
+      <p>Este correo confirma que el servidor de <strong>Pollo Feliz Durango</strong> puede entregar formularios hacia <strong>${escapeHtml(cfg.supportAddress)}</strong>.</p>
+      <p style="font-size:12px;color:#94a3b8;">Proveedor: ${escapeHtml(cfg.provider)} · Fecha: ${escapeHtml(now)}</p>
+    </div>`,
+    text: `Prueba de correo corporativo exitosa hacia ${cfg.supportAddress} (${cfg.provider}) - ${now}`,
+  });
+
+  if (!result.sent) {
+    addSystemLog({
+      level: 'error',
+      category: 'SYSTEM',
+      method: 'POST',
+      path: '/api/admin/mail/test',
+      status_code: 422,
+      message: `Prueba de envío a ${cfg.supportAddress} falló: ${result.error}`,
+    });
+    return res.status(422).json({
+      sent: false,
+      configured: result.configured,
+      provider: result.provider,
+      recipient: cfg.supportAddress,
+      message: result.error || 'No se pudo enviar el correo de prueba.',
+    });
+  }
+
+  res.json({
+    sent: true,
+    configured: true,
+    provider: result.provider,
+    messageId: result.messageId,
+    recipient: cfg.supportAddress,
+    message: `Correo de prueba enviado correctamente a ${cfg.supportAddress}.`,
   });
 });
 
@@ -3024,6 +3670,7 @@ app.get('/api/admin/change-logs/export', authenticateAdmin, (_req, res) => {
 app.post('/api/admin/change-logs/revert-last', authenticateAdmin, (_req, res) => {
   if (changeLogs.length > 0) {
     const last = changeLogs.shift();
+    saveStore('changeLogs', changeLogs);
     res.json({ message: `Se revirtió la acción: ${last?.description || 'Último cambio'}` });
   } else {
     res.json({ message: 'No hay cambios para revertir.' });
@@ -3084,6 +3731,7 @@ app.patch('/api/admin/orders/:id', authenticateAdmin, (req, res) => {
   if (notes !== undefined) order.notes = notes;
   if (branch !== undefined) order.branch = branch;
   order.updated_at = new Date().toISOString();
+  saveStore('orders', orders);
 
   logAdminChange(
     (req as any).adminUser,
@@ -3323,6 +3971,7 @@ app.post('/api/admin/analytics/simulate-order', (req, res) => {
   };
 
   orders.unshift(newOrder);
+  saveStore('orders', orders);
 
   res.status(201).json({
     message: `¡Nuevo pedido en vivo #${newOrder.id} registrado en ${selectedBranch}!`,
@@ -3391,6 +4040,7 @@ app.post('/api/admin/system-logs/clear', authenticateAdmin, (req, res) => {
   }
 
   systemLogs.length = 0;
+  saveStore('systemLogs', systemLogs);
   addSystemLog({
     level: 'info',
     category: 'SYSTEM',
@@ -3491,7 +4141,8 @@ const isProd = process.env.NODE_ENV === 'production';
 const PORT = 3000;
 
 if (!isProd) {
-  const vite = await createViteServer({
+  let viteServer: Awaited<ReturnType<typeof createViteServer>> | null = null;
+  const viteReady = createViteServer({
     server: {
       middlewareMode: true,
       allowedHosts: true,
@@ -3499,8 +4150,29 @@ if (!isProd) {
       ws: false,
     },
     appType: 'spa',
+  })
+    .then((vite) => {
+      viteServer = vite;
+      return vite;
+    })
+    .catch((err) => {
+      console.error('[VITE INIT ERROR] Usando respaldo estático dist/:', err);
+      return null;
+    });
+
+  const distStatic = express.static(path.resolve(__dirname, 'dist'));
+  app.use(async (req: Request, res: Response, next: NextFunction) => {
+    const vite = viteServer ?? (await viteReady);
+    if (vite) {
+      return vite.middlewares(req, res, next);
+    }
+    return distStatic(req, res, () => {
+      if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+        return res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      }
+      return next();
+    });
   });
-  app.use(vite.middlewares);
 } else {
   app.use(express.static(path.resolve(__dirname, 'dist')));
   app.get('*', (_req, res) => {
@@ -3508,6 +4180,17 @@ if (!isProd) {
   });
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+const httpServer = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on http://0.0.0.0:${PORT}`);
 });
+
+const shutdownServer = (signal: string) => {
+  console.log(`[SHUTDOWN] Señal ${signal} recibida, liberando puerto ${PORT}...`);
+  httpServer.close(() => {
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(0), 1500).unref();
+};
+
+process.on('SIGINT', () => shutdownServer('SIGINT'));
+process.on('SIGTERM', () => shutdownServer('SIGTERM'));

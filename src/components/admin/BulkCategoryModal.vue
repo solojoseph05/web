@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 space-y-4"
+        class="admin-panel w-full max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 space-y-4"
         role="dialog"
         aria-modal="true"
       >
@@ -68,25 +68,25 @@
           <div v-if="!isCustom">
             <select
               v-model="selectedCategory"
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-bold focus:border-red-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-bold focus:border-red-500 focus:bg-white dark:focus:bg-[#161e2e] focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:text-slate-100 cursor-pointer"
             >
-              <option value="" disabled>Selecciona una categoría...</option>
-              <optgroup label="Categorías Principales">
-                <option value="Combos">🍱 Combos</option>
-                <option value="Bebidas">🥤 Bebidas (Drinks)</option>
-                <option value="Extras">🍟 Extras (Complementos)</option>
+              <option value="" disabled class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">Selecciona una categoría...</option>
+              <optgroup label="Categorías Principales" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-300">
+                <option value="Combos" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🍱 Combos</option>
+                <option value="Bebidas" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🥤 Bebidas (Drinks)</option>
+                <option value="Extras" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🍟 Extras (Complementos)</option>
               </optgroup>
-              <optgroup label="Especialidades">
-                <option value="Pollo Entero">🍗 Pollo Entero</option>
-                <option value="Medio Pollo">🍗 Medio Pollo</option>
-                <option value="Paquetes">📦 Paquetes</option>
-                <option value="Complementos">🥔 Complementos</option>
-                <option value="Tacos">🌮 Tacos</option>
-                <option value="Ensaladas">🥗 Ensaladas</option>
-                <option value="Postres">🍮 Postres</option>
+              <optgroup label="Especialidades" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-300">
+                <option value="Pollo Entero" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🍗 Pollo Entero</option>
+                <option value="Medio Pollo" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🍗 Medio Pollo</option>
+                <option value="Paquetes" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">📦 Paquetes</option>
+                <option value="Complementos" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🥔 Complementos</option>
+                <option value="Tacos" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🌮 Tacos</option>
+                <option value="Ensaladas" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🥗 Ensaladas</option>
+                <option value="Postres" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">🍮 Postres</option>
               </optgroup>
-              <optgroup v-if="otherCategories.length > 0" label="Otras Categorías">
-                <option v-for="cat in otherCategories" :key="cat" :value="cat">
+              <optgroup v-if="otherCategories.length > 0" label="Otras Categorías" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-300">
+                <option v-for="cat in otherCategories" :key="cat" :value="cat" class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100">
                   📁 {{ cat }}
                 </option>
               </optgroup>
@@ -98,7 +98,7 @@
               v-model="customCategoryText"
               type="text"
               placeholder="Ej. Combos Infantiles, Desayunos, Salsas..."
-              class="w-full rounded-xl border border-red-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-bold focus:border-red-600 focus:outline-hidden dark:border-red-800 dark:bg-gray-800 dark:text-white"
+              class="w-full rounded-xl border border-red-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 font-bold focus:border-red-600 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100"
             />
           </div>
 

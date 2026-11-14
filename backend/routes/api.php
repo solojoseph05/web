@@ -7,9 +7,10 @@ use App\Http\Controllers\AdminChangeLogController;
 use App\Http\Controllers\AdminLandingContentController;
 use App\Http\Controllers\AdminSystemAlertsController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\MailDiagnosticsController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/feedback', [FeedbackController::class, 'store']);
+Route::post('/feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,1');
 Route::get('/landing/content', [AdminLandingContentController::class, 'publicContent']);
 
 // Rutas públicas de reseñas sincronizadas con Google Maps
@@ -231,12 +232,16 @@ Route::middleware('admin.auth')->group(function () {
         ->middleware('admin.permission:landing.manage');
     Route::delete('/admin/uploads/image', [AdminLandingContentController::class, 'deleteImage'])
         ->middleware('admin.permission:landing.manage');
+    Route::get('/admin/resumes/{filename}', [AdminLandingContentController::class, 'downloadResume'])
+        ->middleware('admin.permission:landing.jobs.manage');
     Route::get('/admin/export-data', [AdminLandingContentController::class, 'exportData'])
         ->middleware('admin.permission:landing.manage');
 
     Route::get('/admin/contact-messages', [AdminContactMessagesController::class, 'index'])
         ->middleware('admin.permission:messages.manage');
     Route::patch('/admin/contact-messages/{contactMessage}', [AdminContactMessagesController::class, 'update'])
+        ->middleware('admin.permission:messages.manage');
+    Route::delete('/admin/contact-messages/{contactMessage}', [AdminContactMessagesController::class, 'destroy'])
         ->middleware('admin.permission:messages.manage');
 
     Route::get('/admin/change-logs', [AdminChangeLogController::class, 'index'])
@@ -254,5 +259,8 @@ Route::middleware('admin.auth')->group(function () {
         ->middleware('admin.permission:approval.manage');
 
     Route::get('/admin/system-alerts', [AdminSystemAlertsController::class, 'index'])
+        ->middleware('admin.permission:history.view');
+
+    Route::match(['get', 'post'], '/admin/mail/test-support', [MailDiagnosticsController::class, 'testSupport'])
         ->middleware('admin.permission:history.view');
 });

@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 my-6 transition-all max-h-[92vh] flex flex-col overflow-hidden"
+        class="admin-panel relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 my-6 transition-all max-h-[92vh] flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -54,10 +54,10 @@
               v-model="form.name"
               type="text"
               placeholder="Ej. Pollo Asado Estilo Sinaloa, Paquete 4, Papas Gajo..."
-              class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-hidden dark:bg-gray-800 dark:text-white font-semibold transition"
+              class="w-full rounded-xl border px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-red-500/20 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
               :class="errors.name
                 ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-gray-700 dark:bg-gray-800 dark:focus:bg-gray-800 dark:focus:border-red-500'"
+                : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:focus:border-red-500'"
               @input="errors.name = ''; validationError = ''"
             />
             <p v-if="errors.name" class="text-[11px] text-red-600 dark:text-red-400 font-bold mt-1">
@@ -84,24 +84,24 @@
             <div v-if="!isCustomCategory" class="relative">
               <select
                 v-model="form.category"
-                class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition cursor-pointer"
                 @change="errors.category = ''; validationError = ''"
               >
-                <optgroup label="Categorías Principales (Sugeridas)">
-                  <option value="Combos">🍱 Combos</option>
-                  <option value="Bebidas">🥤 Bebidas (Drinks)</option>
-                  <option value="Extras">🍟 Extras (Complementos)</option>
+                <optgroup class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" label="Categorías Principales (Sugeridas)">
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Combos">🍱 Combos</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Bebidas">🥤 Bebidas (Drinks)</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Extras">🍟 Extras (Complementos)</option>
                 </optgroup>
-                <optgroup label="Especialidades de Pollo">
-                  <option value="Pollo Entero">🍗 Pollo Entero</option>
-                  <option value="Medio Pollo">🍗 Medio Pollo</option>
-                  <option value="Paquetes">📦 Paquetes</option>
-                  <option value="Tacos">🌮 Tacos</option>
-                  <option value="Ensaladas">🥗 Ensaladas</option>
-                  <option value="Postres">🍮 Postres</option>
+                <optgroup class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" label="Especialidades de Pollo">
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Pollo Entero">🍗 Pollo Entero</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Medio Pollo">🍗 Medio Pollo</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Paquetes">📦 Paquetes</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Tacos">🌮 Tacos</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Ensaladas">🥗 Ensaladas</option>
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Postres">🍮 Postres</option>
                 </optgroup>
-                <optgroup v-if="extraCategoryOptions.length > 0" label="Otras Categorías Existentes">
-                  <option v-for="cat in extraCategoryOptions" :key="cat" :value="cat">
+                <optgroup class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" v-if="extraCategoryOptions.length > 0" label="Otras Categorías Existentes">
+                  <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" v-for="cat in extraCategoryOptions" :key="cat" :value="cat">
                     📁 {{ cat }}
                   </option>
                 </optgroup>
@@ -113,7 +113,7 @@
                 v-model="customCategoryText"
                 type="text"
                 placeholder="Escribe el nombre de la categoría (ej. Combos, Bebidas, Extras, Salsas...)"
-                class="w-full rounded-xl border border-red-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-600 focus:outline-hidden dark:border-red-800 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-red-300 bg-white px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 font-semibold focus:border-red-600 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-red-800 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                 @input="form.category = customCategoryText; errors.category = ''; validationError = ''"
               />
               <p class="text-[10px] text-gray-500 dark:text-gray-400">
@@ -161,10 +161,10 @@
                   min="1"
                   step="1"
                   placeholder="180"
-                  class="w-full rounded-xl border px-3.5 py-2.5 pl-8 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-hidden dark:bg-gray-800 dark:text-white font-semibold transition"
+                  class="w-full rounded-xl border px-4 py-3 pl-8 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-red-500/20 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
                   :class="errors.price
                     ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                    : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-gray-700 dark:bg-gray-800 dark:focus:bg-gray-800 dark:focus:border-red-500'"
+                    : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:focus:border-red-500'"
                   @input="errors.price = ''; validationError = ''"
                 />
               </div>
@@ -181,7 +181,7 @@
                 v-model="form.badge"
                 type="text"
                 placeholder="Ej. Más vendido, Especial, Nuevo..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 dark:focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
           </div>
@@ -195,7 +195,7 @@
               v-model="form.description"
               rows="3"
               placeholder="Describe las porciones, acompañamientos incluidos, aderezos o tamaño..."
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 dark:focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
             ></textarea>
           </div>
 
@@ -215,29 +215,46 @@
             <ImageUploader v-model="form.image_url" />
           </div>
 
-          <!-- Toggles: is_active & is_featured -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <label class="flex items-center gap-2.5 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+          <!-- Toggles: is_active, is_featured & is_sold_out -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <label class="flex items-center gap-2.5 p-3 rounded-2xl border border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50">
               <input
                 v-model="form.is_active"
                 type="checkbox"
                 class="h-4 w-4 rounded text-red-600 focus:ring-red-500"
               />
               <div>
-                <span class="block text-xs font-bold text-gray-800 dark:text-gray-200">Disponible para Venta</span>
-                <span class="block text-[10px] text-gray-400">Visible en el catálogo público</span>
+                <span class="block text-xs font-bold text-gray-800 dark:text-slate-100">Disponible</span>
+                <span class="block text-[10px] text-gray-400">Visible en menú público</span>
               </div>
             </label>
 
-            <label class="flex items-center gap-2.5 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+            <label class="flex items-center gap-2.5 p-3 rounded-2xl border border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50">
               <input
                 v-model="form.is_featured"
                 type="checkbox"
                 class="h-4 w-4 rounded text-red-600 focus:ring-red-500"
               />
               <div>
-                <span class="block text-xs font-bold text-gray-800 dark:text-gray-200">Platillo Destacado</span>
-                <span class="block text-[10px] text-gray-400">Mostrar en el inicio de la web</span>
+                <span class="block text-xs font-bold text-gray-800 dark:text-slate-100">Platillo Destacado</span>
+                <span class="block text-[10px] text-gray-400">Mostrar en inicio</span>
+              </div>
+            </label>
+
+            <label
+              class="flex items-center gap-2.5 p-3 rounded-2xl border cursor-pointer transition"
+              :class="form.is_sold_out
+                ? 'border-amber-500/70 bg-amber-50/70 dark:bg-amber-950/30 dark:border-amber-700'
+                : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50'"
+            >
+              <input
+                v-model="form.is_sold_out"
+                type="checkbox"
+                class="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
+              />
+              <div>
+                <span class="block text-xs font-bold text-gray-800 dark:text-slate-100">Platillo Agotado</span>
+                <span class="block text-[10px] text-gray-400">Etiqueta Agotado temporal</span>
               </div>
             </label>
           </div>
@@ -344,6 +361,7 @@ const form = ref({
   image_url: '',
   is_active: true,
   is_featured: false,
+  is_sold_out: false,
 })
 
 const extraCategoryOptions = computed(() => {
@@ -406,6 +424,7 @@ watch(
           image_url: props.itemToEdit.image_url || '',
           is_active: props.itemToEdit.is_active ?? true,
           is_featured: props.itemToEdit.is_featured ?? false,
+          is_sold_out: Boolean(props.itemToEdit.is_sold_out),
         }
       } else {
         isEditing.value = false
@@ -420,6 +439,7 @@ watch(
           image_url: PRESET_IMAGES['Combos'],
           is_active: true,
           is_featured: false,
+          is_sold_out: false,
         }
       }
     }

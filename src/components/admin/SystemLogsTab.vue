@@ -1,6 +1,6 @@
 <!-- src/components/admin/SystemLogsTab.vue -->
 <template>
-  <div class="space-y-6">
+  <div class="admin-panel space-y-6">
     <!-- Header with status and actions -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-xs">
       <div>
@@ -148,7 +148,7 @@
               @input="handleSearchInput"
               type="text"
               placeholder="Buscar en mensaje, ruta, IP..."
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 pl-8 pr-3 py-1.5 text-xs text-gray-900 focus:border-purple-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-700 dark:text-white"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 pl-8 pr-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 focus:border-purple-500 focus:bg-white dark:focus:bg-[#161e2e] focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:text-slate-100"
             />
           </div>
 

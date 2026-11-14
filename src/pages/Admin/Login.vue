@@ -24,7 +24,7 @@
       TARJETA PRINCIPAL DE AUTENTICACIÓN (LARAVEL BREEZE AUTH CARD)
       Animación CSS suave: slide-up y fade-in de 600ms con curva de aceleración natural
     -->
-    <div class="w-full sm:max-w-md px-6 py-7 sm:py-8 bg-white dark:bg-gray-800 shadow-xl sm:rounded-2xl border border-gray-200/80 dark:border-gray-700/80 breeze-card-enter">
+    <div class="admin-panel w-full sm:max-w-md px-6 py-7 sm:py-8 bg-white dark:bg-[#0f172a] shadow-xl sm:rounded-2xl border border-gray-200/80 dark:border-slate-800 breeze-card-enter">
       <!-- Encabezado de la Tarjeta -->
       <div class="mb-5 pb-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
         <div>
@@ -168,7 +168,7 @@
               autocomplete="username"
               placeholder="nombre@pollofeliz.com"
               :disabled="isLockedOut || loading"
-              class="block w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2 text-sm shadow-2xs transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="block w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2 text-sm shadow-2xs transition placeholder-gray-400 dark:placeholder-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -208,7 +208,7 @@
               :disabled="isLockedOut || loading"
               @keydown="checkCapsLock"
               @keyup="checkCapsLock"
-              class="block w-full rounded-lg border border-gray-300 pl-9 pr-10 py-2 text-sm shadow-2xs transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="block w-full rounded-lg border border-gray-300 pl-9 pr-10 py-2 text-sm shadow-2xs transition placeholder-gray-400 dark:placeholder-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:focus:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
 
             <button
@@ -315,7 +315,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
       @click.self="showForgotModal = false"
     >
-      <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4 breeze-card-enter">
+      <div class="admin-panel w-full max-w-sm rounded-2xl bg-white dark:bg-[#0f172a] p-6 shadow-2xl border border-gray-200 dark:border-slate-800 space-y-4 breeze-card-enter">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-gray-900 dark:text-white text-base flex items-center gap-2">
             <span>🛡️</span>
@@ -337,7 +337,7 @@
             type="email"
             v-model="forgotEmail"
             placeholder="ejemplo@pollofeliz.com"
-            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100"
           />
           <div class="flex items-center justify-end gap-2 pt-2">
             <button

@@ -76,15 +76,23 @@
             </div>
           </div>
 
-          <!-- Mini Mapa de Google Embebido -->
-          <div class="h-56 overflow-hidden rounded-3xl bg-white shadow-md dark:bg-gray-800 dark:border dark:border-gray-700">
-            <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116744.11887028168!2d-104.6538!3d24.0277!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x869bb7bf73775b03%3A0x6b6c22dfecbbfb0!2sVictoria%20de%20Durango%2C%20Dgo.!5e0!3m2!1ses!2smx!4v1700000000000"
-              width="100%" 
-              height="100%" 
-              style="border:0;" 
-              allowfullscreen="" 
-              loading="lazy" 
+          <!-- Mini Mapa de Google Embebido (carga diferida con IntersectionObserver) -->
+          <div ref="mapFrameWrapper" class="relative h-56 overflow-hidden rounded-3xl bg-white shadow-md dark:bg-gray-800 dark:border dark:border-gray-700">
+            <div
+              v-if="!mapLoaded"
+              class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400"
+            >
+              <span class="text-xl">📍</span>
+              <span>Cargando mapa de Durango...</span>
+            </div>
+            <iframe
+              v-if="mapLoaded"
+              :src="googleMapEmbedUrl"
+              width="100%"
+              height="100%"
+              style="border:0;"
+              allowfullscreen=""
+              loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
               title="Mapa de sucursales Pollo Feliz Durango"
             ></iframe>
@@ -221,11 +229,27 @@
                 class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition cursor-pointer"
               >
                 <option value="Cualquier sucursal">Cualquier sucursal de Durango</option>
-                <option value="Sucursal Centro Histórico">Sucursal Centro Histórico</option>
-                <option value="Sucursal Jardines">Sucursal Jardines</option>
-                <option value="Sucursal Coyoacán">Sucursal Coyoacán</option>
-                <option value="Sucursal San Ángel">Sucursal San Ángel</option>
+                <option
+                  v-for="b in availableBranches"
+                  :key="b.id || b.name"
+                  :value="b.name"
+                >
+                  {{ b.name }}
+                </option>
               </select>
+            </div>
+
+            <!-- Campo Honeypot oculto antispam (invisible para usuarios reales) -->
+            <div class="hidden" aria-hidden="true">
+              <label for="contact-website-trap">Sitio web</label>
+              <input
+                id="contact-website-trap"
+                v-model="form.website"
+                type="text"
+                name="website"
+                tabindex="-1"
+                autocomplete="off"
+              />
             </div>
 
             <!-- Row 4: Mensaje -->
@@ -263,14 +287,46 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/plugins/axios'
 import company from '@/config/company'
 import { useLandingContent } from '@/composables/useLandingContent'
 import { useToasts } from '@/composables/useToasts'
 
 const { addToast } = useToasts()
-const { landingSettings } = useLandingContent()
+const { landingSettings, landingBranches } = useLandingContent()
+
+const mapFrameWrapper = ref(null)
+const mapLoaded = ref(false)
+const googleMapEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116744.11887028168!2d-104.6538!3d24.0277!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x869bb7bf73775b03%3A0x6b6c22dfecbbfb0!2sVictoria%20de%20Durango%2C%20Dgo.!5e0!3m2!1ses!2smx!4v1700000000000'
+let iframeObserver = null
+
+onMounted(() => {
+  if (typeof IntersectionObserver !== 'undefined' && mapFrameWrapper.value) {
+    iframeObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          mapLoaded.value = true
+          iframeObserver?.disconnect()
+          iframeObserver = null
+        }
+      },
+      { rootMargin: '250px' }
+    )
+    iframeObserver.observe(mapFrameWrapper.value)
+  } else {
+    mapLoaded.value = true
+  }
+})
+
+onBeforeUnmount(() => {
+  iframeObserver?.disconnect()
+  iframeObserver = null
+})
+
+const availableBranches = computed(() =>
+  (landingBranches.value || []).filter((b) => b && b.name)
+)
 
 const form = ref({
   name: '',
@@ -279,6 +335,7 @@ const form = ref({
   subject: 'Consulta general',
   branch: 'Cualquier sucursal',
   message: '',
+  website: '',
 })
 
 const isSubmitting = ref(false)
@@ -331,6 +388,7 @@ const handleSubmit = async () => {
       subject: form.value.subject,
       branch: form.value.branch,
       message: form.value.message.trim(),
+      website: form.value.website,
       destination_email: 'soporte@pollofelizdgo.com',
     }
 
@@ -357,6 +415,7 @@ const resetForm = () => {
     subject: 'Consulta general',
     branch: 'Cualquier sucursal',
     message: '',
+    website: '',
   }
   submittedSuccess.value = false
   feedbackError.value = ''

@@ -133,11 +133,11 @@
             <span>💬 Consultar Apertura</span>
           </a>
           <a
-            :href="branch.mapLink || branch.map_link || `https://maps.google.com/?q=${encodeURIComponent('Pollo Feliz ' + branch.name + ' Durango')}`"
+            :href="getDirectionsUrl(branch)"
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center justify-center rounded-xl bg-gray-100 px-3.5 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 min-h-[44px]"
-            title="Ver ubicación planeada en mapa"
+            title="Ver ubicación planeada en Google Maps"
           >
             <svg class="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -145,23 +145,33 @@
           </a>
         </template>
 
-        <!-- When in operation: Standard GPS & Call buttons -->
+        <!-- When in operation: Focus Map, Standard GPS & Call buttons -->
         <template v-else>
+          <button
+            type="button"
+            @click="emit('focus-map', branch)"
+            class="flex items-center justify-center gap-1 rounded-xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 transition hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-950/80 min-h-[44px] cursor-pointer"
+            title="Ubicar en mapa interactivo"
+          >
+            <span>📍</span>
+            <span class="hidden sm:inline">Mapa</span>
+          </button>
+
           <a
-            :href="branch.mapLink || branch.map_link || `https://maps.google.com/?q=${encodeURIComponent('Pollo Feliz ' + branch.name + ' Durango')}`"
+            :href="getDirectionsUrl(branch)"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-bold text-gray-800 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 min-h-[44px]"
+            class="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gray-100 px-3 py-2.5 text-xs font-bold text-gray-800 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 min-h-[44px]"
           >
-            <svg class="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            <span>Cómo llegar (GPS)</span>
+            <span>Cómo llegar</span>
           </a>
 
           <a
             :href="`tel:${branch.phone}`"
-            class="flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 shadow-xs min-h-[44px]"
+            class="flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-3.5 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 shadow-xs min-h-[44px]"
             aria-label="Llamar a sucursal"
           >
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,11 +195,27 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['focus-map'])
+
 const copied = ref(false)
 
 const branchImage = computed(() => {
   return props.branch.image_url || props.branch.image || ''
 })
+
+const getDirectionsUrl = (branch) => {
+  const lat = Number(branch?.latitude)
+  const lng = Number(branch?.longitude)
+  if (!Number.isNaN(lat) && !Number.isNaN(lng) && lat !== 0 && lng !== 0) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+  }
+  return (
+    branch?.directions_url ||
+    branch?.map_link ||
+    branch?.mapLink ||
+    `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent('Pollo Feliz ' + (branch?.name || '') + ' Durango')}`
+  )
+}
 
 const isCurrentlyOpen = computed(() => {
   if (props.branch.is_coming_soon) return false

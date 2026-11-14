@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Modelo Eloquent de sucursales/ubicaciones activas para la Landing Page y mapa GPS.
+ */
 class Location extends Model
 {
     protected $table = 'locations';

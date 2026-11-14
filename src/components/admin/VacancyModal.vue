@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 my-6 transition-all max-h-[92vh] flex flex-col overflow-hidden"
+        class="admin-panel relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 my-6 transition-all max-h-[92vh] flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -54,10 +54,10 @@
               v-model="form.title"
               type="text"
               placeholder="Ej. Parrillero de Pollo Asado, Ayudante de Cocina, Cajero(a)..."
-              class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-hidden bg-gray-50 dark:bg-gray-800 dark:text-white font-semibold transition"
+              class="w-full rounded-xl border px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden bg-gray-50 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold focus:ring-2 focus:ring-red-500/20 transition"
               :class="errors.title
                 ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                : 'border-gray-200 focus:border-red-500 focus:bg-gray-50 dark:focus:bg-gray-800 dark:border-gray-700'"
+                : 'border-gray-200 focus:border-red-500 focus:bg-gray-50 dark:border-slate-700 dark:focus:border-red-500'"
               @input="errors.title = ''; validationError = ''"
             />
             <p v-if="errors.title" class="text-[11px] text-red-600 dark:text-red-400 font-bold mt-1">
@@ -73,12 +73,12 @@
               </label>
               <select
                 v-model="form.employment_type"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-red-500 cursor-pointer"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:focus:border-red-500 transition cursor-pointer"
               >
-                <option value="Tiempo completo">⏰ Tiempo completo</option>
-                <option value="Medio tiempo">⏱️ Medio tiempo</option>
-                <option value="Fines de semana">📅 Fines de semana</option>
-                <option value="Por temporada">🍂 Por temporada</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Tiempo completo">⏰ Tiempo completo</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Medio tiempo">⏱️ Medio tiempo</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Fines de semana">📅 Fines de semana</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Por temporada">🍂 Por temporada</option>
               </select>
             </div>
 
@@ -88,12 +88,12 @@
               </label>
               <select
                 v-model="form.location"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-red-500 cursor-pointer"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 font-semibold focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:focus:border-red-500 transition cursor-pointer"
               >
-                <option value="Sucursal Centro Histórico">📍 Sucursal Centro Histórico</option>
-                <option value="Sucursal Polanco">📍 Sucursal Polanco</option>
-                <option value="Sucursal Jardines de Durango">📍 Sucursal Jardines de Durango</option>
-                <option value="Todas las sucursales">🏢 Todas las sucursales</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Sucursal Centro Histórico">📍 Sucursal Centro Histórico</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Sucursal Polanco">📍 Sucursal Polanco</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Sucursal Jardines de Durango">📍 Sucursal Jardines de Durango</option>
+                <option class="bg-white text-gray-900 dark:bg-[#161e2e] dark:text-slate-100" value="Todas las sucursales">🏢 Todas las sucursales</option>
               </select>
             </div>
           </div>
@@ -108,7 +108,7 @@
                 v-model="form.salary_range"
                 type="text"
                 placeholder="Ej. $9,500 - $12,500 MXN mensuales"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
 
@@ -120,7 +120,7 @@
                 v-model="form.schedule"
                 type="text"
                 placeholder="Ej. Lunes a Sábado: 8:00 AM - 4:00 PM"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
           </div>
@@ -134,10 +134,10 @@
               v-model="form.description"
               rows="3"
               placeholder="Detalla las actividades principales del puesto y funciones a desempeñar en el restaurante..."
-              class="w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-hidden bg-gray-50 dark:bg-gray-800 dark:text-white transition"
+              class="w-full rounded-xl border px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-red-500/20 bg-gray-50 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               :class="errors.description
                 ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                : 'border-gray-200 focus:border-red-500 focus:bg-gray-50 dark:focus:bg-gray-800 dark:border-gray-700'"
+                : 'border-gray-200 focus:border-red-500 focus:bg-gray-50 dark:border-slate-700 dark:focus:border-red-500'"
               @input="errors.description = ''; validationError = ''"
             ></textarea>
             <p v-if="errors.description" class="text-[11px] text-red-600 dark:text-red-400 font-bold mt-1">
@@ -155,7 +155,7 @@
                 v-model="form.requirements"
                 rows="2"
                 placeholder="Ej. Mayor de 18 años, actitud de servicio, experiencia previa..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               ></textarea>
             </div>
 
@@ -167,7 +167,7 @@
                 v-model="form.benefits"
                 rows="2"
                 placeholder="Ej. Comida diaria incluida, prestaciones de ley, propinas, bonos..."
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               ></textarea>
             </div>
           </div>

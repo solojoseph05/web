@@ -22,7 +22,7 @@
           </div>
 
           <!-- Headline -->
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 leading-[1.1] dark:text-white">
+          <h1 class="text-balance text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 leading-[1.1] dark:text-white">
             {{ heroTitlePrefix }}
             <span class="relative inline-block text-red-600 dark:text-red-500">
               {{ heroTitleHighlight }}
@@ -80,15 +80,15 @@
           <div class="pt-6 border-t border-gray-200/70 dark:border-gray-800/80">
             <div class="grid grid-cols-3 gap-4 max-w-lg mx-auto sm:mx-0 text-center sm:text-left">
               <div>
-                <p class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{{ stat1Value }}</p>
+                <p class="tabular-nums text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{{ stat1Value }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{ stat1Label }}</p>
               </div>
               <div>
-                <p class="text-2xl sm:text-3xl font-black text-red-600 dark:text-red-500">{{ stat2Value }}</p>
+                <p class="tabular-nums text-2xl sm:text-3xl font-black text-red-600 dark:text-red-500">{{ stat2Value }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{ stat2Label }}</p>
               </div>
               <div>
-                <p class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{{ stat3Value }}</p>
+                <p class="tabular-nums text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{{ stat3Value }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{ stat3Label }}</p>
               </div>
             </div>

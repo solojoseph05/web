@@ -34,12 +34,17 @@ dist-ssr
 *.sln
 *.sw?
 
-# Archivos de base de datos locales (si usas SQLite o similar en el backend)
+# Archivos de base de datos locales (SQLite / PostgreSQL local)
+data/
+data/*.sqlite*
 *.sqlite
 *.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+backend/database/*.sqlite*
 *.db.aistudio
 .laravel
 dist
 backend/public/dist
-*.sqlite
 .aistudio/

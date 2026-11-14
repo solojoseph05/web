@@ -1,15 +1,18 @@
 /**
  * FACTORÍA PRINCIPAL DEL SISTEMA DE BASE DE DATOS
  * ===============================================
- * Centraliza la inicialización y el acceso al adaptador de persistencia.
+ * Centraliza la inicialización y el acceso al adaptador de persistencia real.
+ * Por defecto opera con SQLite persistente en disco (`data/pollofeliz.sqlite`)
+ * o PostgreSQL cuando se configura `DB_CONNECTION=postgres`.
  */
 
 import { IDatabaseAdapter } from './DatabaseAdapter.js';
-import { MemoryDatabaseAdapter } from './adapters/MemoryAdapter.js';
+import { SQLiteDatabaseAdapter } from './adapters/SQLiteAdapter.js';
 import { PostgresDatabaseAdapter } from './adapters/PostgresAdapter.js';
 
 export * from './schema.js';
 export * from './DatabaseAdapter.js';
+export { SQLiteDatabaseAdapter } from './adapters/SQLiteAdapter.js';
 
 let databaseInstance: IDatabaseAdapter | null = null;
 
@@ -18,7 +21,7 @@ export const getDatabase = (): IDatabaseAdapter => {
     return databaseInstance;
   }
 
-  const connectionType = (process.env.DB_CONNECTION || 'memory').toLowerCase();
+  const connectionType = (process.env.DB_CONNECTION || 'sqlite').toLowerCase();
 
   switch (connectionType) {
     case 'postgres':
@@ -27,9 +30,9 @@ export const getDatabase = (): IDatabaseAdapter => {
       databaseInstance = new PostgresDatabaseAdapter();
       break;
 
-    case 'memory':
+    case 'sqlite':
     default:
-      databaseInstance = new MemoryDatabaseAdapter();
+      databaseInstance = new SQLiteDatabaseAdapter();
       break;
   }
 

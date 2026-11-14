@@ -22,16 +22,23 @@
         :src="resolveImage(item)"
         :alt="item.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        :class="{ 'grayscale opacity-75': item.is_sold_out }"
         loading="lazy"
         decoding="async"
         @error="handleImageError"
       />
-      <!-- Badge -->
+      <!-- Etiqueta visual de Agotado o Destacado -->
       <span
-        v-if="item.badge"
+        v-if="item.is_sold_out"
+        class="absolute top-3 right-3 bg-slate-900/95 text-white text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md border border-slate-700"
+      >
+        Agotado
+      </span>
+      <span
+        v-else-if="item.badge || item.is_featured"
         class="absolute top-3 right-3 bg-red-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md"
       >
-        {{ item.badge }}
+        {{ item.badge || 'Destacado' }}
       </span>
 
       <!-- Quick inspect tag -->
@@ -50,7 +57,7 @@
           <h3 class="text-base font-bold text-gray-800 group-hover:text-red-600 transition-colors dark:text-gray-100">
             {{ item.name }}
           </h3>
-          <span class="text-red-600 font-extrabold text-lg whitespace-nowrap">${{ item.price }}</span>
+          <span class="text-red-600 font-extrabold text-lg whitespace-nowrap tabular-nums">${{ item.price }}</span>
         </div>
         <p class="text-xs text-gray-500 line-clamp-2 mb-4 dark:text-gray-300">
           {{ item.description }}

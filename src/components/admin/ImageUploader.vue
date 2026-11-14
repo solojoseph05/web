@@ -1,6 +1,6 @@
 <!-- src/components/admin/ImageUploader.vue -->
 <template>
-  <div class="space-y-3.5">
+  <div class="admin-panel space-y-3.5">
     <!-- Top Mode Selector: Subir Archivo vs Galería vs Pegar Enlace -->
     <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-xs font-bold">
       <button
@@ -197,7 +197,7 @@
           v-model="inputUrl"
           type="url"
           placeholder="https://images.unsplash.com/... o https://midominio.com/foto.jpg"
-          class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 dark:placeholder-slate-400 focus:border-red-500 focus:bg-white dark:focus:bg-[#161e2e] focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:text-slate-100"
           @input="handleUrlInput"
         />
         <button

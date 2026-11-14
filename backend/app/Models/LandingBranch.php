@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Modelo Eloquent para la gestión de sucursales administrativas de Pollo Feliz Durango.
+ */
 class LandingBranch extends Model
 {
     protected $table = 'landing_branches';

@@ -6,10 +6,15 @@ use App\Http\Middleware\AdminPermissionMiddleware;
 use App\Models\AdminChangeLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
+/**
+ * Controlador de autenticación administrativa, RBAC y protección de cuentas críticas.
+ */
 class AdminAuthController extends Controller
 {
     private function ensureAdminColumnsExist()
@@ -575,6 +580,9 @@ class AdminAuthController extends Controller
         ]);
     }
 
+    /**
+     * Crea un nuevo usuario administrativo validando privilegios de Super Administrador.
+     */
     public function createAdminUser(Request $request)
     {
         if ($migrationError = $this->ensureAdminColumnsExist()) {
@@ -585,7 +593,7 @@ class AdminAuthController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'max:100'],
-            'role' => ['nullable', 'string', 'in:super_admin,content_manager,support_agent'],
+            'role' => ['nullable', 'string', 'in:super_admin,gerente,cocina,atencion,cajero,content_manager,support_agent'],
         ]);
 
         $adminUser = $request->attributes->get('adminUser');
@@ -595,38 +603,48 @@ class AdminAuthController extends Controller
             ], 403);
         }
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => $data['password'],
-            'is_admin' => true,
-            'role' => $data['role'] ?? 'content_manager',
-        ]);
+        try {
+            $user = DB::transaction(function () use ($adminUser, $data): User {
+                $user = User::create([
+                    'name' => trim($data['name']),
+                    'email' => strtolower(trim($data['email'])),
+                    'password' => Hash::make($data['password']),
+                    'is_admin' => true,
+                    'role' => $data['role'] ?? 'content_manager',
+                    'status' => 'active',
+                ]);
 
-        AdminChangeLog::create([
-            'admin_user_id' => $adminUser->id,
-            'action' => 'admin.user.create',
-            'target_type' => 'User',
-            'target_id' => (string) $user->id,
-            'description' => 'Se creó un nuevo usuario administrador.',
-            'changes' => [
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-        ]);
+                AdminChangeLog::create([
+                    'admin_user_id' => $adminUser->id,
+                    'action' => 'admin.user.create',
+                    'target_type' => 'User',
+                    'target_id' => (string) $user->id,
+                    'description' => 'Se creó un nuevo usuario administrador.',
+                    'changes' => [
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                    ],
+                ]);
 
-        return response()->json([
-            'message' => 'Usuario administrador creado correctamente.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'two_factor_enabled' => (bool) $user->two_factor_enabled,
-                'permissions' => AdminPermissionMiddleware::permissionsForRole($user->role),
-            ],
-        ], 201);
+                return $user;
+            });
+
+            return response()->json([
+                'message' => 'Usuario administrador creado correctamente.',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'two_factor_enabled' => (bool) $user->two_factor_enabled,
+                    'permissions' => AdminPermissionMiddleware::permissionsForRole($user->role),
+                ],
+            ], 201);
+        } catch (\Throwable $e) {
+            Log::error('Error creando usuario administrador', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'No se pudo crear el usuario administrador.'], 500);
+        }
     }
 
     public function revokeUserSessions(Request $request, $id)
@@ -671,9 +689,13 @@ class AdminAuthController extends Controller
         ]);
     }
 
+    /**
+     * Suspende o reactiva una cuenta administrativa impidiendo autosuspensión
+     * o desactivación del último Super Administrador activo.
+     */
     public function toggleUserStatus(Request $request, $id)
     {
-        if ((int)$id === 1) {
+        if ((int) $id === 1) {
             return response()->json(['message' => 'No es posible suspender al Super Administrador principal.'], 403);
         }
 
@@ -684,43 +706,72 @@ class AdminAuthController extends Controller
             return response()->json(['message' => 'Usuario no encontrado.'], 404);
         }
 
+        if ($adminUser && (int) $adminUser->id === (int) $targetUser->id) {
+            return response()->json(['message' => 'No puedes suspender tu propia cuenta con sesión activa.'], 403);
+        }
+
         $currentStatus = $targetUser->status ?? 'active';
         $newStatus = $currentStatus === 'suspended' ? 'active' : 'suspended';
-        $targetUser->status = $newStatus;
 
-        if ($newStatus === 'suspended') {
-            $targetUser->api_token = 'token-suspended-' . Str::random(40);
-            $targetUser->last_revoked_at = now();
+        if ($newStatus === 'suspended' && $targetUser->role === 'super_admin') {
+            $otherActiveSuperAdmins = User::query()
+                ->where('is_admin', true)
+                ->where('role', 'super_admin')
+                ->where('id', '!=', $targetUser->id)
+                ->where(function ($q) {
+                    $q->whereNull('status')->orWhere('status', '!=', 'suspended');
+                })
+                ->count();
+
+            if ($otherActiveSuperAdmins === 0) {
+                return response()->json([
+                    'message' => 'Operación denegada: el sistema debe conservar al menos un Super Administrador activo.',
+                ], 403);
+            }
         }
-        $targetUser->save();
 
-        AdminChangeLog::create([
-            'admin_user_id' => $adminUser->id ?? 1,
-            'action' => 'admin.user.toggle_status',
-            'target_type' => 'User',
-            'target_id' => (string) $targetUser->id,
-            'description' => "Estado de la cuenta {$targetUser->name} cambiado a: {$newStatus}",
-            'changes' => [
-                'previous_status' => $currentStatus,
-                'new_status' => $newStatus,
-            ],
-        ]);
+        try {
+            DB::transaction(function () use ($adminUser, $targetUser, $currentStatus, $newStatus): void {
+                $targetUser->status = $newStatus;
 
-        return response()->json([
-            'success' => true,
-            'message' => $newStatus === 'suspended'
-                ? "La cuenta de {$targetUser->name} ha sido suspendida por seguridad y sus sesiones desconectadas."
-                : "La cuenta de {$targetUser->name} ha sido reactivada.",
-            'status' => $newStatus,
-            'user' => [
-                'id' => $targetUser->id,
-                'name' => $targetUser->name,
-                'email' => $targetUser->email,
+                if ($newStatus === 'suspended') {
+                    $targetUser->api_token = 'token-suspended-' . Str::random(40);
+                    $targetUser->last_revoked_at = now();
+                }
+                $targetUser->save();
+
+                AdminChangeLog::create([
+                    'admin_user_id' => $adminUser->id ?? 1,
+                    'action' => 'admin.user.toggle_status',
+                    'target_type' => 'User',
+                    'target_id' => (string) $targetUser->id,
+                    'description' => "Estado de la cuenta {$targetUser->name} cambiado a: {$newStatus}",
+                    'changes' => [
+                        'previous_status' => $currentStatus,
+                        'new_status' => $newStatus,
+                    ],
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => $newStatus === 'suspended'
+                    ? "La cuenta de {$targetUser->name} ha sido suspendida por seguridad y sus sesiones desconectadas."
+                    : "La cuenta de {$targetUser->name} ha sido reactivada.",
                 'status' => $newStatus,
-                'active_sessions_count' => $newStatus === 'suspended' ? 0 : 1,
-                'last_revoked_at' => $targetUser->last_revoked_at,
-            ],
-        ]);
+                'user' => [
+                    'id' => $targetUser->id,
+                    'name' => $targetUser->name,
+                    'email' => $targetUser->email,
+                    'status' => $newStatus,
+                    'active_sessions_count' => $newStatus === 'suspended' ? 0 : 1,
+                    'last_revoked_at' => $targetUser->last_revoked_at,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error cambiando estado de usuario administrativo', ['id' => $id, 'error' => $e->getMessage()]);
+            return response()->json(['message' => 'No se pudo actualizar el estado del usuario.'], 500);
+        }
     }
 
     private function generateBase32Secret(int $length = 32): string

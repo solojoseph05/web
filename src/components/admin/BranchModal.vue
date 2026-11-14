@@ -7,7 +7,7 @@
       @click.self="emit('close')"
     >
       <div
-        class="relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 my-8 transition-all max-h-[92vh] flex flex-col overflow-hidden"
+        class="admin-panel relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100 dark:bg-[#0f172a] dark:border-slate-800 my-8 transition-all max-h-[92vh] flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -47,7 +47,7 @@
               type="text"
               required
               placeholder="Ej. Sucursal Centro Histórico"
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-semibold transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
             />
           </div>
 
@@ -61,7 +61,7 @@
               type="text"
               required
               placeholder="Ej. Av. 5 de Mayo #123, Colonia Centro, Durango, Dgo."
-              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
             />
           </div>
 
@@ -76,7 +76,7 @@
                 type="text"
                 required
                 placeholder="Ej. 618-123-4567"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white font-medium transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-medium transition"
               />
             </div>
 
@@ -89,7 +89,7 @@
                 type="text"
                 required
                 placeholder="Ej. Lun - Dom: 10:00 AM - 10:00 PM"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@
                   v-model="coordInputText"
                   type="text"
                   placeholder="https://maps.google.com/?q=24.0277,-104.6532 o pega '24.0277, -104.6532'"
-                  class="flex-1 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs text-gray-900 focus:border-blue-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="flex-1 rounded-xl border border-blue-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
                   @input="handleCoordInput"
                 />
                 <button
@@ -142,7 +142,7 @@
                   v-model.number="form.latitude"
                   type="number"
                   step="any"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono font-bold text-gray-900 focus:border-blue-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
                   @change="updateMarkerPosition"
                 />
               </div>
@@ -155,7 +155,7 @@
                   v-model.number="form.longitude"
                   type="number"
                   step="any"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono font-bold text-gray-900 focus:border-blue-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
                   @change="updateMarkerPosition"
                 />
               </div>
@@ -169,7 +169,7 @@
                   type="number"
                   min="10"
                   max="19"
-                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono font-bold text-gray-900 focus:border-blue-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 transition"
                 />
               </div>
             </div>
@@ -212,8 +212,8 @@
               <input
                 v-model="form.map_link"
                 type="url"
-                placeholder="https://maps.google.com/?q=24.0277,-104.6532"
-                class="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-900 focus:border-blue-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="https://www.google.com/maps/dir/?api=1&destination=24.0277,-104.6532"
+                class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
             </div>
           </div>
@@ -228,7 +228,7 @@
                 v-model="form.image_url"
                 type="url"
                 placeholder="https://images.unsplash.com/..."
-                class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs text-gray-900 focus:border-red-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white transition"
+                class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:outline-hidden dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 transition"
               />
               <button
                 type="button"
@@ -434,7 +434,7 @@ const applyPreset = (preset) => {
   form.value.latitude = preset.lat
   form.value.longitude = preset.lng
   if (!form.value.address) form.value.address = preset.address
-  form.value.map_link = `https://maps.google.com/?q=${preset.lat},${preset.lng}`
+  form.value.map_link = `https://www.google.com/maps/dir/?api=1&destination=${preset.lat},${preset.lng}`
   updateMarkerPosition()
   coordExtractMsg.value = `✓ Ubicación ajustada a ${preset.name}`
   coordExtractSuccess.value = true
@@ -466,7 +466,7 @@ const handleCoordInput = () => {
   if (coords) {
     form.value.latitude = Number(coords.lat.toFixed(6))
     form.value.longitude = Number(coords.lng.toFixed(6))
-    form.value.map_link = `https://maps.google.com/?q=${form.value.latitude},${form.value.longitude}`
+    form.value.map_link = `https://www.google.com/maps/dir/?api=1&destination=${form.value.latitude},${form.value.longitude}`
     updateMarkerPosition()
     coordExtractMsg.value = `✓ Coordenadas detectadas: ${form.value.latitude}, ${form.value.longitude}`
     coordExtractSuccess.value = true
@@ -478,7 +478,7 @@ const extractAndApplyCoords = () => {
   if (coords) {
     form.value.latitude = Number(coords.lat.toFixed(6))
     form.value.longitude = Number(coords.lng.toFixed(6))
-    form.value.map_link = `https://maps.google.com/?q=${form.value.latitude},${form.value.longitude}`
+    form.value.map_link = `https://www.google.com/maps/dir/?api=1&destination=${form.value.latitude},${form.value.longitude}`
     updateMarkerPosition()
     coordExtractMsg.value = `✓ Coordenadas extraídas exitosamente.`
     coordExtractSuccess.value = true
@@ -523,7 +523,7 @@ const initMap = () => {
     const pos = e.target.getLatLng()
     form.value.latitude = Number(pos.lat.toFixed(6))
     form.value.longitude = Number(pos.lng.toFixed(6))
-    form.value.map_link = `https://maps.google.com/?q=${form.value.latitude},${form.value.longitude}`
+    form.value.map_link = `https://www.google.com/maps/dir/?api=1&destination=${form.value.latitude},${form.value.longitude}`
     coordExtractMsg.value = `Marcador movido: ${form.value.latitude}, ${form.value.longitude}`
     coordExtractSuccess.value = true
   })
@@ -532,7 +532,7 @@ const initMap = () => {
     const { lat, lng } = e.latlng
     form.value.latitude = Number(lat.toFixed(6))
     form.value.longitude = Number(lng.toFixed(6))
-    form.value.map_link = `https://maps.google.com/?q=${form.value.latitude},${form.value.longitude}`
+    form.value.map_link = `https://www.google.com/maps/dir/?api=1&destination=${form.value.latitude},${form.value.longitude}`
     leafletMarker.setLatLng([lat, lng])
     coordExtractMsg.value = `Marcador reubicado: ${form.value.latitude}, ${form.value.longitude}`
     coordExtractSuccess.value = true
@@ -583,7 +583,7 @@ watch(
           phone: '618-123-4567',
           schedule: 'Lun - Dom: 10:00 AM - 10:00 PM',
           image_url: SUGGESTED_BRANCH_IMAGES[0].url,
-          map_link: 'https://maps.google.com/?q=24.0277,-104.6532',
+          map_link: 'https://www.google.com/maps/dir/?api=1&destination=24.0277,-104.6532',
           latitude: 24.0277,
           longitude: -104.6532,
           map_zoom: 16,

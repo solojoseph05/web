@@ -139,18 +139,25 @@
             :src="resolveItemImage(item)"
             :alt="item.name"
             class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            :class="{ 'grayscale opacity-75': item.is_sold_out }"
             loading="lazy"
             decoding="async"
             @error="handleImgError($event, item)"
           />
           <div class="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent"></div>
 
-          <!-- Promotional or Popular Badge -->
+          <!-- Estado Agotado, Etiqueta Promocional o Destacado -->
           <span
-            v-if="item.badge"
+            v-if="item.is_sold_out"
+            class="absolute top-3 right-3 rounded-full bg-slate-900/95 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-md border border-slate-700"
+          >
+            Agotado
+          </span>
+          <span
+            v-else-if="item.badge || item.is_featured"
             class="absolute top-3 right-3 rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-md"
           >
-            {{ item.badge }}
+            {{ item.badge || 'Destacado' }}
           </span>
 
           <!-- Category Tag -->
@@ -166,7 +173,7 @@
               <h3 class="text-base font-bold text-gray-900 group-hover:text-red-600 transition-colors dark:text-white">
                 {{ item.name }}
               </h3>
-              <span class="text-base font-black text-red-600 whitespace-nowrap">
+              <span class="text-base font-black text-red-600 whitespace-nowrap tabular-nums">
                 ${{ formatPrice(item.price) }}
               </span>
             </div>
@@ -188,10 +195,14 @@
             </button>
             <button
               @click.stop="handleAddToCart(item)"
-              class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-red-700 active:scale-95 cursor-pointer"
+              :disabled="item.is_sold_out"
+              class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold shadow-xs transition"
+              :class="item.is_sold_out
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                : 'bg-red-600 text-white hover:bg-red-700 active:scale-95 cursor-pointer'"
             >
-              <PlusIcon class="h-3.5 w-3.5" />
-              <span>Agregar</span>
+              <PlusIcon v-if="!item.is_sold_out" class="h-3.5 w-3.5" />
+              <span>{{ item.is_sold_out ? 'Agotado' : 'Agregar' }}</span>
             </button>
           </div>
         </div>
@@ -248,15 +259,19 @@
         </div>
 
         <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 sm:border-l border-gray-100 pt-3 sm:pt-0 sm:pl-6 dark:border-gray-700">
-          <div class="text-lg font-black text-red-600 sm:mb-2">
+          <div class="text-lg font-black text-red-600 sm:mb-2 tabular-nums">
             ${{ formatPrice(item.price) }}
           </div>
           <button
-            @click="handleAddToCart(item)"
-            class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-red-700 active:scale-95 cursor-pointer"
+            @click.stop="handleAddToCart(item)"
+            :disabled="item.is_sold_out"
+            class="inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold shadow-xs transition"
+            :class="item.is_sold_out
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+              : 'bg-red-600 text-white hover:bg-red-700 active:scale-95 cursor-pointer'"
           >
-            <PlusIcon class="h-3.5 w-3.5" />
-            <span>Agregar</span>
+            <PlusIcon v-if="!item.is_sold_out" class="h-3.5 w-3.5" />
+            <span>{{ item.is_sold_out ? 'Agotado' : 'Agregar' }}</span>
           </button>
         </div>
       </article>
@@ -352,6 +367,7 @@ const fetchMenuItems = async () => {
         category: item.category || 'Pollo Entero',
         badge: item.badge || '',
         is_featured: item.is_featured ?? true,
+        is_sold_out: Boolean(item.is_sold_out),
         image: item.image_url || menuConfig.featured.find(f => f.name === item.name || f.id === item.id)?.image || '',
       }))
     } else {
@@ -455,6 +471,10 @@ const filteredItems = computed(() => {
 })
 
 const handleAddToCart = (item) => {
+  if (item?.is_sold_out) {
+    addToast(`"${item.name}" se encuentra agotado temporalmente.`, 'warning')
+    return
+  }
   addToCart(item, 1)
   addToast(`¡"${item.name}" agregado a tu pedido!`, 'success')
 }
