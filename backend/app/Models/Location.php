@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Modelo Eloquent de sucursales/ubicaciones activas para la Landing Page y mapa GPS.
@@ -66,23 +65,5 @@ class Location extends Model
     public function getMapLinkAttribute($value): string
     {
         return $value ?: ($this->attributes['google_maps_url'] ?? '');
-    }
-
-    /**
-     * Model Observer / Booted Events para invalidación automática de caché de la Landing Page
-     */
-    protected static function booted(): void
-    {
-        static::saved(function ($location) {
-            Cache::forget('landing_page_data');
-            Cache::forget('landing_page_locations');
-            Cache::forget('locations_active');
-        });
-
-        static::deleted(function ($location) {
-            Cache::forget('landing_page_data');
-            Cache::forget('landing_page_locations');
-            Cache::forget('locations_active');
-        });
     }
 }

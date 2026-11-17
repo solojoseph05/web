@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -65,19 +64,5 @@ class LandingPromotion extends Model
         }
 
         return $query;
-    }
-
-    /**
-     * Invalida la caché de la Landing Page ante cualquier cambio en promociones.
-     */
-    protected static function booted(): void
-    {
-        $clearCache = static function (): void {
-            Cache::forget('landing_page_data');
-            Cache::forget('landing_page_promos');
-        };
-
-        static::saved($clearCache);
-        static::deleted($clearCache);
     }
 }

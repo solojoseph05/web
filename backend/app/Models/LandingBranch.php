@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Modelo Eloquent para la gestión de sucursales administrativas de Pollo Feliz Durango.
@@ -63,23 +62,5 @@ class LandingBranch extends Model
     public function getMapLinkAttribute($value): string
     {
         return $value ?: ($this->attributes['google_maps_url'] ?? '');
-    }
-
-    /**
-     * Model Observer / Booted Events para invalidación automática de caché de la Landing Page
-     */
-    protected static function booted(): void
-    {
-        static::saved(function ($branch) {
-            Cache::forget('landing_page_data');
-            Cache::forget('landing_page_locations');
-            Cache::forget('locations_active');
-        });
-
-        static::deleted(function ($branch) {
-            Cache::forget('landing_page_data');
-            Cache::forget('landing_page_locations');
-            Cache::forget('locations_active');
-        });
     }
 }

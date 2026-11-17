@@ -57,7 +57,7 @@
               class="w-full rounded-xl border px-4 py-3 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-red-500/20 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
               :class="errors.name
                 ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:focus:border-red-500'"
+                : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:focus:border-red-500'"
               @input="errors.name = ''; validationError = ''"
             />
             <p v-if="errors.name" class="text-[11px] text-red-600 dark:text-red-400 font-bold mt-1">
@@ -164,7 +164,7 @@
                   class="w-full rounded-xl border px-4 py-3 pl-8 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-red-500/20 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:text-slate-100 dark:placeholder-slate-400 font-semibold transition"
                   :class="errors.price
                     ? 'border-red-500 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 ring-1 ring-red-500'
-                    : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:focus:border-red-500'"
+                    : 'border-gray-200 bg-gray-50 focus:border-red-500 focus:bg-white dark:border-slate-700 dark:bg-[#161e2e] dark:focus:bg-[#161e2e] dark:focus:border-red-500'"
                   @input="errors.price = ''; validationError = ''"
                 />
               </div>

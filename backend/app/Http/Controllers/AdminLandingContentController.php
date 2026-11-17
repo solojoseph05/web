@@ -801,12 +801,22 @@ class AdminLandingContentController extends Controller
         try {
             $previousImage = $landingBranch->image_url;
 
-            DB::transaction(function () use ($request, $landingBranch, $data): void {
+            $previousName = $landingBranch->name;
+
+            DB::transaction(function () use ($request, $landingBranch, $data, $previousName): void {
                 $landingBranch->fill($data);
                 $landingBranch->save();
 
                 try {
-                    Location::where('id', $landingBranch->id)->update($data);
+                    $location = Location::query()
+                        ->where('id', $landingBranch->id)
+                        ->orWhere('branch_name', $previousName)
+                        ->orWhere('name', $previousName)
+                        ->first();
+                    if ($location) {
+                        $location->fill($data);
+                        $location->save();
+                    }
                 } catch (\Throwable $e) {
                     Log::info('No se pudo sincronizar locations en actualización: ' . $e->getMessage());
                 }
@@ -847,10 +857,16 @@ class AdminLandingContentController extends Controller
 
             DB::transaction(function () use ($request, $landingBranch): void {
                 $snapshot = $landingBranch->toArray();
+                $branchName = $landingBranch->name;
                 $landingBranch->delete();
 
                 try {
-                    Location::where('id', $snapshot['id'] ?? 0)->delete();
+                    $location = Location::query()
+                        ->where('id', $snapshot['id'] ?? 0)
+                        ->orWhere('branch_name', $branchName)
+                        ->orWhere('name', $branchName)
+                        ->first();
+                    $location?->delete();
                 } catch (\Throwable $e) {
                     Log::info('No se pudo sincronizar eliminación en locations: ' . $e->getMessage());
                 }

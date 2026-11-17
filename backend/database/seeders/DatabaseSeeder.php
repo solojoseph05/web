@@ -7,6 +7,7 @@ use App\Models\LandingJob;
 use App\Models\LandingPromotion;
 use App\Models\LandingSetting;
 use App\Models\Location;
+use App\Models\Review;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -202,6 +203,112 @@ class DatabaseSeeder extends Seeder
                 } else {
                     LandingJob::create($job);
                 }
+            }
+        }
+
+        // 6. Reseñas verificadas iniciales en Durango
+        if (Schema::hasTable('reviews')) {
+            $reviews = [
+                [
+                    'customer_name' => 'Martha Elena Salcido',
+                    'rating' => 5,
+                    'comment' => '¡El mejor pollo asado de Durango sin duda alguna! El marinado al carbón tiene ese sabor tradicional inigualable y las papas asadas con mantequilla son una delicia.',
+                    'branch' => 'Sucursal Centro Histórico',
+                    'favorite_dish' => 'Paquete Familiar',
+                    'tags' => ['Sabor al carbón', 'Crujiente', 'Salsas caseras'],
+                    'is_verified' => true,
+                    'source' => 'Google Maps',
+                    'is_google_review' => true,
+                    'status' => 'approved',
+                    'likes_count' => 24,
+                    'admin_reply' => [
+                        'author' => 'Equipo Pollo Feliz',
+                        'message' => '¡Muchas gracias Sra. Martha! Nos llena de orgullo ser parte de sus domingos familiares.',
+                    ],
+                ],
+                [
+                    'customer_name' => 'Ing. Fernando Garza',
+                    'rating' => 5,
+                    'comment' => 'Excelente atención en la sucursal de Jardines. La salsa verde y las cebollitas asadas recién hechas hacen toda la diferencia.',
+                    'branch' => 'Sucursal Jardines de Durango',
+                    'favorite_dish' => 'Pollo Entero Clásico',
+                    'tags' => ['Excelente atención', 'Rápido', 'Cebollitas asadas'],
+                    'is_verified' => true,
+                    'source' => 'Google Maps',
+                    'is_google_review' => true,
+                    'status' => 'approved',
+                    'likes_count' => 18,
+                    'admin_reply' => null,
+                ],
+                [
+                    'customer_name' => 'Dra. Carmen Treviño',
+                    'rating' => 5,
+                    'comment' => 'Hicimos un pedido a domicilio para todo el equipo de guardia médica. Llegó calientito, en empaque sellado y súper limpio.',
+                    'branch' => 'Sucursal Blvd. Domingo Arrieta',
+                    'favorite_dish' => 'Medio Pollo con Papas',
+                    'tags' => ['Entrega rápida', 'Empaque higiénico'],
+                    'is_verified' => true,
+                    'source' => 'Google Maps',
+                    'is_google_review' => true,
+                    'status' => 'approved',
+                    'likes_count' => 31,
+                    'admin_reply' => [
+                        'author' => 'Gerencia Pollo Feliz',
+                        'message' => '¡Gracias Doctora Carmen y a todo su equipo por su labor!',
+                    ],
+                ],
+                [
+                    'customer_name' => 'Ricardo Morales',
+                    'rating' => 4,
+                    'comment' => 'Muy buen sazón, el pollo súper jugoso y bien dorado por fuera. Las tortillas calientitas siempre llegan a tiempo.',
+                    'branch' => 'Sucursal Centro Histórico',
+                    'favorite_dish' => 'Pollo Entero Clásico',
+                    'tags' => ['Muy jugoso', 'Buen precio'],
+                    'is_verified' => true,
+                    'source' => 'Google Maps',
+                    'is_google_review' => true,
+                    'status' => 'approved',
+                    'likes_count' => 9,
+                    'admin_reply' => null,
+                ],
+                [
+                    'customer_name' => 'Lic. Claudia Benítez',
+                    'rating' => 5,
+                    'comment' => 'Compramos pollo para el cumpleaños de mi papá. La atención de las chicas en caja fue súper amable, todo bien empacado.',
+                    'branch' => 'Sucursal Jardines de Durango',
+                    'favorite_dish' => 'Combo Dos Pollos',
+                    'tags' => ['Atención amable', 'A tiempo', 'Tradición'],
+                    'is_verified' => true,
+                    'source' => 'Google Maps',
+                    'is_google_review' => true,
+                    'status' => 'approved',
+                    'likes_count' => 14,
+                    'admin_reply' => null,
+                ],
+                [
+                    'customer_name' => 'Javier Domínguez',
+                    'rating' => 5,
+                    'comment' => 'Las mejores salsas de Durango. El pollo tiene ese sabor ahumado al carbón de mezquite que no encuentras en otro lado.',
+                    'branch' => 'Sucursal Centro Histórico',
+                    'favorite_dish' => 'Pollo Asado con Guarnición',
+                    'tags' => ['Ahumado al carbón', 'Salsas picantes'],
+                    'is_verified' => true,
+                    'source' => 'Google Maps',
+                    'is_google_review' => true,
+                    'status' => 'approved',
+                    'likes_count' => 22,
+                    'admin_reply' => null,
+                ],
+            ];
+
+            foreach ($reviews as $reviewData) {
+                Review::query()->firstOrCreate(
+                    [
+                        'customer_name' => $reviewData['customer_name'],
+                        'branch' => $reviewData['branch'],
+                    ],
+                    $reviewData
+                );
             }
         }
 

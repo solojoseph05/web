@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Modelo Eloquent para los platillos del menú público de Pollo Feliz Durango.
@@ -38,20 +37,5 @@ class LandingMenuItem extends Model
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
-    }
-
-    /**
-     * Invalida automáticamente la caché de la Landing Page cuando cambia un platillo.
-     */
-    protected static function booted(): void
-    {
-        $clearCache = static function (): void {
-            Cache::forget('landing_page_data');
-            Cache::forget('landing_page_menu');
-        };
-
-        static::saved($clearCache);
-        static::deleted($clearCache);
-        static::restored($clearCache);
     }
 }

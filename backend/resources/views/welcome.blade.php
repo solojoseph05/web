@@ -1,3 +1,9 @@
+{{--
+    Vista principal pública (Blade SSR) de Pollo Feliz Durango.
+    Renderiza Hero optimizado para LCP, Menú digital con filtro instantáneo, Promociones vigentes,
+    Sucursales con lazy-load de Google Maps / Leaflet mediante IntersectionObserver,
+    Bolsa de Trabajo y Contacto directo hacia soporte@pollofelizdgo.com con datos SEO JSON-LD.
+--}}
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
@@ -9,9 +15,83 @@
         $pageDescription = $settings['hero_description'] ?? 'Disfruta del mejor pollo asado al carbón de mezquite en Durango. Menú digital, promociones vigentes, sucursales y contacto directo.';
         $companyPhone = $settings['company_phone'] ?? '618-123-4567';
         $companyWhatsapp = preg_replace('/\D+/', '', (string) ($settings['company_whatsapp'] ?? '526181234567'));
+        $googleMapsApiKey = trim((string) config('services.google_maps.key', ''));
         $primaryLoc = isset($locations) && is_iterable($locations) ? collect($locations)->first() : null;
         $menuList = isset($menuItems) && is_iterable($menuItems) ? collect($menuItems) : collect([]);
         $menuCategories = $menuList->pluck('category')->filter()->unique()->values();
+
+        // Esquema estructurado Schema.org (@type Restaurant) codificado de forma segura con json_encode
+        $departmentBranches = [];
+        foreach (($locations ?? []) as $loc) {
+            $branchItem = [
+                '@type' => 'Restaurant',
+                'name' => 'Pollo Feliz - ' . ($loc?->branch_name ?? $loc?->name ?? 'Sucursal Durango'),
+                'telephone' => $loc?->phone ?? $companyPhone,
+                'openingHours' => $loc?->schedule ?? 'Mo-Su 10:00-22:00',
+                'address' => [
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => $loc?->address ?? 'Durango, Dgo.',
+                    'addressLocality' => 'Durango',
+                    'addressRegion' => 'Durango',
+                    'addressCountry' => 'MX',
+                ],
+            ];
+
+            if (is_numeric($loc?->latitude) && is_numeric($loc?->longitude)) {
+                $lat = (float) $loc->latitude;
+                $lng = (float) $loc->longitude;
+                $branchItem['hasMap'] = "https://www.google.com/maps/dir/?api=1&destination={$lat},{$lng}";
+                $branchItem['geo'] = [
+                    '@type' => 'GeoCoordinates',
+                    'latitude' => $lat,
+                    'longitude' => $lng,
+                ];
+            }
+
+            $departmentBranches[] = $branchItem;
+        }
+
+        $schemaMenuItems = [];
+        foreach ($menuList->take(12) as $dish) {
+            $schemaMenuItems[] = [
+                '@type' => 'MenuItem',
+                'name' => (string) ($dish->name ?? 'Platillo Pollo Feliz'),
+                'description' => \Illuminate\Support\Str::limit((string) ($dish->description ?? ''), 140),
+                'offers' => [
+                    '@type' => 'Offer',
+                    'price' => number_format((float) ($dish->price ?? 0), 2, '.', ''),
+                    'priceCurrency' => 'MXN',
+                    'availability' => !empty($dish->is_sold_out)
+                        ? 'https://schema.org/OutOfStock'
+                        : 'https://schema.org/InStock',
+                ],
+            ];
+        }
+
+        $jsonLdSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Restaurant',
+            'name' => $brandName,
+            'image' => $settings['hero_image_url'] ?? asset('favicon.jpg'),
+            'servesCuisine' => 'Pollo Asado al Carbón, Comida Mexicana',
+            'priceRange' => '$$',
+            'telephone' => $companyPhone,
+            'email' => $settings['company_email'] ?? 'soporte@pollofelizdgo.com',
+            'address' => [
+                '@type' => 'PostalAddress',
+                'streetAddress' => $settings['company_address'] ?? 'Av. 5 de Mayo #123',
+                'addressLocality' => 'Durango',
+                'addressRegion' => 'Durango',
+                'postalCode' => '34000',
+                'addressCountry' => 'MX',
+            ],
+            'department' => $departmentBranches,
+            'hasMenu' => [
+                '@type' => 'Menu',
+                'name' => 'Menú Digital Pollo Feliz Durango',
+                'hasMenuItem' => $schemaMenuItems,
+            ],
+        ];
     @endphp
 
     <title>{{ $pageTitle }}</title>
@@ -32,79 +112,14 @@
 
     {{-- Metadatos de geolocalización SEO calculados dinámicamente desde la primera sucursal activa --}}
     @if(!empty($primaryLoc?->latitude) && !empty($primaryLoc?->longitude))
-        <meta name="geo.position" content="{{ $primaryLoc->latitude }};{{ $primaryLoc->longitude }}">
-        <meta name="ICBM" content="{{ $primaryLoc->latitude }}, {{ $primaryLoc->longitude }}">
+        <meta name="geo.position" content="{{ (float) $primaryLoc->latitude }};{{ (float) $primaryLoc->longitude }}">
+        <meta name="ICBM" content="{{ (float) $primaryLoc->latitude }}, {{ (float) $primaryLoc->longitude }}">
         <meta name="geo.placename" content="{{ $primaryLoc->branch_name ?? $primaryLoc->name ?? 'Durango, México' }}">
         <meta name="geo.region" content="MX-DUR">
     @endif
 
-    {{-- Datos estructurados JSON-LD (Schema.org) con sucursales activas y menú digital --}}
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "FastFoodRestaurant",
-        "name": "{{ $brandName }}",
-        "image": "{{ $settings['hero_image_url'] ?? asset('favicon.jpg') }}",
-        "servesCuisine": "Pollo Asado al Carbón, Comida Mexicana",
-        "priceRange": "$$",
-        "telephone": "{{ $companyPhone }}",
-        "email": "{{ $settings['company_email'] ?? 'soporte@pollofelizdgo.com' }}",
-        "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "{{ $settings['company_address'] ?? 'Av. 5 de Mayo #123' }}",
-            "addressLocality": "Durango",
-            "addressRegion": "Durango",
-            "postalCode": "34000",
-            "addressCountry": "MX"
-        },
-        "department": [
-            @forelse(($locations ?? []) as $loc)
-            {
-                "@type": "Restaurant",
-                "name": "Pollo Feliz - {{ $loc?->branch_name ?? $loc?->name ?? 'Sucursal Durango' }}",
-                "telephone": "{{ $loc?->phone ?? $companyPhone }}",
-                "openingHours": "{{ $loc?->schedule ?? 'Mo-Su 10:00-22:00' }}",
-                "address": {
-                    "@type": "PostalAddress",
-                    "streetAddress": "{{ $loc?->address ?? 'Durango, Dgo.' }}",
-                    "addressLocality": "Durango",
-                    "addressRegion": "Durango",
-                    "addressCountry": "MX"
-                }
-                @if(!empty($loc?->latitude) && !empty($loc?->longitude))
-                ,
-                "hasMap": "https://www.google.com/maps/dir/?api=1&destination={{ $loc->latitude }},{{ $loc->longitude }}",
-                "geo": {
-                    "@type": "GeoCoordinates",
-                    "latitude": {{ $loc->latitude }},
-                    "longitude": {{ $loc->longitude }}
-                }
-                @endif
-            }{{ !$loop->last ? ',' : '' }}
-            @empty
-            @endforelse
-        ],
-        "hasMenu": {
-            "@type": "Menu",
-            "name": "Menú Digital Pollo Feliz Durango",
-            "hasMenuItem": [
-                @foreach($menuList->take(12) as $dish)
-                {
-                    "@type": "MenuItem",
-                    "name": "{{ $dish->name }}",
-                    "description": "{{ \Illuminate\Support\Str::limit($dish->description ?? '', 140) }}",
-                    "offers": {
-                        "@type": "Offer",
-                        "price": "{{ number_format((float) $dish->price, 2, '.', '') }}",
-                        "priceCurrency": "MXN",
-                        "availability": "{{ !empty($dish->is_sold_out) ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock' }}"
-                    }
-                }{{ !$loop->last ? ',' : '' }}
-                @endforeach
-            ]
-        }
-    }
-    </script>
+    {{-- Datos estructurados JSON-LD (Schema.org @type Restaurant) --}}
+    <script type="application/ld+json">{!! json_encode($jsonLdSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}</script>
 
     {{-- Tailwind CSS CDN para renderizado de respaldo en Blade --}}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -647,14 +662,24 @@
             modal.classList.remove('flex');
         }
 
+        const googleMapsApiKey = @json($googleMapsApiKey ?? '');
         let bladeLeafletMap = null;
+        let bladeGoogleMap = null;
         const bladeLeafletMarkers = {};
+        const bladeGoogleMarkers = {};
+        let bladeGoogleInfoWindow = null;
 
         function focusBranchOnMap(lat, lng, id) {
             const wrapper = document.getElementById('map-section-wrapper');
             if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
             ensureMapLoaded(() => {
-                if (bladeLeafletMap) {
+                if (bladeGoogleMap && window.google?.maps) {
+                    bladeGoogleMap.panTo({ lat, lng });
+                    bladeGoogleMap.setZoom(16);
+                    if (bladeGoogleMarkers[id]) {
+                        window.google.maps.event.trigger(bladeGoogleMarkers[id], 'click');
+                    }
+                } else if (bladeLeafletMap) {
                     bladeLeafletMap.flyTo([lat, lng], 16, { duration: 1.0 });
                     if (bladeLeafletMarkers[id]) bladeLeafletMarkers[id].openPopup();
                 }
@@ -664,15 +689,8 @@
         let mapLoadStarted = false;
         let mapReadyCallbacks = [];
 
-        function ensureMapLoaded(cb) {
-            if (bladeLeafletMap) {
-                if (cb) cb();
-                return;
-            }
-            if (cb) mapReadyCallbacks.push(cb);
-            if (mapLoadStarted) return;
-            mapLoadStarted = true;
-
+        function loadLeafletFallback() {
+            if (bladeLeafletMap) return;
             const css = document.createElement('link');
             css.rel = 'stylesheet';
             css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
@@ -681,13 +699,128 @@
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
             script.onload = initBladeLeafletMap;
+            script.onerror = () => {
+                const mapEl = document.getElementById('landing-leaflet-map');
+                if (mapEl) mapEl.textContent = 'No se pudo cargar el mapa interactivo. Usa el botón "Cómo llegar" en cada sucursal.';
+            };
             document.body.appendChild(script);
+        }
+
+        function ensureMapLoaded(cb) {
+            if (bladeGoogleMap || bladeLeafletMap) {
+                if (cb) cb();
+                return;
+            }
+            if (cb) mapReadyCallbacks.push(cb);
+            if (mapLoadStarted) return;
+            mapLoadStarted = true;
+
+            if (googleMapsApiKey) {
+                window.gm_authFailure = function () {
+                    bladeGoogleMap = null;
+                    loadLeafletFallback();
+                };
+                window.__initPolloGoogleMap = initBladeGoogleMap;
+                const gScript = document.createElement('script');
+                gScript.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(googleMapsApiKey) + '&callback=__initPolloGoogleMap';
+                gScript.async = true;
+                gScript.defer = true;
+                gScript.onerror = loadLeafletFallback;
+                document.head.appendChild(gScript);
+            } else {
+                loadLeafletFallback();
+            }
+        }
+
+        function initBladeGoogleMap() {
+            const locationsData = @json($locations ?? []);
+            const mapEl = document.getElementById('landing-leaflet-map');
+            if (!mapEl || !Array.isArray(locationsData) || !window.google?.maps) {
+                loadLeafletFallback();
+                return;
+            }
+
+            const validLocations = locationsData.filter(loc => loc.latitude && loc.longitude);
+            if (validLocations.length === 0) {
+                mapEl.textContent = 'No hay coordenadas GPS activas registradas.';
+                return;
+            }
+
+            mapEl.textContent = '';
+            const defaultLat = parseFloat(validLocations[0].latitude) || 24.0277;
+            const defaultLng = parseFloat(validLocations[0].longitude) || -104.6532;
+
+            bladeGoogleMap = new google.maps.Map(mapEl, {
+                center: { lat: defaultLat, lng: defaultLng },
+                zoom: parseInt(validLocations[0].map_zoom || 13, 10),
+                mapTypeControl: false,
+                streetViewControl: false,
+            });
+            bladeGoogleInfoWindow = new google.maps.InfoWindow();
+
+            const bounds = new google.maps.LatLngBounds();
+            const chipsContainer = document.getElementById('map-branch-chips');
+            if (chipsContainer) chipsContainer.innerHTML = '';
+
+            validLocations.forEach((loc) => {
+                const lat = parseFloat(loc.latitude);
+                const lng = parseFloat(loc.longitude);
+                const name = loc.branch_name || loc.name || ('Sucursal #' + loc.id);
+                const address = loc.address || '';
+                const schedule = loc.schedule || 'Lun - Dom: 10:00 AM - 10:00 PM';
+                const directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng;
+
+                bounds.extend({ lat, lng });
+
+                const marker = new google.maps.Marker({
+                    position: { lat, lng },
+                    map: bladeGoogleMap,
+                    title: name,
+                    label: { text: '🍗', fontSize: '16px' },
+                });
+
+                const popupHtml = `
+                    <div style="font-family: inherit; padding: 4px; max-width: 240px; color: #111;">
+                        <h4 style="font-weight: 900; margin: 0 0 4px; font-size: 14px;">${name}</h4>
+                        <p style="font-size: 11px; color: #555; margin: 0 0 6px;">📍 ${address}</p>
+                        <p style="font-size: 11px; color: #555; margin: 0 0 8px;">🕒 ${schedule}</p>
+                        <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background-color:#dc2626; color:white; text-decoration:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🧭 Cómo llegar</a>
+                    </div>
+                `;
+
+                marker.addListener('click', () => {
+                    bladeGoogleInfoWindow.setContent(popupHtml);
+                    bladeGoogleInfoWindow.open(bladeGoogleMap, marker);
+                });
+
+                if (loc.id) bladeGoogleMarkers[loc.id] = marker;
+
+                if (chipsContainer) {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'px-3 py-1 rounded-xl text-xs font-bold bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-700 border border-gray-200 transition';
+                    chip.textContent = name;
+                    chip.onclick = () => {
+                        bladeGoogleMap.panTo({ lat, lng });
+                        bladeGoogleMap.setZoom(16);
+                        google.maps.event.trigger(marker, 'click');
+                    };
+                    chipsContainer.appendChild(chip);
+                }
+            });
+
+            if (validLocations.length > 1) {
+                bladeGoogleMap.fitBounds(bounds);
+            }
+
+            mapReadyCallbacks.forEach(fn => fn());
+            mapReadyCallbacks = [];
         }
 
         function initBladeLeafletMap() {
             const locationsData = @json($locations ?? []);
             const mapEl = document.getElementById('landing-leaflet-map');
-            if (!mapEl || !Array.isArray(locationsData)) return;
+            if (!mapEl || !Array.isArray(locationsData) || typeof L === 'undefined') return;
 
             const validLocations = locationsData.filter(loc => loc.latitude && loc.longitude);
             if (validLocations.length === 0) {
@@ -717,6 +850,7 @@
 
             const bounds = [];
             const chipsContainer = document.getElementById('map-branch-chips');
+            if (chipsContainer) chipsContainer.innerHTML = '';
 
             validLocations.forEach((loc) => {
                 const lat = parseFloat(loc.latitude);

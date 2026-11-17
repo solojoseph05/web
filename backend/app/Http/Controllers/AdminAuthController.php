@@ -774,6 +774,75 @@ class AdminAuthController extends Controller
         }
     }
 
+    /**
+     * Elimina una cuenta administrativa protegiendo al usuario autenticado actual,
+     * al Super Administrador principal y al último Super Administrador activo del sistema.
+     */
+    public function deleteAdminUser(Request $request, $id)
+    {
+        $adminUser = $request->attributes->get('adminUser');
+        $targetUser = User::find($id);
+
+        if (!$targetUser) {
+            return response()->json(['message' => 'Usuario administrativo no encontrado.'], 404);
+        }
+
+        if ((int) $targetUser->id === 1) {
+            return response()->json(['message' => 'No es posible eliminar al Super Administrador principal del sistema.'], 403);
+        }
+
+        if ($adminUser && (int) $adminUser->id === (int) $targetUser->id) {
+            return response()->json(['message' => 'No puedes eliminar tu propia cuenta con sesión activa.'], 403);
+        }
+
+        if ($targetUser->role === 'super_admin') {
+            $remainingSuperAdmins = User::query()
+                ->where('is_admin', true)
+                ->where('role', 'super_admin')
+                ->where('id', '!=', $targetUser->id)
+                ->where(function ($q) {
+                    $q->whereNull('status')->orWhere('status', '!=', 'suspended');
+                })
+                ->count();
+
+            if ($remainingSuperAdmins === 0) {
+                return response()->json([
+                    'message' => 'Operación denegada: el sistema debe conservar al menos un Super Administrador activo.',
+                ], 403);
+            }
+        }
+
+        try {
+            DB::transaction(function () use ($adminUser, $targetUser): void {
+                $snapshot = [
+                    'id' => $targetUser->id,
+                    'name' => $targetUser->name,
+                    'email' => $targetUser->email,
+                    'role' => $targetUser->role,
+                ];
+
+                $targetUser->delete();
+
+                AdminChangeLog::create([
+                    'admin_user_id' => $adminUser->id ?? 1,
+                    'action' => 'admin.user.delete',
+                    'target_type' => 'User',
+                    'target_id' => (string) $snapshot['id'],
+                    'description' => "Se eliminó la cuenta administrativa {$snapshot['name']} ({$snapshot['email']}).",
+                    'changes' => $snapshot,
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario administrativo eliminado correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error eliminando usuario administrativo', ['id' => $id, 'error' => $e->getMessage()]);
+            return response()->json(['message' => 'No se pudo eliminar el usuario administrativo.'], 500);
+        }
+    }
+
     private function generateBase32Secret(int $length = 32): string
     {
         $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
